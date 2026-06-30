@@ -16,6 +16,10 @@ Work in progress — MVP under active development.
 - **Database:** PostgreSQL (persistent schema cache)
 - **Infrastructure:** Docker Compose
 
+## DB-Architecture
+
+![TableTrail-DBArchitecture](screenshots/TableTrail-DBArchitecture.png)
+
 ## Getting Started
 
 ```bash
