@@ -11,7 +11,7 @@ class Columns(Base):
     name : Mapped[str] = mapped_column()
     data_type : Mapped[str] = mapped_column()
     is_nullable : Mapped[bool] = mapped_column()
-    default_value : Mapped[str] = mapped_column()
+    default_value : Mapped[str | None] = mapped_column()
     ordinal_position : Mapped[int] = mapped_column()
 
     __table_args__ = (
