@@ -1,23 +1,15 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 from table_trail_backend.core.config import Settings
 
 settings = Settings()
 
-# Engine
-engine = create_engine(
-    settings.DATABASE_URL,
-    future=True,
-    pool_pre_ping=True,
-)
+engine = create_async_engine(settings.DATABASE_URL, echo=True)
 
-
-# Session
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    expire_on_commit=False,
-    bind=engine
+async_session = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False
 )
 
 class Base(DeclarativeBase):
