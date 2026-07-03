@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from table_trail_backend.db.database_config import Base
 
 
-class Constrains(Base):
+class Constraints(Base):
     __tablename__ = 'constraints'
 
     id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
