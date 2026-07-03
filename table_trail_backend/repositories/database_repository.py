@@ -36,12 +36,9 @@ class DatabasesRepository:
 
     async def update(self, db_id: int, data: UpdateDatabase):
         database = await self.get_one_database(db_id)
-        if data.name is not None:
-            database.name = data.name
-        if data.db_type is not None:
-            database.db_type = data.db_type
-        if data.connection_url is not None:
-            database.connection_url = data.connection_url
+        update_data = data.model_dump(exclude_none=True)
+        for key, value in update_data.items():
+            setattr(database, key, value)
         await self.db.flush()
         await self.db.refresh(database)
         return database

@@ -32,7 +32,12 @@ class TableRepository:
         return tables.scalars().all()
 
 
-    async def update_table(self, db_id: int, table_id: int, name: str | None = None, schema_name: str | None = None):
+    async def update_table(self,
+                           db_id: int,
+                           table_id: int,
+                           name: str | None = None,
+                           schema_name: str | None = None):
+
         database = await self.get_table_by_id(db_id, table_id)
         if name is not None:
             database.name = name
