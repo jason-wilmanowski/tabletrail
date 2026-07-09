@@ -7,7 +7,7 @@ class Constraints(Base):
     __tablename__ = 'constraints'
 
     id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    table_id : Mapped[int] = mapped_column(ForeignKey('tables.id'))
+    table_id : Mapped[int] = mapped_column(ForeignKey('tables.id'), ondelete='CASCADE')
     constraint_type : Mapped[str] = mapped_column()
     constraint_name : Mapped[str] = mapped_column()
     references_table_id : Mapped[int | None] = mapped_column()

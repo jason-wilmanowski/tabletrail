@@ -2,6 +2,10 @@
 class DatabaseSystemError(Exception):
     pass
 
+class ScanningSystemError(Exception):
+    pass
+
+
 
 # General Exceptions
 class NotAllowedError(DatabaseSystemError):
@@ -25,7 +29,7 @@ class ConstraintError(DatabaseSystemError):
     pass
 
 # Scanning Error
-class ScanningError(DatabaseSystemError):
+class ScanningError(ScanningSystemError):
     pass
 
 

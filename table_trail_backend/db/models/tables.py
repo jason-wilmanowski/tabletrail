@@ -7,7 +7,7 @@ class Tables(Base):
     __tablename__ = 'tables'
 
     id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    database_id : Mapped[int] = mapped_column(ForeignKey('databases.id'))
+    database_id : Mapped[int] = mapped_column(ForeignKey('databases.id'), ondelete='CASCADE')
     name : Mapped[str] = mapped_column()
     schema_name : Mapped[str | None] = mapped_column()
 

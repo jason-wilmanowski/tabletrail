@@ -7,7 +7,7 @@ class Columns(Base):
     __tablename__ = 'columns'
 
     id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    table_id : Mapped[int] = mapped_column(ForeignKey('tables.id'))
+    table_id : Mapped[int] = mapped_column(ForeignKey('tables.id'), ondelete='CASCADE')
     name : Mapped[str] = mapped_column()
     data_type : Mapped[str] = mapped_column()
     is_nullable : Mapped[bool] = mapped_column()
