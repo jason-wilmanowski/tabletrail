@@ -34,7 +34,7 @@ class TableRepository:
     async def get_table_by_name(self, db_id: int, table_name: str):
         table = await self.db.execute(
             select(Tables).where(and_(Tables.database_id == db_id,
-                                 Tables.name == table_name))
+                                      Tables.name == table_name))
         )
         return table.scalar_one_or_none()
 
