@@ -28,8 +28,16 @@ class ColumnError(DatabaseSystemError):
 class ConstraintError(DatabaseSystemError):
     pass
 
-# Scanning Error
-class ScanningError(ScanningSystemError):
+
+
+# Scanning Exceptions
+class ScannerConnectionError(ScanningSystemError):
+    pass
+
+class ScannerUnsupportedDBError(ScanningSystemError):
+    pass
+
+class ScannerDataError(ScanningSystemError):
     pass
 
 
