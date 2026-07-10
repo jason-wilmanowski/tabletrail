@@ -11,6 +11,6 @@ class UpdateDatabase(BaseModel):
     name: str | None = None
     db_type: DBType | None = None
     connection_url: str | None = None
-
+    status: DBStatus | None = None
 
 
