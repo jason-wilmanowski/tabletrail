@@ -9,36 +9,61 @@ class ScanningSystemError(Exception):
 
 # General Exceptions
 class NotAllowedError(DatabaseSystemError):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 
 # Database Exceptions
 class DatabaseError(DatabaseSystemError):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 # Table Exceptions
 class TableError(DatabaseSystemError):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 # Column Exceptions
 class ColumnError(DatabaseSystemError):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 # Constraint Error
 class ConstraintError(DatabaseSystemError):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 
 
 # Scanning Exceptions
 class ScannerConnectionError(ScanningSystemError):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
+
 
 class ScannerUnsupportedDBError(ScanningSystemError):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 class ScannerDataError(ScanningSystemError):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 
 

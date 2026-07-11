@@ -15,7 +15,7 @@ from table_trail_backend.repositories.database_repository import DatabasesReposi
 from table_trail_backend.repositories.table_repository import TableRepository
 from table_trail_backend.repositories.column_repository import ColumnRepository
 from table_trail_backend.repositories.constraint_repository import ConstraintsRepository
-from table_trail_backend.schemas.database_schema import CreateDatabase, UpdateDatabase
+from table_trail_backend.schemas.database_schema import CreateDatabase, UpdateDatabase, DatabaseResponse
 from table_trail_backend.schemas.column_schema import CreateColumn
 from table_trail_backend.schemas.constraint_schema import CreateConstraint
 
@@ -32,7 +32,7 @@ class ScanService:
 
     # Public Entry Point
 
-    async def execute_scan(self, database_details: CreateDatabase) -> dict:
+    async def execute_scan(self, database_details: CreateDatabase) -> DatabaseResponse:
 
         prepared_url = self._prepare_url(database_details)
 
@@ -87,9 +87,11 @@ class ScanService:
         try:
             return scanner.scan(prepared_url)
         except ConnectionError as e:
-            raise ScannerConnectionError(f"Could not connect to database: {str(e)}")
+            raise ScannerConnectionError(message="Could not connect to database",
+                                         status_code=503)
         except Exception as e:
-            raise ScannerDataError(f"Scanner failed while reading database structure: {str(e)}")
+            raise ScannerDataError(message="Scanner failed while reading database structure",
+                                   status_code = 422)
 
     async def _clear_existing_data(self, db_id: int) -> None:
         tables = await self.table_repo.get_database_tables(db_id)
@@ -186,5 +188,6 @@ class ScanService:
             DBType.MARIADB: MariaDBScanner,
         }
         if db_type not in scanner_map:
-            raise ScannerUnsupportedDBError(f"Unsupported database type: {db_type}")
+            raise ScannerUnsupportedDBError(message="Unsupported database type",
+                                            status_code = 422)
         return scanner_map[db_type]()
