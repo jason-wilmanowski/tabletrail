@@ -1,7 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from table_trail_backend.core.enums import DBType, DBStatus
+from table_trail_backend.schemas.table_schema import TableResponse
 
 
+# Insert Section
 class CreateDatabase(BaseModel):
     name: str
     db_type: DBType
@@ -31,3 +33,10 @@ class ConnectionDetails(BaseModel):
     username: str
     password: str
 
+
+# Response Section
+
+class DatabaseResponse(CreateDatabase):
+    id: int
+    tables: list[TableResponse]
+    model_config = ConfigDict(from_attributes=True)
