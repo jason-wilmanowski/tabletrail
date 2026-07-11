@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from table_trail_backend.core.enums import DBType, DBStatus
 from table_trail_backend.schemas.table_schema import TableResponse
+from table_trail_backend.schemas.column_schema import ColumnResponse
 
 
 # Insert Section
@@ -36,10 +37,18 @@ class ConnectionDetails(BaseModel):
 
 # Response Section
 
-class FullDatabaseResponse(CreateDatabase):
+class DatabaseStructureResponse(CreateDatabase):
     id: int
     tables: list[TableResponse]
     model_config = ConfigDict(from_attributes=True)
 
 class DatabaseResponse(CreateDatabase):
     id: int
+
+
+class SearchResponse(BaseModel):
+    tables: list[TableResponse] | None = None
+    columns: list[ColumnResponse] | None = None
+    schema_tables: list[TableResponse] | None = None
+    model_config = ConfigDict(from_attributes=True)
+
