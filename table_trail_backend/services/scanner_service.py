@@ -55,7 +55,10 @@ class ScanService:
             # 5. Mark as READY
             await self._update_status(database.id, DBStatus.READY)
 
-            return {"message": "Scan completed successfully", "database_id": database.id}
+            # 6. Get Database Object
+            scanned_database =  await self.db_repo.get_one_database(database.id)
+
+            return scanned_database
 
         except ScanningSystemError:
             await self.db.rollback()
