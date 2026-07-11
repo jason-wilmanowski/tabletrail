@@ -14,7 +14,8 @@ class DatabaseService:
     async def get_full_database(self, db_id: int):
         database = await self.db_repo.get_full_database(db_id)
         if database is None:
-            raise DatabaseError(f"Database with id {db_id} not found")
+            raise DatabaseError(message=f"Database with id {db_id} not found",
+                                status_code=404)
         return database
 
     async def get_all_databases(self):
@@ -22,15 +23,18 @@ class DatabaseService:
 
     async def update_database(self, db_id: int, data: UpdateDatabase):
         if not data:
-            raise DatabaseError("No data to update")
+            raise DatabaseError(message=f"No update data provided",
+                                status_code=400)
         database = await self.db_repo.get_one_database(db_id)
         if database is None:
-            raise DatabaseError(f"Database with id {db_id} not found")
+            raise DatabaseError(message=f"Database with id {db_id} not found",
+                                status_code=404)
         return await self.db_repo.update(db_id, data)
 
     async def delete_database(self, db_id: int):
         database = await self.db_repo.get_one_database(db_id)
         if database is None:
-            raise DatabaseError(f"Database with id {db_id} not found")
+            raise DatabaseError(message=f"Database with id {db_id} not found",
+                                status_code=404)
         await self.db_repo.delete_database(db_id)
         await self.db.commit()
