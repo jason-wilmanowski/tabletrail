@@ -1,13 +1,12 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from table_trail_backend.core.enums import DBType, DBStatus
 from table_trail_backend.core.exceptions import (
     ScannerConnectionError,
     ScannerUnsupportedDBError,
     ScannerDataError,
     ScanningSystemError
-
 )
+from table_trail_backend.db.models.databases import Databases
 from table_trail_backend.db_scanner.base_scanner import ScannedDatabase
 from table_trail_backend.db_scanner.postgres_scanner import PostgresScanner
 from table_trail_backend.db_scanner.mysql_scanner import MySQLScanner
@@ -19,6 +18,7 @@ from table_trail_backend.repositories.constraint_repository import ConstraintsRe
 from table_trail_backend.schemas.database_schema import CreateDatabase, UpdateDatabase
 from table_trail_backend.schemas.column_schema import CreateColumn
 from table_trail_backend.schemas.constraint_schema import CreateConstraint
+from table_trail_backend.schemas.database_schema import ConnectionDetails
 
 
 class ScanService:
@@ -30,18 +30,18 @@ class ScanService:
         self.column_repo = ColumnRepository(db)
         self.constraint_repo = ConstraintsRepository(db)
 
-    # ── Public Entry Point ─────────────────────────────────────────────────────
+    # Public Entry Point
 
-    async def execute_scan(self, connection_url: str, name: str) -> dict:
-        db_type = self._detect_db_type(connection_url)
-        prepared_url = self._prepare_url(connection_url, db_type)
+    async def execute_scan(self, connection_details: ConnectionDetails, name: str) -> dict:
+
+        prepared_url = self._prepare_url(connection_details)
 
         # Initialize — sets status to SCANNING, commits immediately
-        database = await self._initialize_scan(name, db_type, connection_url)
+        database = await self._initialize_scan(name, connection_details)
 
         try:
             # 1. Run scanner first — if this fails, existing data is untouched
-            scan_result = await self._run_scanner(db_type, prepared_url)
+            scan_result = await self._run_scanner(connection_details.db_type, prepared_url)
 
             # 2. Clear existing data for this database (flush only)
             await self._clear_existing_data(database.id)
@@ -65,11 +65,16 @@ class ScanService:
 
     # Private Workflow Steps
 
-    async def _initialize_scan(self, name: str, db_type: DBType, connection_url: str):
+    async def _initialize_scan(self, name: str, connection_details: ConnectionDetails) -> Databases:
         database = await self.db_repo.create(CreateDatabase(
             name=name,
-            db_type=db_type,
-            connection_url=connection_url
+            db_type=connection_details.db_type,
+            host=connection_details.host,
+            port=connection_details.port,
+            db_name=connection_details.db_name,
+            username=connection_details.username,
+            password=connection_details.password,
+            status=DBStatus.SCANNING
         ))
         await self.db.commit()
         return database
@@ -156,40 +161,20 @@ class ScanService:
 
     # Helper Methods
 
-    def _detect_db_type(self, connection_url: str) -> DBType:
-        from sqlalchemy.engine import make_url
-        try:
-            dialect = make_url(connection_url).drivername.lower()
-        except Exception:
-            raise ScannerConnectionError(f"Invalid connection URL format: {connection_url}")
-
-        if "mariadb" in dialect:
-            return DBType.MARIADB
-        elif "postgresql" in dialect or "postgres" in dialect:
-            return DBType.POSTGRESQL
-        elif "mysql" in dialect:
-            return DBType.MYSQL
-
-        raise ScannerUnsupportedDBError(f"Unsupported database type in URL: {dialect}")
-
-    def _prepare_url(self, connection_url: str, db_type: DBType) -> str:
-        from sqlalchemy.engine import make_url
-        url = make_url(connection_url)
-
-        # Replace localhost with host.docker.internal for Docker networking
-        host = url.host
+    def _prepare_url(self, connection_details: ConnectionDetails) -> str:
+        host = connection_details.host
         if host in ("localhost", "127.0.0.1"):
             host = "host.docker.internal"
 
-        # Set correct sync driver prefix per DB type
         driver_map = {
             DBType.POSTGRESQL: "postgresql+psycopg2",
             DBType.MYSQL: "mysql+pymysql",
             DBType.MARIADB: "mariadb+pymysql",
         }
 
-        prepared = url.set(drivername=driver_map[db_type], host=host)
-        return prepared.render_as_string(hide_password=False)
+        driver = driver_map[connection_details.db_type]
+
+        return f"{driver}://{connection_details.username}:{connection_details.password}@{host}:{connection_details.port}/{connection_details.db_name}"
 
     def _get_scanner(self, db_type: DBType):
         scanner_map = {
