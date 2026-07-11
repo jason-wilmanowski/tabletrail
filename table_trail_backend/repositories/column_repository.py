@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, and_
 from table_trail_backend.db.models.columns import Columns
+from table_trail_backend.db.models.tables import Tables
 from table_trail_backend.schemas.column_schema import CreateColumn, UpdateColumn
 
 
@@ -37,12 +38,14 @@ class ColumnRepository:
         )
         return columns.scalars().all()
 
-    async def get_column_by_name(self, table_id: int, column_name: str):
-        column = await self.db.execute(
-            select(Columns).where(and_(Columns.table_id == table_id,
-                                       Columns.name == column_name))
+    async def search_by_name(self, db_id: int, query: str) -> list[Columns]:
+        result = await self.db.execute(
+            select(Columns)
+            .join(Tables)
+            .where(and_(Tables.database_id == db_id,
+                        Columns.name.ilike(f"%{query}%")))
         )
-        return column.scalar_one_or_none()
+        return list(result.scalars().all())
 
 
     async def update_column(self, table_id: int, column_id: int, data: UpdateColumn):
