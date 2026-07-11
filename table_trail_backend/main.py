@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from table_trail_backend.core.config import settings
 from table_trail_backend.db.database_config import engine, Base
+from table_trail_backend.api import scanner, database
 
 
 @asynccontextmanager
@@ -27,3 +28,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.include_router(scanner.router, prefix="/api/v1")
+app.include_router(database.router, prefix="/api/v1")
