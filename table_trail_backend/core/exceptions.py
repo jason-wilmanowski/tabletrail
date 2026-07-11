@@ -1,69 +1,52 @@
-# Base Exception
+# Base Database Exception
 class DatabaseSystemError(Exception):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
+# Base Scanning Exception
 class ScanningSystemError(Exception):
-    pass
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 
 
 # General Exceptions
 class NotAllowedError(DatabaseSystemError):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
+    pass
 
 
 # Database Exceptions
 class DatabaseError(DatabaseSystemError):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
+    pass
 
 # Table Exceptions
 class TableError(DatabaseSystemError):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
+    pass
 
 # Column Exceptions
 class ColumnError(DatabaseSystemError):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
+    pass
 
 # Constraint Error
 class ConstraintError(DatabaseSystemError):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
+    pass
 
 
 
 # Scanning Exceptions
 class ScannerConnectionError(ScanningSystemError):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
+    pass
 
 
 class ScannerUnsupportedDBError(ScanningSystemError):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
+    pass
 
 class ScannerDataError(ScanningSystemError):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
+    pass
 
 
 
