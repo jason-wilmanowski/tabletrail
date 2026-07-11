@@ -33,7 +33,6 @@ class DatabasesRepository:
         )
         return databases.scalars().all()
 
-
     async def update(self, db_id: int, data: UpdateDatabase):
         database = await self.get_one_database(db_id)
         update_data = data.model_dump(exclude_none=True)
