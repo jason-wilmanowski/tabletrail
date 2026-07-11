@@ -1,5 +1,5 @@
 from sqlalchemy import Enum, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from table_trail_backend.db.database_config import Base
 from table_trail_backend.core.enums import DBType, DBStatus
@@ -19,3 +19,7 @@ class Databases(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
 
+    constraints: Mapped[list["Databases"]] = relationship(
+        back_populates="database",
+        cascade="all, delete-orphan"
+    )

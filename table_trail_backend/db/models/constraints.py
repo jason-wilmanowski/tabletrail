@@ -1,6 +1,8 @@
 from sqlalchemy import UniqueConstraint, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from table_trail_backend.db.database_config import Base
+from table_trail_backend.db.models.constraint_columns import ConstraintColumn
+from table_trail_backend.db.models.tables import Tables
 
 
 class Constraints(Base):
