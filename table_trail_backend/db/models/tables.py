@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from table_trail_backend.db.database_config import Base
 from table_trail_backend.db.models.columns import Columns
 from table_trail_backend.db.models.constraints import Constraints
+from table_trail_backend.db.models.databases import Databases
 
 
 class Tables(Base):
@@ -21,6 +22,9 @@ class Tables(Base):
         back_populates="table",
         cascade="all, delete-orphan"
     )
+
+    database: Mapped["Databases"] = relationship(back_populates="tables")
+
     __table_args__ = (
         UniqueConstraint('database_id', 'schema_name', 'name', name='uq_table_per_db_schema'),
     )
