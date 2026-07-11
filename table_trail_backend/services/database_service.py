@@ -4,7 +4,7 @@ from table_trail_backend.core.exceptions import DatabaseError
 from table_trail_backend.schemas.database_schema import UpdateDatabase
 
 
-class DatabasesService:
+class DatabaseService:
 
 
     def __init__(self, db: AsyncSession):

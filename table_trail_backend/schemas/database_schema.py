@@ -36,7 +36,10 @@ class ConnectionDetails(BaseModel):
 
 # Response Section
 
-class DatabaseResponse(CreateDatabase):
+class FullDatabaseResponse(CreateDatabase):
     id: int
     tables: list[TableResponse]
     model_config = ConfigDict(from_attributes=True)
+
+class DatabaseResponse(CreateDatabase):
+    id: int
