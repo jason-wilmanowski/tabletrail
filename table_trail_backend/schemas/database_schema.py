@@ -13,4 +13,11 @@ class UpdateDatabase(BaseModel):
     connection_url: str | None = None
     status: DBStatus | None = None
 
+class ConnectionDetails(BaseModel):
+    db_type : DBType
+    host: str
+    port: str
+    db_name: str
+    username: str
+    password: str
 
