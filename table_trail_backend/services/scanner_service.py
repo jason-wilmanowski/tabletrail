@@ -1,4 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from table_trail_backend.api.database import update_database
 from table_trail_backend.core.enums import DBType, DBStatus
 from table_trail_backend.core.exceptions import (
     ScannerConnectionError,
@@ -29,7 +31,6 @@ class ScanService:
         self.table_repo = TableRepository(db)
         self.column_repo = ColumnRepository(db)
         self.constraint_repo = ConstraintsRepository(db)
-
 
     # Public Entry Point
 
@@ -70,7 +71,10 @@ class ScanService:
     # Private Workflow Steps
 
     async def _initialize_scan(self, database_details: CreateDatabase) -> Databases:
-        database = await self.db_repo.create(CreateDatabaseInternal(
+
+        existing_database = await self.db_repo.get_database_by_connection(database_details.host, database_details.port, database_details.db_name)
+        if existing_database:
+            database = await self.db_repo.update(existing_database.id, UpdateDatabase(
             name=database_details.name,
             db_type=database_details.db_type,
             host=database_details.host,
@@ -79,7 +83,19 @@ class ScanService:
             username=database_details.username,
             password=database_details.password,
             status=DBStatus.SCANNING
-        ))
+            ))
+
+        else:
+            database = await self.db_repo.create(CreateDatabaseInternal(
+                name=database_details.name,
+                db_type=database_details.db_type,
+                host=database_details.host,
+                port=database_details.port,
+                db_name=database_details.db_name,
+                username=database_details.username,
+                password=database_details.password,
+                status=DBStatus.SCANNING
+            ))
         await self.db.commit()
         return database
 
@@ -91,7 +107,7 @@ class ScanService:
             raise ScannerConnectionError(message="Could not connect to database",
                                          status_code=503)
         except Exception as e:
-            raise ScannerDataError(message="Scanner failed while reading database structure",
+            raise ScannerDataError(message=f"Scanner failed while reading database structure: {e}",
                                    status_code = 422)
 
     async def _clear_existing_data(self, db_id: int) -> None:

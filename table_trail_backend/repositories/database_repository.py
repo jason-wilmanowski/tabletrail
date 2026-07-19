@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, and_
 from sqlalchemy.orm import joinedload
 from table_trail_backend.db.models.databases import Databases
 from table_trail_backend.schemas.database_schema import UpdateDatabase, CreateDatabaseInternal
@@ -30,7 +30,7 @@ class DatabasesRepository:
         return new_database
 
     async def get_full_database(self, db_id: int):
-        result = await self.db.execute(
+        database = await self.db.execute(
             select(Databases)
             .where(Databases.id == db_id)
             .options(
@@ -41,7 +41,16 @@ class DatabasesRepository:
                 .joinedload(Constraints.constraint_columns)
             )
         )
-        return result.unique().scalar_one_or_none()
+        return database.unique().scalar_one_or_none()
+
+    async def get_database_by_connection(self, host: str, port: str, db_name: str):
+        database = await self.db.execute(
+            select(Databases).where(and_(Databases.host == host,
+                                         Databases.port == port,
+                                         Databases.db_name == db_name))
+        )
+
+        return database.scalar_one_or_none()
 
     async def get_one_database(self, db_id: int):
         database = await self.db.execute(

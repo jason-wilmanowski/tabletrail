@@ -5,6 +5,7 @@ from table_trail_backend.schemas.column_schema import ColumnResponse
 
 
 # Insert Section
+
 class CreateDatabase(BaseModel):
     name: str
     db_type: DBType
@@ -19,7 +20,6 @@ class CreateDatabaseInternal(CreateDatabase):
     status: DBStatus
 
 
-
 class UpdateDatabase(BaseModel):
     name: str | None = None
     db_type : DBType | None = None
@@ -30,6 +30,7 @@ class UpdateDatabase(BaseModel):
     password: str | None = None
     status: DBStatus | None = None
 
+
 class ConnectionDetails(BaseModel):
     db_type : DBType
     host: str
@@ -37,6 +38,7 @@ class ConnectionDetails(BaseModel):
     db_name: str
     username: str
     password: str
+
 
 
 # Response Section
@@ -48,6 +50,16 @@ class DatabaseStructureResponse(CreateDatabase):
 
 class DatabaseResponse(CreateDatabase):
     id: int
+
+class DatabaseOverviewResponse(BaseModel):
+    id: int
+    name: str
+    db_type: DBType
+    status: DBStatus
+    host: str
+    port: str
+    db_name: str
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SearchResponse(BaseModel):
