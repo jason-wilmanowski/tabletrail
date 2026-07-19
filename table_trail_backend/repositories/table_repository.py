@@ -31,6 +31,13 @@ class TableRepository:
             select(Tables).where(Tables.database_id == db_id))
         return tables.scalars().all()
 
+    async def get_table_by_name(self, db_id: int, table_name: str):
+        table = await self.db.execute(
+            select(Tables).where(and_(Tables.name == table_name,
+                                      Tables.database_id == db_id))
+        )
+        return table.scalar_one_or_none()
+
     async def search_by_name(self, db_id: int, query: str) -> list[Tables]:
         result = await self.db.execute(
             select(Tables).where(and_(Tables.database_id == db_id,
