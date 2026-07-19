@@ -6,9 +6,9 @@ class CreateConstraint(BaseModel):
     constraint_type : str
     constraint_name : str
     references_table_id : int | None = None
-    on_delete : str
-    on_update : str
-    check_expression : str
+    on_delete : str | None = None
+    on_update : str | None = None
+    check_expression : str | None = None
 
 
 class UpdateConstraint(BaseModel):
