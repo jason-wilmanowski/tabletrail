@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from sqlalchemy.orm import joinedload
 from table_trail_backend.db.models.databases import Databases
-from table_trail_backend.schemas.database_schema import CreateDatabase, UpdateDatabase
+from table_trail_backend.schemas.database_schema import UpdateDatabase, CreateDatabaseInternal
 from table_trail_backend.db.models.tables import Tables
 from table_trail_backend.db.models.constraints import Constraints
 
@@ -15,14 +15,15 @@ class DatabasesRepository:
         self.db = session
 
 
-    async def create(self, data: CreateDatabase):
+    async def create(self, data: CreateDatabaseInternal):
         new_database = Databases(name=data.name,
                                  db_type=data.db_type,
                                  host=data.host,
                                  port=data.port,
                                  db_name=data.db_name,
                                  username=data.username,
-                                 password=data.password)
+                                 password=data.password,
+                                 status=data.status)
         self.db.add(new_database)
         await self.db.flush()
         await self.db.refresh(new_database)
