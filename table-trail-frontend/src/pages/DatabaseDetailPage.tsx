@@ -1,11 +1,15 @@
 import { useParams } from 'react-router-dom'
 import { useDatabase } from '../hooks/useDatabases'
+import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 
 /**
  * Route `/database/:id`. Loads the full nested database structure via
- * `useDatabase(id)` and renders it as a plain, temporary representation —
- * this validates the data flow end-to-end before Step 11 replaces the
- * body with the React Flow canvas.
+ * `useDatabase(id)` and renders it as a plain, temporary representation.
+ * As of Step 11, a `GraphCanvas` placeholder area is also mounted below
+ * it with static test nodes — not yet connected to `data` (that mapping
+ * is Step 12's job). Both sections coexist so the page keeps validating
+ * the raw data flow while the canvas infrastructure is verified in
+ * isolation.
  */
 export function DatabaseDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -43,6 +47,10 @@ export function DatabaseDetailPage() {
       </p>
 
       <p className="text-sm text-neutral-500">Tables: {data.tables.length}</p>
+
+      <div className="h-[500px] w-full border">
+        <GraphCanvas />
+      </div>
 
       <ul>
         {data.tables.map((table) => (
