@@ -6,6 +6,7 @@ from table_trail_backend.db.database_config import Base
 class ConstraintColumn(Base):
     __tablename__ = 'constraint_columns'
 
+    id : Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     constraint_id : Mapped[int] = mapped_column(ForeignKey('constraints.id', ondelete='CASCADE'))
     column_id : Mapped[int] = mapped_column(ForeignKey('columns.id', ondelete='CASCADE'))
 
