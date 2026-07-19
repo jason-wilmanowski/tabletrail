@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from table_trail_backend.schemas.database_schema import DatabaseStructureResponse, DatabaseResponse
+from table_trail_backend.schemas.database_schema import DatabaseStructureResponse, DatabaseResponse, \
+    DatabaseOverviewResponse
 from table_trail_backend.core.dependencies import get_db
 from table_trail_backend.services.database_service import DatabaseService
 from table_trail_backend.core.exceptions import DatabaseSystemError
@@ -11,7 +12,7 @@ from typing import List
 router = APIRouter(prefix="/database", tags=["database"])
 
 
-@router.get("/all", response_model=List[DatabaseStructureResponse])
+@router.get("/all", response_model=List[DatabaseOverviewResponse])
 async def get_all_databases(db: AsyncSession = Depends(get_db)):
 
     database_service = DatabaseService(db)
