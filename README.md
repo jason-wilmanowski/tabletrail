@@ -23,7 +23,7 @@ Work in progress — MVP under active development.
 ## Getting Started
 
 ```bash
-git clone https://github.com/<your-username>/tabletrail.git
+git clone https://github.com/jason-wilmanowski/tabletrail.git
 cd tabletrail
 cp .env.example .env
 docker-compose up
