@@ -49,7 +49,7 @@ export function DatabaseDetailPage() {
       <p className="text-sm text-neutral-500">Tables: {data.tables.length}</p>
 
       <div className="h-[500px] w-full border">
-        <GraphCanvas />
+        <GraphCanvas tables={data.tables} />
       </div>
 
       <ul>
