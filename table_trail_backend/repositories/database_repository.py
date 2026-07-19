@@ -18,7 +18,11 @@ class DatabasesRepository:
     async def create(self, data: CreateDatabase):
         new_database = Databases(name=data.name,
                                  db_type=data.db_type,
-                                 connection_url=data.connection_url)
+                                 host=data.host,
+                                 port=data.port,
+                                 db_name=data.db_name,
+                                 username=data.username,
+                                 password=data.password)
         self.db.add(new_database)
         await self.db.flush()
         await self.db.refresh(new_database)
