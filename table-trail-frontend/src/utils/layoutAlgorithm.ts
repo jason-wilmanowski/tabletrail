@@ -1,16 +1,29 @@
 import dagre from '@dagrejs/dagre'
-import type { Node, Edge } from '@xyflow/react'
+import type { Edge } from '@xyflow/react'
+import type { TableNodeType } from './tablesToNodes'
 
 /**
- * Placeholder node dimensions used purely for layout spacing. React Flow's
- * default node renders at roughly this size; Dagre needs concrete
- * width/height to avoid overlaps regardless of what actually renders.
- * Step 14's custom `TableNode` will likely need real measured sizes
- * (columns list makes nodes taller) — that refinement belongs there, not
- * here, since this utility only knows about generic nodes for now.
+ * Node width stays fixed (TableNode has a fixed min-width, see
+ * `min-w-[220px]` in TableNode.tsx). Height, however, now depends on how
+ * many columns a table has — see `estimateNodeHeight` below. This was a
+ * fixed placeholder (40px) as of Step 13, updated here in Step 15 because
+ * the column list added to `TableNode` makes real node height vary a lot
+ * per table, and a fixed height would cause overlapping nodes for tables
+ * with many columns.
  */
-const NODE_WIDTH = 172
-const NODE_HEIGHT = 40
+const NODE_WIDTH = 220
+const HEADER_HEIGHT = 33
+const ROW_HEIGHT = 26
+const VERTICAL_PADDING = 4
+
+/**
+ * Estimates a node's rendered height from its column count. Not pixel-
+ * perfect (Step 17's collapse/expand will change this again), but close
+ * enough for Dagre to space nodes apart without visible overlap.
+ */
+function estimateNodeHeight(node: TableNodeType): number {
+  return HEADER_HEIGHT + node.data.table.columns.length * ROW_HEIGHT + VERTICAL_PADDING
+}
 
 /**
  * Layout direction: top-to-bottom.
@@ -26,18 +39,22 @@ const LAYOUT_DIRECTION = 'TB'
 /**
  * Computes positions for the given nodes using Dagre and returns a new
  * array of nodes with updated `position` values. Pure function — no
- * React, no side effects, independent of any specific node's rendered
- * content. `edges` are optional since this step has none yet, but the
- * signature already accepts them so Step 18 can pass real relation edges
- * without changing this function's shape.
+ * React, no side effects. `edges` are optional since Step 15 still has
+ * none, but the signature already accepts them so Step 18 can pass real
+ * relation edges without changing this function's shape.
+ *
+ * Typed against `TableNodeType[]` (not a generic `Node[]`) since node
+ * height now depends on `data.table.columns` — this utility is no longer
+ * fully content-agnostic, but stays specific to table nodes, which is all
+ * this application ever lays out.
  */
-export function layoutAlgorithm(nodes: Node[], edges: Edge[] = []): Node[] {
+export function layoutAlgorithm(nodes: TableNodeType[], edges: Edge[] = []): TableNodeType[] {
   const graph = new dagre.graphlib.Graph()
   graph.setDefaultEdgeLabel(() => ({}))
   graph.setGraph({ rankdir: LAYOUT_DIRECTION })
 
   for (const node of nodes) {
-    graph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT })
+    graph.setNode(node.id, { width: NODE_WIDTH, height: estimateNodeHeight(node) })
   }
 
   for (const edge of edges) {
@@ -48,12 +65,13 @@ export function layoutAlgorithm(nodes: Node[], edges: Edge[] = []): Node[] {
 
   return nodes.map((node) => {
     const { x, y } = graph.node(node.id)
+    const height = estimateNodeHeight(node)
     return {
       ...node,
       // Dagre positions by center, React Flow positions by top-left corner.
       position: {
         x: x - NODE_WIDTH / 2,
-        y: y - NODE_HEIGHT / 2,
+        y: y - height / 2,
       },
     }
   })

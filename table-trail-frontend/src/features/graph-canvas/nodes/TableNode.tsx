@@ -4,20 +4,26 @@ import type { TableNodeType } from '../../../utils/tablesToNodes'
 /**
  * Custom React Flow node representing a single database table.
  *
- * Step 14 scope: header only (table name + schema badge). Deliberately
- * built as a technical diagram element, not a dashboard card — thin
- * border, flat dark surface, no shadow, no heavy rounding, per the
- * TableTrail design constraints (Developer Tool aesthetic, Dark Theme
- * First, borders over shadows).
+ * Step 14 added the header (table name + schema badge). Step 15 adds the
+ * column list below it — name and data type per column, sorted by
+ * `ordinal_position` to match the real database structure (not
+ * alphabetical). Still no PK/FK icons, constraints, or collapse/expand —
+ * those are Steps 16/17.
  *
- * Body content (columns, PK/FK icons, collapse/expand) is added in
- * Steps 15–17 below this header without changing the header markup.
+ * Visual style follows the TableTrail design constraints: dense but not
+ * cluttered, thin dividers between rows instead of a card per column,
+ * monospace for the technical values (name + type), no icons or color
+ * yet.
  */
 export function TableNode({ data }: NodeProps<TableNodeType>) {
   const { table } = data
 
+  const sortedColumns = [...table.columns].sort(
+    (a, b) => a.ordinal_position - b.ordinal_position
+  )
+
   return (
-    <div className="min-w-[180px] rounded-md border border-neutral-700 bg-neutral-900 text-neutral-100">
+    <div className="min-w-[220px] rounded-md border border-neutral-700 bg-neutral-900 text-neutral-100">
       <div className="flex items-center justify-between gap-2 border-b border-neutral-700 px-3 py-2">
         <span className="text-sm font-medium">{table.name}</span>
 
@@ -26,6 +32,20 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
             {table.schema_name}
           </span>
         )}
+      </div>
+
+      <div className="divide-y divide-neutral-800">
+        {sortedColumns.map((column) => (
+          <div
+            key={column.id}
+            className="flex items-center justify-between gap-3 px-3 py-1.5"
+          >
+            <span className="font-mono text-xs text-neutral-200">{column.name}</span>
+            <span className="shrink-0 rounded-sm border border-neutral-700 px-1 font-mono text-[10px] uppercase text-neutral-500">
+              {column.data_type}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   )
