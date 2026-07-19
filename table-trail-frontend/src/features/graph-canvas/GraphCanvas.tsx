@@ -6,10 +6,11 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
 } from '@xyflow/react'
-import type { Node, Edge, NodeChange, EdgeChange } from '@xyflow/react'
+import type { Node, Edge, NodeChange, EdgeChange, NodeTypes } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { tablesToNodes } from '../../utils/tablesToNodes'
 import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
+import { TableNode } from './nodes/TableNode'
 import type { TableResponse } from '../../types/table'
 
 interface GraphCanvasProps {
@@ -19,15 +20,29 @@ interface GraphCanvasProps {
 const initialEdges: Edge[] = []
 
 /**
+ * Registered once, outside the component, so React Flow always sees the
+ * same object reference across renders (a new object here would make
+ * React Flow think node types changed on every render).
+ */
+const nodeTypes: NodeTypes = {
+  table: TableNode,
+}
+
+/**
  * Central graph canvas component. Owns React Flow's node/edge state and
  * renders the canvas with default controls.
  *
  * Nodes are derived from real `TableResponse[]` data via `tablesToNodes()`
  * and then positioned by `layoutAlgorithm()` (Dagre) — both are pure
  * utilities, this component only renders what they produce, no mapping or
- * layout math happens here. Later steps build on top of this without
- * changing its shape:
- * - Step 14+ introduces a custom `TableNode` type via `nodeTypes`.
+ * layout math happens here.
+ *
+ * As of Step 14, nodes render via the custom `TableNode` component
+ * (registered in `nodeTypes` above) instead of React Flow's default node —
+ * `tablesToNodes()` already tags every node with `type: 'table'` so this
+ * mapping resolves automatically. Later steps build on top of this
+ * without changing its shape:
+ * - Step 15–17 extend `TableNode` itself (columns, icons, collapse).
  * - Step 18 adds edges derived from constraints and passes them into
  *   `layoutAlgorithm()` so Dagre can account for relations too.
  */
@@ -62,6 +77,7 @@ export function GraphCanvas({ tables }: GraphCanvasProps) {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         fitView
