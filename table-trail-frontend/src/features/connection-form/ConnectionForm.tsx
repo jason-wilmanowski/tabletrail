@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import type { DBType } from '../../types/common'
+import { useNavigate } from 'react-router-dom'
+import { useScan } from '../../hooks/useScan'
+import type { DBType, ConnectionFields } from '../../types/common'
 
 interface FormValues {
   name: string
@@ -70,13 +72,16 @@ function validate(values: FormValues): FormErrors {
 }
 
 /**
- * Connection form UI. Owns local field state and client-side validation
- * only — no API call, no navigation. Step 9 will extend `handleSubmit`
- * to call `scanDatabase()` (Step 3) once validation passes.
+ * Connection form UI. Owns local field state and client-side validation,
+ * and — as of Step 9 — triggers the actual scan request via `useScan()`
+ * (Step 3's `scanDatabase` API function under the hood) and navigates to
+ * the resulting database's detail page on success.
  */
 export function ConnectionForm() {
   const [values, setValues] = useState<FormValues>(INITIAL_VALUES)
   const [errors, setErrors] = useState<FormErrors>({})
+  const navigate = useNavigate()
+  const scanMutation = useScan()
 
   function updateField<K extends keyof FormValues>(field: K, value: FormValues[K]) {
     setValues((prev) => ({ ...prev, [field]: value }))
@@ -92,8 +97,17 @@ export function ConnectionForm() {
       return
     }
 
-    // Step 9 will call scanDatabase(values) here and handle
-    // loading/error state + navigation on success.
+    // Validation above guarantees db_type is set, safe to narrow from '' here.
+    const payload: ConnectionFields = {
+      ...values,
+      db_type: values.db_type as DBType,
+    }
+
+    scanMutation.mutate(payload, {
+      onSuccess: (database) => {
+        navigate(`/database/${database.id}`)
+      },
+    })
   }
 
   return (
@@ -184,7 +198,13 @@ export function ConnectionForm() {
         {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
       </div>
 
-      <button type="submit">Connect</button>
+      {scanMutation.isError && (
+        <p className="text-sm text-red-600">{scanMutation.error.message}</p>
+      )}
+
+      <button type="submit" disabled={scanMutation.isPending}>
+        {scanMutation.isPending ? 'Connecting...' : 'Connect'}
+      </button>
     </form>
   )
 }
