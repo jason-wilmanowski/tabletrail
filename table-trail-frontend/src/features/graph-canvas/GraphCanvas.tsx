@@ -9,6 +9,7 @@ import {
 import type { Node, Edge, NodeChange, EdgeChange } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { tablesToNodes } from '../../utils/tablesToNodes'
+import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
 import type { TableResponse } from '../../types/table'
 
 interface GraphCanvasProps {
@@ -21,25 +22,29 @@ const initialEdges: Edge[] = []
  * Central graph canvas component. Owns React Flow's node/edge state and
  * renders the canvas with default controls.
  *
- * As of Step 12, nodes are derived from real `TableResponse[]` data via
- * `tablesToNodes()` (src/utils/) rather than static test data — all
- * mapping logic lives in that utility, this component only renders what
- * it produces. Later steps build on top of this without changing its
- * shape:
- * - Step 13 adds auto-layout (Dagre) inside `tablesToNodes()` /
- *   a follow-up layout utility, positions flow through unchanged here.
+ * Nodes are derived from real `TableResponse[]` data via `tablesToNodes()`
+ * and then positioned by `layoutAlgorithm()` (Dagre) — both are pure
+ * utilities, this component only renders what they produce, no mapping or
+ * layout math happens here. Later steps build on top of this without
+ * changing its shape:
  * - Step 14+ introduces a custom `TableNode` type via `nodeTypes`.
- * - Step 18 adds edges derived from constraints, same pattern as nodes.
+ * - Step 18 adds edges derived from constraints and passes them into
+ *   `layoutAlgorithm()` so Dagre can account for relations too.
  */
 export function GraphCanvas({ tables }: GraphCanvasProps) {
-  const [nodes, setNodes] = useState<Node[]>(() => tablesToNodes(tables))
+  const [nodes, setNodes] = useState<Node[]>(() =>
+    layoutAlgorithm(tablesToNodes(tables), initialEdges)
+  )
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
 
   // Re-derive nodes when the underlying table data changes (e.g. after a
   // rescan). Manual drag positions are intentionally not preserved here —
   // that concern belongs to a later step once layout persistence exists.
   useEffect(() => {
-    setNodes(tablesToNodes(tables))
+    // No edges exist yet at this step (Step 18 introduces them) — passing
+    // an empty array directly here avoids depending on the `edges` state
+    // variable, which stays untouched by user interaction in this step.
+    setNodes(layoutAlgorithm(tablesToNodes(tables), []))
   }, [tables])
 
   const onNodesChange = useCallback(
