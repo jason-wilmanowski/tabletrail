@@ -3,7 +3,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from table_trail_backend.db.database_config import Base
 from table_trail_backend.core.enums import DBType, DBStatus
-from table_trail_backend.db.models.tables import Tables
 
 class Databases(Base):
     __tablename__ = 'databases'
