@@ -33,6 +33,18 @@ export interface DatabaseStructureResponse extends ConnectionFields {
 }
 
 /**
+ * Mirrors backend `DatabaseResponse` schema.
+ * Gap identified while building the API layer in Step 3: `PUT /database/{db_id}`
+ * uses `response_model=DatabaseResponse` on the backend — connection fields
+ * + id, but explicitly WITHOUT `tables`. Distinct from `DatabaseStructureResponse`
+ * and should have been added in Step 2; added here instead of misusing the
+ * wrong type for the update endpoint's return value.
+ */
+export interface DatabaseResponse extends ConnectionFields {
+  id: number
+}
+
+/**
  * Mirrors backend `SearchResponse` schema.
  * All three fields are optional/nullable on the backend (Pydantic
  * `| None = None`), reflected here as optional.
