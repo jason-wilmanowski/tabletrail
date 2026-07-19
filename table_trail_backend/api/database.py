@@ -11,19 +11,6 @@ from typing import List
 router = APIRouter(prefix="/database", tags=["database"])
 
 
-@router.get("/{db_id}", response_model=DatabaseStructureResponse)
-async def get_database(db_id : int, db: AsyncSession = Depends(get_db)):
-
-    database_service = DatabaseService(db)
-
-    try:
-        database = await database_service.get_full_database(db_id)
-    except DatabaseSystemError as error:
-        raise HTTPException(status_code=error.status_code, detail=error.message)
-
-    return database
-
-
 @router.get("/all", response_model=List[DatabaseStructureResponse])
 async def get_all_databases(db: AsyncSession = Depends(get_db)):
 
@@ -35,6 +22,19 @@ async def get_all_databases(db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=error.status_code, detail=error.message)
 
     return databases
+
+
+@router.get("/{db_id}", response_model=DatabaseStructureResponse)
+async def get_database(db_id : int, db: AsyncSession = Depends(get_db)):
+
+    database_service = DatabaseService(db)
+
+    try:
+        database = await database_service.get_full_database(db_id)
+    except DatabaseSystemError as error:
+        raise HTTPException(status_code=error.status_code, detail=error.message)
+
+    return database
 
 
 @router.get("/{db_id}/search", response_model=SearchResponse)
