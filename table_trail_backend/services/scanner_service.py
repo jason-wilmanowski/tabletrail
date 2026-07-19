@@ -15,7 +15,8 @@ from table_trail_backend.repositories.database_repository import DatabasesReposi
 from table_trail_backend.repositories.table_repository import TableRepository
 from table_trail_backend.repositories.column_repository import ColumnRepository
 from table_trail_backend.repositories.constraint_repository import ConstraintsRepository
-from table_trail_backend.schemas.database_schema import CreateDatabase, UpdateDatabase, DatabaseResponse
+from table_trail_backend.schemas.database_schema import CreateDatabase, UpdateDatabase, DatabaseResponse, \
+    CreateDatabaseInternal
 from table_trail_backend.schemas.column_schema import CreateColumn
 from table_trail_backend.schemas.constraint_schema import CreateConstraint
 
@@ -69,7 +70,7 @@ class ScanService:
     # Private Workflow Steps
 
     async def _initialize_scan(self, database_details: CreateDatabase) -> Databases:
-        database = await self.db_repo.create(CreateDatabase(
+        database = await self.db_repo.create(CreateDatabaseInternal(
             name=database_details.name,
             db_type=database_details.db_type,
             host=database_details.host,

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from table_trail_backend.schemas.database_schema import FullDatabaseResponse, CreateDatabase
+from table_trail_backend.schemas.database_schema import DatabaseStructureResponse, CreateDatabase
 from table_trail_backend.core.dependencies import get_db
 from table_trail_backend.services.scanner_service import ScanService
 from table_trail_backend.services.database_service import DatabaseService
@@ -9,8 +9,8 @@ from table_trail_backend.core.exceptions import ScanningSystemError, DatabaseSys
 router = APIRouter(prefix="/scanner", tags=["scanner"])
 
 
-@router.post("", response_model=FullDatabaseResponse)
-async def create_database(database_details: CreateDatabase, db: AsyncSession = Depends(get_db)) -> FullDatabaseResponse:
+@router.post("", response_model=DatabaseStructureResponse)
+async def create_database(database_details: CreateDatabase, db: AsyncSession = Depends(get_db)) -> DatabaseStructureResponse:
 
     scanner_service = ScanService(db)
     database_service = DatabaseService(db)

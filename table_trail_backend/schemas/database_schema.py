@@ -13,7 +13,11 @@ class CreateDatabase(BaseModel):
     db_name: str
     username: str
     password: str
-    status : DBStatus
+
+
+class CreateDatabaseInternal(CreateDatabase):
+    status: DBStatus
+
 
 
 class UpdateDatabase(BaseModel):
