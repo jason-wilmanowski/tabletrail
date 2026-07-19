@@ -20,6 +20,6 @@ class Columns(Base):
         cascade="all, delete-orphan"
     )
     __table_args__ = (
-        UniqueConstraint('table_id', 'name', name='uq_table_per_db_schema'),
+        UniqueConstraint('table_id', 'name', name='uq_column_per_table'),
     )
 
