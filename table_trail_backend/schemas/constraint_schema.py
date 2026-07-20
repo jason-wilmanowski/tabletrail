@@ -26,6 +26,8 @@ class ConstraintResponse(BaseModel):
     id: int
     constraint_name: str
     constraint_type: str
-    references_table_id: int | None
+    references_table_id: int | None = None
     column_names: list[str]
+    on_delete: str | None = None
+    on_update: str | None = None
     model_config = ConfigDict(from_attributes=True)
