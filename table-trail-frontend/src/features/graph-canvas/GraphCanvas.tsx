@@ -6,60 +6,67 @@ import {
   applyNodeChanges,
   applyEdgeChanges,
 } from '@xyflow/react'
-import type { Node, Edge, NodeChange, EdgeChange, NodeTypes } from '@xyflow/react'
+import type { Node, Edge, NodeChange, EdgeChange, NodeTypes, EdgeTypes } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { tablesToNodes } from '../../utils/tablesToNodes'
 import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
+import { constraintsToEdges } from '../../utils/constraintsToEdges'
 import { TableNode } from './nodes/TableNode'
+import { RelationEdge } from './edges/RelationEdge'
 import type { TableResponse } from '../../types/table'
 
 interface GraphCanvasProps {
   tables: TableResponse[]
 }
 
-const initialEdges: Edge[] = []
-
 /**
  * Registered once, outside the component, so React Flow always sees the
- * same object reference across renders (a new object here would make
- * React Flow think node types changed on every render).
+ * same object references across renders (new objects here would make
+ * React Flow think node/edge types changed on every render).
  */
 const nodeTypes: NodeTypes = {
   table: TableNode,
+}
+
+const edgeTypes: EdgeTypes = {
+  relation: RelationEdge,
+}
+
+/**
+ * Computes nodes and edges together for a given set of tables. Kept as
+ * one small helper so both the initial state and the data-change effect
+ * derive them the exact same way, in the right order: edges are needed
+ * *before* layout so Dagre can account for relations when positioning
+ * nodes (see `layoutAlgorithm`'s `edges` parameter).
+ */
+function buildGraph(tables: TableResponse[]): { nodes: Node[]; edges: Edge[] } {
+  const edges = constraintsToEdges(tables)
+  const nodes = layoutAlgorithm(tablesToNodes(tables), edges)
+  return { nodes, edges }
 }
 
 /**
  * Central graph canvas component. Owns React Flow's node/edge state and
  * renders the canvas with default controls.
  *
- * Nodes are derived from real `TableResponse[]` data via `tablesToNodes()`
- * and then positioned by `layoutAlgorithm()` (Dagre) — both are pure
- * utilities, this component only renders what they produce, no mapping or
- * layout math happens here.
- *
- * As of Step 14, nodes render via the custom `TableNode` component
- * (registered in `nodeTypes` above) instead of React Flow's default node —
- * `tablesToNodes()` already tags every node with `type: 'table'` so this
- * mapping resolves automatically. Later steps build on top of this
- * without changing its shape:
- * - Step 15–17 extend `TableNode` itself (columns, icons, collapse).
- * - Step 18 adds edges derived from constraints and passes them into
- *   `layoutAlgorithm()` so Dagre can account for relations too.
+ * Nodes come from `tablesToNodes()` + `layoutAlgorithm()`, edges come from
+ * `constraintsToEdges()` (Step 18) — all three are pure utilities, this
+ * component only renders what they produce and registers the custom
+ * `TableNode`/`RelationEdge` types. No mapping, layout, or constraint
+ * analysis happens here.
  */
 export function GraphCanvas({ tables }: GraphCanvasProps) {
-  const [nodes, setNodes] = useState<Node[]>(() =>
-    layoutAlgorithm(tablesToNodes(tables), initialEdges)
-  )
-  const [edges, setEdges] = useState<Edge[]>(initialEdges)
+  const [nodes, setNodes] = useState<Node[]>(() => buildGraph(tables).nodes)
+  const [edges, setEdges] = useState<Edge[]>(() => buildGraph(tables).edges)
 
-  // Re-derive nodes when the underlying table data changes (e.g. after a
-  // rescan). Manual drag positions are intentionally not preserved here —
-  // that concern belongs to a later step once layout persistence exists.
+  // Re-derive nodes and edges when the underlying table data changes
+  // (e.g. after a rescan). Manual drag positions are intentionally not
+  // preserved here — that concern belongs to a later step once layout
+  // persistence exists.
   useEffect(() => {
-    // No edges exist yet at this step (Step 18 introduces them) — passing
-    // an empty array directly here avoids depending on the `edges` state
-    // variable, which stays untouched by user interaction in this step.
-    setNodes(layoutAlgorithm(tablesToNodes(tables), []))
+    const graph = buildGraph(tables)
+    setNodes(graph.nodes)
+    setEdges(graph.edges)
   }, [tables])
 
   const onNodesChange = useCallback(
@@ -78,6 +85,7 @@ export function GraphCanvas({ tables }: GraphCanvasProps) {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         fitView
