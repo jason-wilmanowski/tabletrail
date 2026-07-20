@@ -12,3 +12,8 @@ class ConstraintColumn(Base):
 
     column: Mapped["Columns"] = relationship(back_populates="constraint_columns")
     constraint: Mapped["Constraints"] = relationship(back_populates="constraint_columns")
+
+    @property
+    def column_names(self) -> list[str]:
+        return [cc.column.name for cc in self.constraint_columns]
+    

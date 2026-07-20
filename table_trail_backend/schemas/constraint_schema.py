@@ -27,4 +27,5 @@ class ConstraintResponse(BaseModel):
     constraint_name: str
     constraint_type: str
     references_table_id: int | None
+    column_names: list[str]
     model_config = ConfigDict(from_attributes=True)

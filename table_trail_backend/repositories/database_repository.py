@@ -5,6 +5,7 @@ from table_trail_backend.db.models.databases import Databases
 from table_trail_backend.schemas.database_schema import UpdateDatabase, CreateDatabaseInternal
 from table_trail_backend.db.models.tables import Tables
 from table_trail_backend.db.models.constraints import Constraints
+from table_trail_backend.db.models.constraint_columns import ConstraintColumn
 
 
 
@@ -39,6 +40,7 @@ class DatabasesRepository:
                 joinedload(Databases.tables)
                 .joinedload(Tables.constraints)
                 .joinedload(Constraints.constraint_columns)
+                .joinedload(ConstraintColumn.column)
             )
         )
         return database.unique().scalar_one_or_none()
