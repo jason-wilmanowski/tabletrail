@@ -3,6 +3,7 @@ import { KeyRound, Link2, ChevronDown, ChevronUp } from 'lucide-react'
 import type { NodeProps } from '@xyflow/react'
 import type { TableNodeType } from '../../../utils/tablesToNodes'
 import { buildColumnConstraintMap } from '../../../utils/constraintGrouping'
+import { useUiStore } from '../../../store/uiStore'
 
 /**
  * Tables with more columns than this are collapsed to the first N by
@@ -17,18 +18,20 @@ const COLLAPSE_THRESHOLD = 15
  * Custom React Flow node representing a single database table.
  *
  * Step 14 added the header. Step 15 added the column list. Step 16 added
- * PK/FK indicators. Step 17 adds collapse/expand for tables with more
- * than `COLLAPSE_THRESHOLD` columns — a small text+chevron toggle, not an
- * accordion card, kept consistent with the dense, technical style of the
- * rest of the node.
+ * PK/FK indicators. Step 17 added collapse/expand. Step 21 adds selection:
+ * clicking the node body sets `selectedTableId` in the shared `uiStore`,
+ * which `TableInspectorPanel` reacts to — this component only *triggers*
+ * that selection, it doesn't know anything about the inspector itself.
  *
- * Expand state is local `useState`, not global (Zustand) or per-app
- * state: it only ever affects this one node's own rendering, nothing
- * else in the application needs to know or react to it.
+ * Expand state stays local `useState` (only affects this node's own
+ * rendering), while selection goes through the global store (affects a
+ * different part of the UI entirely) — same distinction the store
+ * architecture was designed around back in Step 5.
  */
 export function TableNode({ data }: NodeProps<TableNodeType>) {
   const { table } = data
   const [isExpanded, setIsExpanded] = useState(false)
+  const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
 
   const sortedColumns = [...table.columns].sort(
     (a, b) => a.ordinal_position - b.ordinal_position
@@ -42,7 +45,10 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
   const hiddenCount = sortedColumns.length - COLLAPSE_THRESHOLD
 
   return (
-    <div className="min-w-[220px] rounded-md border border-neutral-700 bg-neutral-900 text-neutral-100">
+    <div
+      onClick={() => setSelectedTableId(String(table.id))}
+      className="min-w-[220px] rounded-md border border-neutral-700 bg-neutral-900 text-neutral-100"
+    >
       <div className="flex items-center justify-between gap-2 border-b border-neutral-700 px-3 py-2">
         <span className="text-sm font-medium">{table.name}</span>
 
@@ -89,7 +95,12 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
       {hasMore && (
         <button
           type="button"
-          onClick={() => setIsExpanded((prev) => !prev)}
+          onClick={(event) => {
+            // Stop propagation so toggling columns doesn't also trigger
+            // node selection (the outer div's onClick above).
+            event.stopPropagation()
+            setIsExpanded((prev) => !prev)
+          }}
           className="nodrag flex w-full items-center justify-center gap-1 border-t border-neutral-800 py-1 font-mono text-[10px] text-neutral-500 transition-colors hover:text-neutral-300"
         >
           {isExpanded ? (

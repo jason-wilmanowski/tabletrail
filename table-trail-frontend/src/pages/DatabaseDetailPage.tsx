@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useDatabase } from '../hooks/useDatabases'
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
+import { TableInspectorPanel } from '../features/table-inspector/TableInspectorPanel'
 
 /**
  * Route `/database/:id`. Loads the full nested database structure via
@@ -48,8 +49,9 @@ export function DatabaseDetailPage() {
 
       <p className="text-sm text-neutral-500">Tables: {data.tables.length}</p>
 
-      <div className="h-[500px] w-full border">
+      <div className="relative h-[500px] w-full overflow-hidden border">
         <GraphCanvas tables={data.tables} />
+        <TableInspectorPanel tables={data.tables} />
       </div>
 
       <ul>
