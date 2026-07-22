@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect } from 'react'
+import type { CSSProperties } from 'react'
 import {
   ReactFlow,
   Controls,
   Background,
+  MiniMap,
   applyNodeChanges,
   applyEdgeChanges,
 } from '@xyflow/react'
@@ -33,6 +35,42 @@ const edgeTypes: EdgeTypes = {
 }
 
 /**
+ * React Flow themes its built-in Controls/MiniMap/Background via CSS
+ * custom properties (its stylesheet ships light-theme defaults). Rather
+ * than waiting for the formal design-token system (Step 28), these are
+ * overridden locally on the canvas wrapper — scoped to this component,
+ * not a global stylesheet — so navigation elements read as dark and
+ * muted instead of the library's default light chrome. Values are hand-
+ * picked to match the neutral palette already used in TableNode/
+ * RelationEdge (border/background/text tones), not a new color system.
+ */
+interface ReactFlowThemeVars extends CSSProperties {
+  '--xy-background-color'?: string
+  '--xy-controls-button-background-color'?: string
+  '--xy-controls-button-background-color-hover'?: string
+  '--xy-controls-button-border-color'?: string
+  '--xy-controls-button-color'?: string
+  '--xy-controls-button-color-hover'?: string
+  '--xy-minimap-background-color'?: string
+  '--xy-minimap-mask-background-color'?: string
+  '--xy-minimap-node-background-color'?: string
+  '--xy-minimap-node-stroke-color'?: string
+}
+
+const reactFlowTheme: ReactFlowThemeVars = {
+  '--xy-background-color': '#0a0a0a',
+  '--xy-controls-button-background-color': '#18181b',
+  '--xy-controls-button-background-color-hover': '#27272a',
+  '--xy-controls-button-border-color': '#3f3f46',
+  '--xy-controls-button-color': '#a1a1aa',
+  '--xy-controls-button-color-hover': '#e4e4e7',
+  '--xy-minimap-background-color': '#111113',
+  '--xy-minimap-mask-background-color': 'rgba(0, 0, 0, 0.6)',
+  '--xy-minimap-node-background-color': '#3f3f46',
+  '--xy-minimap-node-stroke-color': '#52525b',
+}
+
+/**
  * Computes nodes and edges together for a given set of tables. Kept as
  * one small helper so both the initial state and the data-change effect
  * derive them the exact same way, in the right order: edges are needed
@@ -47,13 +85,15 @@ function buildGraph(tables: TableResponse[]): { nodes: Node[]; edges: Edge[] } {
 
 /**
  * Central graph canvas component. Owns React Flow's node/edge state and
- * renders the canvas with default controls.
+ * renders the canvas with navigation elements.
  *
  * Nodes come from `tablesToNodes()` + `layoutAlgorithm()`, edges come from
- * `constraintsToEdges()` (Step 18) — all three are pure utilities, this
- * component only renders what they produce and registers the custom
- * `TableNode`/`RelationEdge` types. No mapping, layout, or constraint
- * analysis happens here.
+ * `constraintsToEdges()` — all pure utilities, this component only
+ * renders what they produce, registers the custom `TableNode`/
+ * `RelationEdge` types, and — as of Step 20 — configures the built-in
+ * `Background`, `Controls` and `MiniMap`. No custom zoom/pan/minimap
+ * implementation: all three are React Flow's own components, themed via
+ * CSS variables rather than replaced.
  */
 export function GraphCanvas({ tables }: GraphCanvasProps) {
   const [nodes, setNodes] = useState<Node[]>(() => buildGraph(tables).nodes)
@@ -80,7 +120,7 @@ export function GraphCanvas({ tables }: GraphCanvasProps) {
   )
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full" style={reactFlowTheme}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -90,8 +130,14 @@ export function GraphCanvas({ tables }: GraphCanvasProps) {
         onEdgesChange={onEdgesChange}
         fitView
       >
-        <Background />
-        <Controls />
+        <Background color="#27272a" gap={24} />
+        <Controls showInteractive={false} />
+        <MiniMap
+          pannable
+          zoomable
+          nodeStrokeWidth={1}
+          className="!border !border-neutral-700"
+        />
       </ReactFlow>
     </div>
   )
