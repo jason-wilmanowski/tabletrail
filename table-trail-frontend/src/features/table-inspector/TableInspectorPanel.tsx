@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
 import { X } from 'lucide-react'
 import { useUiStore } from '../../store/uiStore'
+import { groupConstraintsByType } from '../../utils/constraintGrouping'
 import type { TableResponse } from '../../types/table'
+import type { ConstraintResponse } from '../../types/constraint'
 
 interface TableInspectorPanelProps {
   /** Already-loaded tables (same data GraphCanvas renders) — this panel
@@ -14,15 +16,18 @@ interface TableInspectorPanelProps {
  * Slide-in panel showing details for the currently selected table.
  *
  * Step 21 added the foundation (open/close, header with name). Step 22
- * adds a full column list below it — name, data type, nullability and
- * default value per column, sorted by `ordinal_position` (same ordering
- * rule as `TableNode`'s column list, kept consistent across the app).
- * Step 23 adds a constraints section the same way, Step 24 wraps both
- * sections in tabs without touching this open/close/selection wiring.
+ * added the column list. Step 23 adds a constraints section below it,
+ * grouped by `constraint_type` via `groupConstraintsByType()`
+ * (src/utils/constraintGrouping.ts) — the same utility file that already
+ * held `buildColumnConstraintMap` for Step 16's PK/FK icons, extended
+ * rather than duplicated. Step 24 wraps both sections in tabs without
+ * touching this open/close/selection wiring.
  *
  * Deliberately compact rows (name + type on one line, nullable + default
  * on a smaller muted line below) rather than a card per column — this is
- * meant to be scanned quickly, not browsed like a dashboard list.
+ * meant to be scanned quickly, not browsed like a dashboard list. Same
+ * principle applied to constraint groups: a small muted type heading
+ * followed by a tight list, not a card per constraint.
  */
 export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
   const selectedTableId = useUiStore((state) => state.selectedTableId)
@@ -36,6 +41,10 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
   const sortedColumns = selectedTable
     ? [...selectedTable.columns].sort((a, b) => a.ordinal_position - b.ordinal_position)
     : []
+
+  const groupedConstraints = selectedTable
+    ? groupConstraintsByType(selectedTable.constraints)
+    : new Map<string, ConstraintResponse[]>()
 
   useEffect(() => {
     if (!isOpen) {
@@ -74,6 +83,10 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
           </div>
 
           <div className="overflow-y-auto">
+            <p className="px-3 pt-2 font-mono text-[10px] uppercase tracking-wide text-neutral-600">
+              Columns
+            </p>
+
             {sortedColumns.length === 0 ? (
               <p className="px-3 py-3 font-mono text-[11px] text-neutral-600">
                 No columns
@@ -102,6 +115,46 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
                       <span>{column.is_nullable ? 'NULL' : 'NOT NULL'}</span>
                       <span>Default: {column.default_value ?? '—'}</span>
                     </div>
+                  </div>
+                </div>
+              ))
+            )}
+
+            <p className="px-3 pt-3 font-mono text-[10px] uppercase tracking-wide text-neutral-600">
+              Constraints
+            </p>
+
+            {groupedConstraints.size === 0 ? (
+              <p className="px-3 py-3 font-mono text-[11px] text-neutral-600">
+                No constraints
+              </p>
+            ) : (
+              Array.from(groupedConstraints.entries()).map(([type, constraints]) => (
+                <div key={type} className="border-b border-neutral-800 px-3 py-2">
+                  <p className="font-mono text-[10px] uppercase text-neutral-500">
+                    {type}
+                  </p>
+
+                  <div className="mt-1 space-y-1">
+                    {constraints.map((constraint) => {
+                      const referencedTable =
+                        constraint.constraint_type === 'FOREIGN KEY'
+                          ? tables.find(
+                              (table) => table.id === constraint.references_table_id
+                            )
+                          : undefined
+
+                      return (
+                        <div key={constraint.id} className="font-mono text-xs text-neutral-200">
+                          <span>{constraint.constraint_name}</span>
+                          {referencedTable && (
+                            <span className="ml-1.5 text-neutral-500">
+                              → {referencedTable.name}
+                            </span>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               ))
