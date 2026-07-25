@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useFilterStore } from '../../store/filterStore'
+import { useUiStore } from '../../store/uiStore'
 import type { TableResponse } from '../../types/table'
 
 interface VirtualizedTableListProps {
@@ -88,10 +89,16 @@ const TABLE_ROW_HEIGHT = 32
  * happens inside the same `useMemo` that already recomputed grouping on
  * `tables` changes, now also re-running when `searchQuery` changes; no
  * extra render passes.
+ *
+ * Step 29 adds a read-only selected-row highlight via `uiStore.selectedTableId`
+ * — reading it (not writing) to mirror the same `accent`-based selection
+ * state now shown on `TableNode`, so a table selected via the sidebar
+ * looks selected in the sidebar too, not just in the graph.
  */
 export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTableListProps) {
   const parentRef = useRef<HTMLDivElement>(null)
   const searchQuery = useFilterStore((state) => state.searchQuery)
+  const selectedTableId = useUiStore((state) => state.selectedTableId)
 
   const filteredTables = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
@@ -155,6 +162,7 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
           }
 
           const { table } = row
+          const isSelected = selectedTableId === String(table.id)
 
           return (
             <button
@@ -162,7 +170,11 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
               type="button"
               onClick={() => onSelectTable?.(table.id)}
               style={style}
-              className="flex items-center gap-2 border-b border-border px-3 text-left font-mono text-xs text-foreground transition-colors hover:bg-surface-hover"
+              className={`flex items-center gap-2 border-b border-border border-l-2 px-3 text-left font-mono text-xs transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset ${
+                isSelected
+                  ? 'border-l-accent bg-surface-hover text-foreground'
+                  : 'border-l-transparent text-foreground'
+              }`}
             >
               <span className="truncate">{table.name}</span>
             </button>

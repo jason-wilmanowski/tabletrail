@@ -71,11 +71,21 @@ function validate(values: FormValues): FormErrors {
   return errors
 }
 
+const FIELD_CLASSES =
+  'w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+
+const LABEL_CLASSES = 'mb-1 block text-xs font-medium text-muted-foreground'
+
 /**
  * Connection form UI. Owns local field state and client-side validation,
  * and — as of Step 9 — triggers the actual scan request via `useScan()`
  * (Step 3's `scanDatabase` API function under the hood) and navigates to
  * the resulting database's detail page on success.
+ *
+ * As of Step 29, all fields use the design tokens from Step 28
+ * (`surface`/`border`/`foreground`/`ring`) instead of unstyled native
+ * browser controls — this form was left visually bare since Step 8, which
+ * clashed against the now dark-themed body.
  */
 export function ConnectionForm() {
   const [values, setValues] = useState<FormValues>(INITIAL_VALUES)
@@ -111,24 +121,30 @@ export function ConnectionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
+    <form onSubmit={handleSubmit} noValidate className="max-w-sm space-y-4">
       <div>
-        <label htmlFor="name">Name</label>
+        <label htmlFor="name" className={LABEL_CLASSES}>
+          Name
+        </label>
         <input
           id="name"
           type="text"
           value={values.name}
           onChange={(e) => updateField('name', e.target.value)}
+          className={FIELD_CLASSES}
         />
-        {errors.name && <p className="text-sm text-danger">{errors.name}</p>}
+        {errors.name && <p className="mt-1 text-xs text-danger">{errors.name}</p>}
       </div>
 
       <div>
-        <label htmlFor="db_type">Database Type</label>
+        <label htmlFor="db_type" className={LABEL_CLASSES}>
+          Database Type
+        </label>
         <select
           id="db_type"
           value={values.db_type}
           onChange={(e) => updateField('db_type', e.target.value as DBType)}
+          className={FIELD_CLASSES}
         >
           <option value="">Select a database type</option>
           {DB_TYPE_OPTIONS.map((option) => (
@@ -137,23 +153,28 @@ export function ConnectionForm() {
             </option>
           ))}
         </select>
-        {errors.db_type && <p className="text-sm text-danger">{errors.db_type}</p>}
+        {errors.db_type && <p className="mt-1 text-xs text-danger">{errors.db_type}</p>}
       </div>
 
       <div>
-        <label htmlFor="host">Host</label>
+        <label htmlFor="host" className={LABEL_CLASSES}>
+          Host
+        </label>
         <input
           id="host"
           type="text"
           placeholder="localhost"
           value={values.host}
           onChange={(e) => updateField('host', e.target.value)}
+          className={FIELD_CLASSES}
         />
-        {errors.host && <p className="text-sm text-danger">{errors.host}</p>}
+        {errors.host && <p className="mt-1 text-xs text-danger">{errors.host}</p>}
       </div>
 
       <div>
-        <label htmlFor="port">Port</label>
+        <label htmlFor="port" className={LABEL_CLASSES}>
+          Port
+        </label>
         <input
           id="port"
           type="number"
@@ -161,48 +182,62 @@ export function ConnectionForm() {
           max={65535}
           value={values.port}
           onChange={(e) => updateField('port', e.target.value)}
+          className={FIELD_CLASSES}
         />
-        {errors.port && <p className="text-sm text-danger">{errors.port}</p>}
+        {errors.port && <p className="mt-1 text-xs text-danger">{errors.port}</p>}
       </div>
 
       <div>
-        <label htmlFor="db_name">Database Name</label>
+        <label htmlFor="db_name" className={LABEL_CLASSES}>
+          Database Name
+        </label>
         <input
           id="db_name"
           type="text"
           value={values.db_name}
           onChange={(e) => updateField('db_name', e.target.value)}
+          className={FIELD_CLASSES}
         />
-        {errors.db_name && <p className="text-sm text-danger">{errors.db_name}</p>}
+        {errors.db_name && <p className="mt-1 text-xs text-danger">{errors.db_name}</p>}
       </div>
 
       <div>
-        <label htmlFor="username">Username</label>
+        <label htmlFor="username" className={LABEL_CLASSES}>
+          Username
+        </label>
         <input
           id="username"
           type="text"
           value={values.username}
           onChange={(e) => updateField('username', e.target.value)}
+          className={FIELD_CLASSES}
         />
-        {errors.username && <p className="text-sm text-danger">{errors.username}</p>}
+        {errors.username && <p className="mt-1 text-xs text-danger">{errors.username}</p>}
       </div>
 
       <div>
-        <label htmlFor="password">Password</label>
+        <label htmlFor="password" className={LABEL_CLASSES}>
+          Password
+        </label>
         <input
           id="password"
           type="password"
           value={values.password}
           onChange={(e) => updateField('password', e.target.value)}
+          className={FIELD_CLASSES}
         />
-        {errors.password && <p className="text-sm text-danger">{errors.password}</p>}
+        {errors.password && <p className="mt-1 text-xs text-danger">{errors.password}</p>}
       </div>
 
       {scanMutation.isError && (
         <p className="text-sm text-danger">{scanMutation.error.message}</p>
       )}
 
-      <button type="submit" disabled={scanMutation.isPending}>
+      <button
+        type="submit"
+        disabled={scanMutation.isPending}
+        className="rounded-md border border-border bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+      >
         {scanMutation.isPending ? 'Connecting...' : 'Connect'}
       </button>
     </form>

@@ -23,6 +23,13 @@ const COLLAPSE_THRESHOLD = 15
  * which `TableInspectorPanel` reacts to — this component only *triggers*
  * that selection, it doesn't know anything about the inspector itself.
  *
+ * Step 29 adds a visible selected state using the `accent` token defined
+ * in Step 28 specifically for "Selection-Zustände" — until now nothing
+ * in the app actually rendered it, so a selected table looked identical
+ * to any other. A thin accent border is used rather than filling the
+ * whole card, keeping the technical/flat aesthetic instead of turning it
+ * into a colored card.
+ *
  * Expand state stays local `useState` (only affects this node's own
  * rendering), while selection goes through the global store (affects a
  * different part of the UI entirely) — same distinction the store
@@ -31,7 +38,10 @@ const COLLAPSE_THRESHOLD = 15
 export function TableNode({ data }: NodeProps<TableNodeType>) {
   const { table } = data
   const [isExpanded, setIsExpanded] = useState(false)
+  const selectedTableId = useUiStore((state) => state.selectedTableId)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
+
+  const isSelected = selectedTableId === String(table.id)
 
   const sortedColumns = [...table.columns].sort(
     (a, b) => a.ordinal_position - b.ordinal_position
@@ -47,7 +57,9 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
   return (
     <div
       onClick={() => setSelectedTableId(String(table.id))}
-      className="min-w-[220px] rounded-md border border-border bg-surface text-foreground"
+      className={`min-w-[220px] rounded-md border bg-surface text-foreground transition-colors ${
+        isSelected ? 'border-accent ring-1 ring-accent' : 'border-border hover:border-muted-foreground'
+      }`}
     >
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
         <span className="text-sm font-medium">{table.name}</span>
@@ -101,7 +113,7 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
             event.stopPropagation()
             setIsExpanded((prev) => !prev)
           }}
-          className="nodrag flex w-full items-center justify-center gap-1 border-t border-border py-1 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+          className="nodrag flex w-full items-center justify-center gap-1 border-t border-border py-1 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset"
         >
           {isExpanded ? (
             <>

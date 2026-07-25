@@ -75,7 +75,7 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
             <button
               type="button"
               onClick={() => setSelectedTableId(null)}
-              className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
+              className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               aria-label="Close inspector"
             >
               <X className="h-3.5 w-3.5" />

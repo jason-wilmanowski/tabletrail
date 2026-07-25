@@ -16,7 +16,7 @@ export function SearchInput() {
   const setSearchQuery = useFilterStore((state) => state.setSearchQuery)
 
   return (
-    <div className="flex items-center gap-1.5 border-b border-border px-2 py-1.5">
+    <div className="flex items-center gap-1.5 border-b border-border px-2 py-1.5 focus-within:ring-1 focus-within:ring-ring focus-within:ring-inset">
       <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <input
         type="text"

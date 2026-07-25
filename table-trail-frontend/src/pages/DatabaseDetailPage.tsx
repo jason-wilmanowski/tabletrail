@@ -17,6 +17,12 @@ import { useUiStore } from '../store/uiStore'
  * Clicking a sidebar entry writes `uiStore.selectedTableId`, the same
  * field `TableNode` already writes on click — `GraphCanvas` centers on
  * it and `TableInspectorPanel` opens for it, with no new logic in either.
+ *
+ * Step 29 removes the raw Tables/Columns/Constraints text dump that lived
+ * here since Step 10 — it was always meant as a temporary way to validate
+ * the data flow before the graph existed, and now duplicates exactly what
+ * the graph, sidebar and inspector already show, in a plain bullet-list
+ * form that doesn't belong in the finished dark theme.
  */
 export function DatabaseDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -27,7 +33,7 @@ export function DatabaseDetailPage() {
 
   if (isLoading) {
     return (
-      <div>
+      <div className="p-6">
         <h1 className="text-xl font-semibold">Database Detail</h1>
         <p className="text-sm text-muted-foreground">Loading database...</p>
       </div>
@@ -36,7 +42,7 @@ export function DatabaseDetailPage() {
 
   if (error) {
     return (
-      <div>
+      <div className="p-6">
         <h1 className="text-xl font-semibold">Database Detail</h1>
         <p className="text-sm text-danger">{error.message}</p>
       </div>
@@ -48,16 +54,16 @@ export function DatabaseDetailPage() {
   }
 
   return (
-    <div>
+    <div className="p-6">
       <h1 className="text-xl font-semibold">{data.name}</h1>
       <p className="text-sm text-muted-foreground">
         Type: {data.db_type} · Host: {data.host}:{data.port} · DB: {data.db_name}
       </p>
 
-      <p className="text-sm text-muted-foreground">Tables: {data.tables.length}</p>
+      <p className="mb-4 text-sm text-muted-foreground">Tables: {data.tables.length}</p>
 
-      <div className="flex h-[500px] w-full border border-border">
-        <aside className="flex w-56 shrink-0 flex-col border-r border-border">
+      <div className="flex h-[500px] w-full rounded-md border border-border">
+        <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-panel">
           <SearchInput />
           <div className="flex-1 overflow-hidden">
             <VirtualizedTableList
@@ -67,46 +73,11 @@ export function DatabaseDetailPage() {
           </div>
         </aside>
 
-        <div className="relative flex-1 overflow-hidden">
+        <div className="relative flex-1 overflow-hidden bg-background">
           <GraphCanvas tables={data.tables} />
           <TableInspectorPanel tables={data.tables} />
         </div>
       </div>
-
-      <ul>
-        {data.tables.map((table) => (
-          <li key={table.id}>
-            <h2 className="font-medium">
-              {table.schema_name ? `${table.schema_name}.` : ''}
-              {table.name}
-            </h2>
-
-            <p className="text-sm text-muted-foreground">Columns: {table.columns.length}</p>
-            <ul>
-              {table.columns.map((column) => (
-                <li key={column.id} className="text-sm">
-                  {column.name} — {column.data_type}
-                  {column.is_nullable ? '' : ' · NOT NULL'}
-                </li>
-              ))}
-            </ul>
-
-            <p className="text-sm text-muted-foreground">
-              Constraints: {table.constraints.length}
-            </p>
-            <ul>
-              {table.constraints.map((constraint) => (
-                <li key={constraint.id} className="text-sm">
-                  {constraint.constraint_type} — {constraint.constraint_name}
-                  {constraint.references_table_id !== null
-                    ? ` → table #${constraint.references_table_id}`
-                    : ''}
-                </li>
-              ))}
-            </ul>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }

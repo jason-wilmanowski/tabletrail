@@ -6,9 +6,11 @@ import { ConnectionForm } from '../features/connection-form/ConnectionForm'
  */
 export function NewConnectionPage() {
   return (
-    <div>
+    <div className="p-6">
       <h1 className="text-xl font-semibold">New Connection</h1>
-      <ConnectionForm />
+      <div className="mt-4">
+        <ConnectionForm />
+      </div>
     </div>
   )
 }
