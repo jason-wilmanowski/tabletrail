@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
 from table_trail_backend.core.enums import DBType, DBStatus
 from table_trail_backend.schemas.table_schema import TableResponse
@@ -58,7 +60,10 @@ class DatabaseOverviewResponse(BaseModel):
     status: DBStatus
     host: str
     port: str
+    username: str
     db_name: str
+    created_at : datetime
+    updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
 
 
