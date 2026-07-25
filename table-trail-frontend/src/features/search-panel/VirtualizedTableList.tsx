@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { useFilterStore } from '../../store/filterStore'
 import type { TableResponse } from '../../types/table'
 
 interface VirtualizedTableListProps {
@@ -73,22 +74,34 @@ const HEADER_ROW_HEIGHT = 24
 const TABLE_ROW_HEIGHT = 32
 
 /**
- * Performant, virtualized, schema-grouped list of a database's tables —
- * only the rows currently in the scroll viewport (plus a small overscan
- * buffer) exist in the DOM, regardless of how many tables or schemas the
- * database actually has.
+ * Performant, virtualized, schema-grouped, searchable list of a
+ * database's tables — only the rows currently in the scroll viewport
+ * (plus a small overscan buffer) exist in the DOM, regardless of how many
+ * tables or schemas the database actually has.
  *
- * Step 24 established plain virtualization. Step 25 adds schema grouping
- * via `groupTablesBySchema()` above, flattening groups into one row list
- * so the existing `@tanstack/react-virtual` setup keeps working unchanged
- * in kind — just fed a different (flattened, grouped) array and a
- * per-row-type size estimate instead of a single constant. No search,
- * filter, collapse, or store logic here, consistent with the previous step.
+ * Step 24 established plain virtualization. Step 25 added schema
+ * grouping. Step 26 adds client-side filtering: reads `searchQuery` from
+ * `filterStore` (written by `SearchInput`, which contains no filter logic
+ * itself) and filters `tables` by name — case-insensitive substring match
+ * — *before* grouping, so `groupTablesBySchema()` and the virtualizer
+ * configuration don't need to know filtering exists at all. Filtering
+ * happens inside the same `useMemo` that already recomputed grouping on
+ * `tables` changes, now also re-running when `searchQuery` changes; no
+ * extra render passes.
  */
 export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTableListProps) {
   const parentRef = useRef<HTMLDivElement>(null)
+  const searchQuery = useFilterStore((state) => state.searchQuery)
 
-  const rows = useMemo(() => groupTablesBySchema(tables), [tables])
+  const filteredTables = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (query === '') {
+      return tables
+    }
+    return tables.filter((table) => table.name.toLowerCase().includes(query))
+  }, [tables, searchQuery])
+
+  const rows = useMemo(() => groupTablesBySchema(filteredTables), [filteredTables])
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -101,6 +114,14 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
   if (tables.length === 0) {
     return (
       <div className="px-3 py-3 font-mono text-[11px] text-neutral-600">No tables</div>
+    )
+  }
+
+  if (filteredTables.length === 0) {
+    return (
+      <div className="px-3 py-3 font-mono text-[11px] text-neutral-600">
+        No matching tables
+      </div>
     )
   }
 
