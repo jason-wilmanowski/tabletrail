@@ -26,5 +26,17 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+
+  frontend:
+    build: ./table-trail-frontend
+    env_file:
+      - .env
+    ports:
+      - ${FRONTEND_PORT}
+    depends_on:
+      api:
+        condition: service_healthy
+
+
 volumes:
   pgdata:
