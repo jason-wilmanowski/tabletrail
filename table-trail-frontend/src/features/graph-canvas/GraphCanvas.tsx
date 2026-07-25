@@ -39,13 +39,13 @@ const edgeTypes: EdgeTypes = {
 
 /**
  * React Flow themes its built-in Controls/MiniMap/Background via CSS
- * custom properties (its stylesheet ships light-theme defaults). Rather
- * than waiting for the formal design-token system (Step 28), these are
- * overridden locally on the canvas wrapper — scoped to this component,
- * not a global stylesheet — so navigation elements read as dark and
- * muted instead of the library's default light chrome. Values are hand-
- * picked to match the neutral palette already used in TableNode/
- * RelationEdge (border/background/text tones), not a new color system.
+ * custom properties (its stylesheet ships light-theme defaults). These
+ * are overridden locally on the canvas wrapper — scoped to this
+ * component, not a global stylesheet, since React Flow's own variables
+ * are a different naming scheme than this app's design tokens — but as
+ * of Step 28 every value here points at the same `--background`,
+ * `--panel`, `--border` etc. tokens defined in index.css, not hand-picked
+ * hex values anymore.
  */
 interface ReactFlowThemeVars extends CSSProperties {
   '--xy-background-color'?: string
@@ -61,16 +61,16 @@ interface ReactFlowThemeVars extends CSSProperties {
 }
 
 const reactFlowTheme: ReactFlowThemeVars = {
-  '--xy-background-color': '#0a0a0a',
-  '--xy-controls-button-background-color': '#18181b',
-  '--xy-controls-button-background-color-hover': '#27272a',
-  '--xy-controls-button-border-color': '#3f3f46',
-  '--xy-controls-button-color': '#a1a1aa',
-  '--xy-controls-button-color-hover': '#e4e4e7',
-  '--xy-minimap-background-color': '#111113',
-  '--xy-minimap-mask-background-color': 'rgba(0, 0, 0, 0.6)',
-  '--xy-minimap-node-background-color': '#3f3f46',
-  '--xy-minimap-node-stroke-color': '#52525b',
+  '--xy-background-color': 'hsl(var(--background))',
+  '--xy-controls-button-background-color': 'hsl(var(--panel))',
+  '--xy-controls-button-background-color-hover': 'hsl(var(--surface-hover))',
+  '--xy-controls-button-border-color': 'hsl(var(--border))',
+  '--xy-controls-button-color': 'hsl(var(--muted-foreground))',
+  '--xy-controls-button-color-hover': 'hsl(var(--foreground))',
+  '--xy-minimap-background-color': 'hsl(var(--panel))',
+  '--xy-minimap-mask-background-color': 'hsl(var(--background) / 0.6)',
+  '--xy-minimap-node-background-color': 'hsl(var(--border))',
+  '--xy-minimap-node-stroke-color': 'hsl(var(--muted-foreground))',
 }
 
 /**
@@ -164,13 +164,13 @@ function GraphCanvasInner({ tables }: GraphCanvasProps) {
         onEdgesChange={onEdgesChange}
         fitView
       >
-        <Background color="#27272a" gap={24} />
+        <Background color="hsl(var(--border))" gap={24} />
         <Controls showInteractive={false} />
         <MiniMap
           pannable
           zoomable
           nodeStrokeWidth={1}
-          className="!border !border-neutral-700"
+          className="!border !border-border"
         />
       </ReactFlow>
     </div>

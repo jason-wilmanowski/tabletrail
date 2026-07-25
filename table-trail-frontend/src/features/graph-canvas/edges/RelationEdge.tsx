@@ -47,13 +47,13 @@ export function RelationEdge({
       <BaseEdge
         path={edgePath}
         markerEnd={markerEnd}
-        style={{ stroke: '#52525b', strokeWidth: 1.25 }}
+        style={{ stroke: 'hsl(var(--border))', strokeWidth: 1.25 }}
       />
 
       {labelLines.length > 0 && (
         <EdgeLabelRenderer>
           <div
-            className="nodrag nopan absolute rounded-sm border border-neutral-700 bg-neutral-900 px-1.5 py-0.5 font-mono text-[9px] leading-tight text-neutral-400"
+            className="nodrag nopan absolute rounded-sm border border-border bg-panel px-1.5 py-0.5 font-mono text-[9px] leading-tight text-muted-foreground"
             style={{
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
             }}

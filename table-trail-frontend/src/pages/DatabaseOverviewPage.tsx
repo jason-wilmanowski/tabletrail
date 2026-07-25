@@ -15,7 +15,7 @@ export function DatabaseOverviewPage() {
     return (
       <div>
         <h1 className="text-xl font-semibold">Database Overview</h1>
-        <p className="text-sm text-neutral-500">Loading databases...</p>
+        <p className="text-sm text-muted-foreground">Loading databases...</p>
       </div>
     )
   }
@@ -24,7 +24,7 @@ export function DatabaseOverviewPage() {
     return (
       <div>
         <h1 className="text-xl font-semibold">Database Overview</h1>
-        <p className="text-sm text-red-600">{error.message}</p>
+        <p className="text-sm text-danger">{error.message}</p>
       </div>
     )
   }
@@ -34,7 +34,7 @@ export function DatabaseOverviewPage() {
       <h1 className="text-xl font-semibold">Database Overview</h1>
 
       {data && data.length === 0 && (
-        <p className="text-sm text-neutral-500">No databases scanned yet.</p>
+        <p className="text-sm text-muted-foreground">No databases scanned yet.</p>
       )}
 
       <ul>
@@ -43,11 +43,11 @@ export function DatabaseOverviewPage() {
             <button
               type="button"
               onClick={() => navigate(`/database/${database.id}`)}
-              className="flex w-full items-center justify-between border-b py-2 text-left"
+              className="flex w-full items-center justify-between border-b border-border py-2 text-left"
             >
               <span>{database.name}</span>
-              <span className="text-sm text-neutral-500">{database.db_type}</span>
-              <span className="text-sm text-neutral-500">{database.status}</span>
+              <span className="text-sm text-muted-foreground">{database.db_type}</span>
+              <span className="text-sm text-muted-foreground">{database.status}</span>
             </button>
           </li>
         ))}

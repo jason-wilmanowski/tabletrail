@@ -24,7 +24,7 @@ interface RequestOptions {
 /**
  * FastAPI's HTTPException returns `{ "detail": string }` for the
  * ScanningSystemError / DatabaseSystemError style errors used throughout
- * this backend (see error handling discussed in prior steps). For request
+ * this backend. For request
  * validation errors (e.g. a malformed path param), FastAPI instead returns
  * `{ "detail": [{ msg: string, ... }, ...] }` — both shapes are handled here.
  */

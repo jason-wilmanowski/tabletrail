@@ -120,7 +120,7 @@ export function ConnectionForm() {
           value={values.name}
           onChange={(e) => updateField('name', e.target.value)}
         />
-        {errors.name && <p className="text-sm text-red-600">{errors.name}</p>}
+        {errors.name && <p className="text-sm text-danger">{errors.name}</p>}
       </div>
 
       <div>
@@ -137,7 +137,7 @@ export function ConnectionForm() {
             </option>
           ))}
         </select>
-        {errors.db_type && <p className="text-sm text-red-600">{errors.db_type}</p>}
+        {errors.db_type && <p className="text-sm text-danger">{errors.db_type}</p>}
       </div>
 
       <div>
@@ -149,7 +149,7 @@ export function ConnectionForm() {
           value={values.host}
           onChange={(e) => updateField('host', e.target.value)}
         />
-        {errors.host && <p className="text-sm text-red-600">{errors.host}</p>}
+        {errors.host && <p className="text-sm text-danger">{errors.host}</p>}
       </div>
 
       <div>
@@ -162,7 +162,7 @@ export function ConnectionForm() {
           value={values.port}
           onChange={(e) => updateField('port', e.target.value)}
         />
-        {errors.port && <p className="text-sm text-red-600">{errors.port}</p>}
+        {errors.port && <p className="text-sm text-danger">{errors.port}</p>}
       </div>
 
       <div>
@@ -173,7 +173,7 @@ export function ConnectionForm() {
           value={values.db_name}
           onChange={(e) => updateField('db_name', e.target.value)}
         />
-        {errors.db_name && <p className="text-sm text-red-600">{errors.db_name}</p>}
+        {errors.db_name && <p className="text-sm text-danger">{errors.db_name}</p>}
       </div>
 
       <div>
@@ -184,7 +184,7 @@ export function ConnectionForm() {
           value={values.username}
           onChange={(e) => updateField('username', e.target.value)}
         />
-        {errors.username && <p className="text-sm text-red-600">{errors.username}</p>}
+        {errors.username && <p className="text-sm text-danger">{errors.username}</p>}
       </div>
 
       <div>
@@ -195,11 +195,11 @@ export function ConnectionForm() {
           value={values.password}
           onChange={(e) => updateField('password', e.target.value)}
         />
-        {errors.password && <p className="text-sm text-red-600">{errors.password}</p>}
+        {errors.password && <p className="text-sm text-danger">{errors.password}</p>}
       </div>
 
       {scanMutation.isError && (
-        <p className="text-sm text-red-600">{scanMutation.error.message}</p>
+        <p className="text-sm text-danger">{scanMutation.error.message}</p>
       )}
 
       <button type="submit" disabled={scanMutation.isPending}>

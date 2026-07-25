@@ -63,19 +63,19 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
 
   return (
     <aside
-      className={`absolute right-0 top-0 flex h-full w-72 flex-col border-l border-neutral-700 bg-neutral-900 text-neutral-100 shadow-none transition-transform duration-200 ease-out ${
+      className={`absolute right-0 top-0 flex h-full w-72 flex-col border-l border-border bg-panel text-foreground shadow-none transition-transform duration-200 ease-out ${
         isVisible ? 'translate-x-0' : 'translate-x-full'
       }`}
     >
       {selectedTable && (
         <>
-          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-neutral-700 px-3 py-2">
+          <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
             <span className="text-sm font-medium">{selectedTable.name}</span>
 
             <button
               type="button"
               onClick={() => setSelectedTableId(null)}
-              className="rounded-sm p-1 text-neutral-500 transition-colors hover:bg-neutral-800 hover:text-neutral-300"
+              className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground"
               aria-label="Close inspector"
             >
               <X className="h-3.5 w-3.5" />
@@ -83,35 +83,35 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
           </div>
 
           <div className="overflow-y-auto">
-            <p className="px-3 pt-2 font-mono text-[10px] uppercase tracking-wide text-neutral-600">
+            <p className="px-3 pt-2 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
               Columns
             </p>
 
             {sortedColumns.length === 0 ? (
-              <p className="px-3 py-3 font-mono text-[11px] text-neutral-600">
+              <p className="px-3 py-3 font-mono text-[11px] text-muted-foreground">
                 No columns
               </p>
             ) : (
               sortedColumns.map((column) => (
                 <div
                   key={column.id}
-                  className="flex items-start gap-2 border-b border-neutral-800 px-3 py-2"
+                  className="flex items-start gap-2 border-b border-border px-3 py-2"
                 >
-                  <span className="w-4 shrink-0 pt-0.5 text-right font-mono text-[10px] text-neutral-600">
+                  <span className="w-4 shrink-0 pt-0.5 text-right font-mono text-[10px] text-muted-foreground">
                     {column.ordinal_position}
                   </span>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate font-mono text-xs text-neutral-200">
+                      <span className="truncate font-mono text-xs text-foreground">
                         {column.name}
                       </span>
-                      <span className="shrink-0 rounded-sm border border-neutral-700 px-1 font-mono text-[10px] uppercase text-neutral-500">
+                      <span className="shrink-0 rounded-sm border border-border px-1 font-mono text-[10px] uppercase text-muted-foreground">
                         {column.data_type}
                       </span>
                     </div>
 
-                    <div className="mt-0.5 flex items-center gap-3 font-mono text-[10px] text-neutral-500">
+                    <div className="mt-0.5 flex items-center gap-3 font-mono text-[10px] text-muted-foreground">
                       <span>{column.is_nullable ? 'NULL' : 'NOT NULL'}</span>
                       <span>Default: {column.default_value ?? '—'}</span>
                     </div>
@@ -120,18 +120,18 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
               ))
             )}
 
-            <p className="px-3 pt-3 font-mono text-[10px] uppercase tracking-wide text-neutral-600">
+            <p className="px-3 pt-3 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
               Constraints
             </p>
 
             {groupedConstraints.size === 0 ? (
-              <p className="px-3 py-3 font-mono text-[11px] text-neutral-600">
+              <p className="px-3 py-3 font-mono text-[11px] text-muted-foreground">
                 No constraints
               </p>
             ) : (
               Array.from(groupedConstraints.entries()).map(([type, constraints]) => (
-                <div key={type} className="border-b border-neutral-800 px-3 py-2">
-                  <p className="font-mono text-[10px] uppercase text-neutral-500">
+                <div key={type} className="border-b border-border px-3 py-2">
+                  <p className="font-mono text-[10px] uppercase text-muted-foreground">
                     {type}
                   </p>
 
@@ -145,10 +145,10 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
                           : undefined
 
                       return (
-                        <div key={constraint.id} className="font-mono text-xs text-neutral-200">
+                        <div key={constraint.id} className="font-mono text-xs text-foreground">
                           <span>{constraint.constraint_name}</span>
                           {referencedTable && (
-                            <span className="ml-1.5 text-neutral-500">
+                            <span className="ml-1.5 text-muted-foreground">
                               → {referencedTable.name}
                             </span>
                           )}

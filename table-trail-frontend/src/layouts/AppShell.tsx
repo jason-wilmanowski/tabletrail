@@ -35,7 +35,7 @@ export function AppShell({ children }: AppShellProps) {
  */
 function Sidebar() {
   return (
-    <aside className="w-16 overflow-y-auto border-r md:w-64">
+    <aside className="w-16 overflow-y-auto border-r border-border bg-panel md:w-64">
       {/* Table list, search input and schema filters mount here later */}
     </aside>
   )
@@ -47,7 +47,7 @@ function Sidebar() {
  */
 function Topbar() {
   return (
-    <header className="flex h-14 items-center border-b px-4">
+    <header className="flex h-14 items-center border-b border-border bg-panel px-4">
       {/* Database title, rescan button and breadcrumbs mount here later */}
     </header>
   )

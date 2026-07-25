@@ -1,3 +1,60 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * TableTrail Design Tokens
+ *
+ * Central color system for the whole app — no component defines its own
+ * colors anymore, everything below is consumed via the semantic Tailwind
+ * tokens configured in tailwind.config.ts (bg-surface, text-muted-foreground,
+ * border-border, etc.).
+ *
+ * Values are stored as bare "H S% L%" triplets (not wrapped in hsl(...))
+ * so Tailwind can apply opacity modifiers (e.g. bg-accent/10) via the
+ * `hsl(var(--x) / <alpha-value>)` pattern in the Tailwind config.
+ *
+ * Dark theme only for now (see Design Hinweis: no light/dark toggle in
+ * this step) — kept under :root rather than a `.dark` class so a future
+ * light theme can be added as a `.light` override without restructuring
+ * anything that already consumes these tokens.
+ */
+:root {
+  /* Layered surfaces — background is the app root, panel sits one level
+     above it (sidebar, inspector, canvas chrome), surface is one level
+     above that again (table nodes, dropdowns, anything that reads as a
+     "card" floating over a panel). surface-hover is the same layer on
+     interactive hover/active states. */
+  --background: 240 6% 7%;
+  --panel: 240 6% 10%;
+  --surface: 240 5% 13%;
+  --surface-hover: 240 5% 17%;
+
+  --border: 240 5% 20%;
+
+  /* Text */
+  --foreground: 240 10% 92%;
+  --muted-foreground: 240 5% 58%;
+
+  /* Single restrained accent — selection states, focus rings, primary
+     actions. Deliberately a desaturated slate-blue rather than a
+     saturated SaaS blue, per the "few accents, muted" constraint. */
+  --accent: 217 33% 58%;
+  --accent-foreground: 0 0% 100%;
+
+  /* Status colors — muted, not neon */
+  --danger: 0 62% 56%;
+  --danger-foreground: 0 0% 100%;
+  --warning: 38 75% 55%;
+  --warning-foreground: 0 0% 8%;
+  --success: 142 40% 45%;
+  --success-foreground: 0 0% 100%;
+
+  --ring: 217 33% 58%;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground;
+  }
+}

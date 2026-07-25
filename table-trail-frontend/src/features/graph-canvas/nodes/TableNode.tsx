@@ -47,19 +47,19 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
   return (
     <div
       onClick={() => setSelectedTableId(String(table.id))}
-      className="min-w-[220px] rounded-md border border-neutral-700 bg-neutral-900 text-neutral-100"
+      className="min-w-[220px] rounded-md border border-border bg-surface text-foreground"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-neutral-700 px-3 py-2">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
         <span className="text-sm font-medium">{table.name}</span>
 
         {table.schema_name && (
-          <span className="rounded border border-neutral-600 px-1.5 py-0.5 font-mono text-[11px] text-neutral-400">
+          <span className="rounded border border-border px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
             {table.schema_name}
           </span>
         )}
       </div>
 
-      <div className="divide-y divide-neutral-800">
+      <div className="divide-y divide-border">
         {visibleColumns.map((column) => {
           const flags = columnConstraints.get(column.name)
 
@@ -68,23 +68,23 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
               key={column.id}
               className="flex items-center justify-between gap-3 px-3 py-1.5"
             >
-              <span className="flex min-w-0 items-center gap-1.5 font-mono text-xs text-neutral-200">
+              <span className="flex min-w-0 items-center gap-1.5 font-mono text-xs text-foreground">
                 {flags?.isPrimaryKey && (
                   <KeyRound
-                    className="h-3 w-3 shrink-0 text-neutral-400"
+                    className="h-3 w-3 shrink-0 text-muted-foreground"
                     aria-label="Primary key"
                   />
                 )}
                 {flags?.isForeignKey && (
                   <Link2
-                    className="h-3 w-3 shrink-0 text-neutral-400"
+                    className="h-3 w-3 shrink-0 text-muted-foreground"
                     aria-label="Foreign key"
                   />
                 )}
                 <span className="truncate">{column.name}</span>
               </span>
 
-              <span className="shrink-0 rounded-sm border border-neutral-700 px-1 font-mono text-[10px] uppercase text-neutral-500">
+              <span className="shrink-0 rounded-sm border border-border px-1 font-mono text-[10px] uppercase text-muted-foreground">
                 {column.data_type}
               </span>
             </div>
@@ -101,7 +101,7 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
             event.stopPropagation()
             setIsExpanded((prev) => !prev)
           }}
-          className="nodrag flex w-full items-center justify-center gap-1 border-t border-neutral-800 py-1 font-mono text-[10px] text-neutral-500 transition-colors hover:text-neutral-300"
+          className="nodrag flex w-full items-center justify-center gap-1 border-t border-border py-1 font-mono text-[10px] text-muted-foreground transition-colors hover:text-foreground"
         >
           {isExpanded ? (
             <>

@@ -16,14 +16,14 @@ export function SearchInput() {
   const setSearchQuery = useFilterStore((state) => state.setSearchQuery)
 
   return (
-    <div className="flex items-center gap-1.5 border-b border-neutral-800 px-2 py-1.5">
-      <Search className="h-3.5 w-3.5 shrink-0 text-neutral-600" />
+    <div className="flex items-center gap-1.5 border-b border-border px-2 py-1.5">
+      <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
       <input
         type="text"
         value={searchQuery}
         onChange={(event) => setSearchQuery(event.target.value)}
         placeholder="Filter tables..."
-        className="w-full bg-transparent font-mono text-xs text-neutral-200 placeholder:text-neutral-600 focus:outline-none"
+        className="w-full bg-transparent font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
       />
     </div>
   )

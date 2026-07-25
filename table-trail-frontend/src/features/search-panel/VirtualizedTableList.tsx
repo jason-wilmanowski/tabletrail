@@ -113,13 +113,13 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
 
   if (tables.length === 0) {
     return (
-      <div className="px-3 py-3 font-mono text-[11px] text-neutral-600">No tables</div>
+      <div className="px-3 py-3 font-mono text-[11px] text-muted-foreground">No tables</div>
     )
   }
 
   if (filteredTables.length === 0) {
     return (
-      <div className="px-3 py-3 font-mono text-[11px] text-neutral-600">
+      <div className="px-3 py-3 font-mono text-[11px] text-muted-foreground">
         No matching tables
       </div>
     )
@@ -147,7 +147,7 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
               <div
                 key={`header-${row.schemaName}`}
                 style={style}
-                className="flex items-end px-3 pb-1 font-mono text-[10px] uppercase tracking-wide text-neutral-600"
+                className="flex items-end px-3 pb-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground"
               >
                 {row.schemaName}
               </div>
@@ -162,7 +162,7 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
               type="button"
               onClick={() => onSelectTable?.(table.id)}
               style={style}
-              className="flex items-center gap-2 border-b border-neutral-800 px-3 text-left font-mono text-xs text-neutral-300 transition-colors hover:bg-neutral-800"
+              className="flex items-center gap-2 border-b border-border px-3 text-left font-mono text-xs text-foreground transition-colors hover:bg-surface-hover"
             >
               <span className="truncate">{table.name}</span>
             </button>

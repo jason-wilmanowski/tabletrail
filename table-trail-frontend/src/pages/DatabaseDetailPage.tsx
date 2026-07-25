@@ -29,7 +29,7 @@ export function DatabaseDetailPage() {
     return (
       <div>
         <h1 className="text-xl font-semibold">Database Detail</h1>
-        <p className="text-sm text-neutral-500">Loading database...</p>
+        <p className="text-sm text-muted-foreground">Loading database...</p>
       </div>
     )
   }
@@ -38,7 +38,7 @@ export function DatabaseDetailPage() {
     return (
       <div>
         <h1 className="text-xl font-semibold">Database Detail</h1>
-        <p className="text-sm text-red-600">{error.message}</p>
+        <p className="text-sm text-danger">{error.message}</p>
       </div>
     )
   }
@@ -50,14 +50,14 @@ export function DatabaseDetailPage() {
   return (
     <div>
       <h1 className="text-xl font-semibold">{data.name}</h1>
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-muted-foreground">
         Type: {data.db_type} · Host: {data.host}:{data.port} · DB: {data.db_name}
       </p>
 
-      <p className="text-sm text-neutral-500">Tables: {data.tables.length}</p>
+      <p className="text-sm text-muted-foreground">Tables: {data.tables.length}</p>
 
-      <div className="flex h-[500px] w-full border">
-        <aside className="flex w-56 shrink-0 flex-col border-r border-neutral-800">
+      <div className="flex h-[500px] w-full border border-border">
+        <aside className="flex w-56 shrink-0 flex-col border-r border-border">
           <SearchInput />
           <div className="flex-1 overflow-hidden">
             <VirtualizedTableList
@@ -81,7 +81,7 @@ export function DatabaseDetailPage() {
               {table.name}
             </h2>
 
-            <p className="text-sm text-neutral-500">Columns: {table.columns.length}</p>
+            <p className="text-sm text-muted-foreground">Columns: {table.columns.length}</p>
             <ul>
               {table.columns.map((column) => (
                 <li key={column.id} className="text-sm">
@@ -91,7 +91,7 @@ export function DatabaseDetailPage() {
               ))}
             </ul>
 
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-muted-foreground">
               Constraints: {table.constraints.length}
             </p>
             <ul>
