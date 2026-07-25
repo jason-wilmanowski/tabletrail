@@ -2,6 +2,8 @@ import { useState, useCallback, useEffect } from 'react'
 import type { CSSProperties } from 'react'
 import {
   ReactFlow,
+  ReactFlowProvider,
+  useReactFlow,
   Controls,
   Background,
   MiniMap,
@@ -15,6 +17,7 @@ import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
 import { constraintsToEdges } from '../../utils/constraintsToEdges'
 import { TableNode } from './nodes/TableNode'
 import { RelationEdge } from './edges/RelationEdge'
+import { useUiStore } from '../../store/uiStore'
 import type { TableResponse } from '../../types/table'
 
 interface GraphCanvasProps {
@@ -90,14 +93,25 @@ function buildGraph(tables: TableResponse[]): { nodes: Node[]; edges: Edge[] } {
  * Nodes come from `tablesToNodes()` + `layoutAlgorithm()`, edges come from
  * `constraintsToEdges()` — all pure utilities, this component only
  * renders what they produce, registers the custom `TableNode`/
- * `RelationEdge` types, and — as of Step 20 — configures the built-in
- * `Background`, `Controls` and `MiniMap`. No custom zoom/pan/minimap
- * implementation: all three are React Flow's own components, themed via
- * CSS variables rather than replaced.
+ * `RelationEdge` types, configures the built-in `Background`, `Controls`
+ * and `MiniMap`, and — as of Step 27 — centers the view on the currently
+ * selected table (`uiStore.selectedTableId`, the same field `TableNode`
+ * writes to on click and `TableInspectorPanel` reads to open). No custom
+ * zoom/pan/minimap/camera implementation: everything here is a React Flow
+ * API (`fitView`) reacting to state, not a reimplementation of it.
+ *
+ * Named `GraphCanvasInner` and wrapped in `ReactFlowProvider` below
+ * because `useReactFlow()` (needed to call `fitView` imperatively) only
+ * works inside a component rendered within that provider's tree — it
+ * can't be called in the same component that also renders `<ReactFlow>`
+ * without the explicit provider wrapping.
  */
-export function GraphCanvas({ tables }: GraphCanvasProps) {
+function GraphCanvasInner({ tables }: GraphCanvasProps) {
   const [nodes, setNodes] = useState<Node[]>(() => buildGraph(tables).nodes)
   const [edges, setEdges] = useState<Edge[]>(() => buildGraph(tables).edges)
+
+  const { fitView } = useReactFlow()
+  const selectedTableId = useUiStore((state) => state.selectedTableId)
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan). Manual drag positions are intentionally not
@@ -108,6 +122,26 @@ export function GraphCanvas({ tables }: GraphCanvasProps) {
     setNodes(graph.nodes)
     setEdges(graph.edges)
   }, [tables])
+
+  // Centers the view on the node matching the current selection —
+  // triggered both by clicking a TableNode directly and by clicking a
+  // sidebar entry (Step 27), since both write to the same store field.
+  // Silently no-ops for a selected id that doesn't match any node (e.g.
+  // stale selection after a rescan) rather than throwing.
+  useEffect(() => {
+    if (selectedTableId === null) {
+      return
+    }
+
+    const nodeId = `table-${selectedTableId}`
+    const nodeExists = nodes.some((node) => node.id === nodeId)
+
+    if (!nodeExists) {
+      return
+    }
+
+    fitView({ nodes: [{ id: nodeId }], duration: 400, maxZoom: 1.25 })
+  }, [selectedTableId, nodes, fitView])
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((current) => applyNodeChanges(changes, current)),
@@ -140,5 +174,19 @@ export function GraphCanvas({ tables }: GraphCanvasProps) {
         />
       </ReactFlow>
     </div>
+  )
+}
+
+/**
+ * Public entry point — wraps `GraphCanvasInner` in `ReactFlowProvider` so
+ * `useReactFlow()` is available inside it. Callers (`DatabaseDetailPage`)
+ * use this export exactly as before; the provider wrapping is an internal
+ * detail, not a change to this component's public API.
+ */
+export function GraphCanvas({ tables }: GraphCanvasProps) {
+  return (
+    <ReactFlowProvider>
+      <GraphCanvasInner tables={tables} />
+    </ReactFlowProvider>
   )
 }

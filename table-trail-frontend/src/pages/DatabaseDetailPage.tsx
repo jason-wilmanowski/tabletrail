@@ -2,21 +2,28 @@ import { useParams } from 'react-router-dom'
 import { useDatabase } from '../hooks/useDatabases'
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 import { TableInspectorPanel } from '../features/table-inspector/TableInspectorPanel'
+import { SearchInput } from '../features/search-panel/SearchInput'
+import { VirtualizedTableList } from '../features/search-panel/VirtualizedTableList'
+import { useUiStore } from '../store/uiStore'
 
 /**
  * Route `/database/:id`. Loads the full nested database structure via
  * `useDatabase(id)` and renders it as a plain, temporary representation.
- * As of Step 11, a `GraphCanvas` placeholder area is also mounted below
- * it with static test nodes — not yet connected to `data` (that mapping
- * is Step 12's job). Both sections coexist so the page keeps validating
- * the raw data flow while the canvas infrastructure is verified in
- * isolation.
+ * As of Step 27, a sidebar (`SearchInput` + `VirtualizedTableList`) is
+ * mounted alongside `GraphCanvas`/`TableInspectorPanel` — both of those
+ * components existed since Steps 24/26 but were never actually rendered
+ * anywhere until now, since no step had explicitly required wiring them
+ * in before this one needed a working sidebar-to-graph connection.
+ * Clicking a sidebar entry writes `uiStore.selectedTableId`, the same
+ * field `TableNode` already writes on click — `GraphCanvas` centers on
+ * it and `TableInspectorPanel` opens for it, with no new logic in either.
  */
 export function DatabaseDetailPage() {
   const { id } = useParams<{ id: string }>()
   const databaseId = Number(id)
 
   const { data, isLoading, error } = useDatabase(databaseId)
+  const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
 
   if (isLoading) {
     return (
@@ -49,9 +56,21 @@ export function DatabaseDetailPage() {
 
       <p className="text-sm text-neutral-500">Tables: {data.tables.length}</p>
 
-      <div className="relative h-[500px] w-full overflow-hidden border">
-        <GraphCanvas tables={data.tables} />
-        <TableInspectorPanel tables={data.tables} />
+      <div className="flex h-[500px] w-full border">
+        <aside className="flex w-56 shrink-0 flex-col border-r border-neutral-800">
+          <SearchInput />
+          <div className="flex-1 overflow-hidden">
+            <VirtualizedTableList
+              tables={data.tables}
+              onSelectTable={(tableId) => setSelectedTableId(String(tableId))}
+            />
+          </div>
+        </aside>
+
+        <div className="relative flex-1 overflow-hidden">
+          <GraphCanvas tables={data.tables} />
+          <TableInspectorPanel tables={data.tables} />
+        </div>
       </div>
 
       <ul>
