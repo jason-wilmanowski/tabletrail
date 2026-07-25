@@ -13,6 +13,7 @@ Work in progress — MVP under active development.
 ## Stack
 
 - **Backend:** Python, FastAPI, SQLAlchemy
+- **Frontend:** Typescript, React
 - **Database:** PostgreSQL (persistent schema cache)
 - **Infrastructure:** Docker Compose
 
