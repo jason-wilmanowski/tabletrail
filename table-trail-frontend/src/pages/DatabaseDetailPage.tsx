@@ -34,8 +34,8 @@ export function DatabaseDetailPage() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <h1 className="text-xl font-semibold">Database Detail</h1>
-        <p className="text-sm text-muted-foreground">Loading database...</p>
+        <h1 className="text-display">Database Detail</h1>
+        <p className="text-body mt-2">Loading database...</p>
       </div>
     )
   }
@@ -43,8 +43,8 @@ export function DatabaseDetailPage() {
   if (error) {
     return (
       <div className="p-6">
-        <h1 className="text-xl font-semibold">Database Detail</h1>
-        <p className="text-sm text-danger">{error.message}</p>
+        <h1 className="text-display">Database Detail</h1>
+        <p className="mt-2 text-sm text-danger">{error.message}</p>
       </div>
     )
   }
@@ -55,12 +55,16 @@ export function DatabaseDetailPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-semibold">{data.name}</h1>
-      <p className="text-sm text-muted-foreground">
-        Type: {data.db_type} · Host: {data.host}:{data.port} · DB: {data.db_name}
+      <h1 className="text-display">{data.name}</h1>
+      <p className="text-body mt-1">
+        Type: <span className="text-technical-muted">{data.db_type}</span> · Host:{' '}
+        <span className="text-technical-muted">
+          {data.host}:{data.port}
+        </span>{' '}
+        · DB: <span className="text-technical-muted">{data.db_name}</span>
       </p>
 
-      <p className="mb-4 text-sm text-muted-foreground">Tables: {data.tables.length}</p>
+      <p className="text-body mb-4 mt-1">Tables: {data.tables.length}</p>
 
       <div className="flex h-[500px] w-full rounded-md border border-border">
         <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-panel">

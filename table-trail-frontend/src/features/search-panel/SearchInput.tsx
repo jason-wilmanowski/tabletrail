@@ -23,7 +23,7 @@ export function SearchInput() {
         value={searchQuery}
         onChange={(event) => setSearchQuery(event.target.value)}
         placeholder="Filter tables..."
-        className="w-full bg-transparent font-mono text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+        className="text-technical w-full bg-transparent placeholder:text-muted-foreground focus:outline-none"
       />
     </div>
   )

@@ -14,8 +14,8 @@ export function DatabaseOverviewPage() {
   if (isLoading) {
     return (
       <div className="p-6">
-        <h1 className="text-xl font-semibold">Database Overview</h1>
-        <p className="text-sm text-muted-foreground">Loading databases...</p>
+        <h1 className="text-display">Database Overview</h1>
+        <p className="text-body mt-2">Loading databases...</p>
       </div>
     )
   }
@@ -23,18 +23,18 @@ export function DatabaseOverviewPage() {
   if (error) {
     return (
       <div className="p-6">
-        <h1 className="text-xl font-semibold">Database Overview</h1>
-        <p className="text-sm text-danger">{error.message}</p>
+        <h1 className="text-display">Database Overview</h1>
+        <p className="mt-2 text-sm text-danger">{error.message}</p>
       </div>
     )
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-semibold">Database Overview</h1>
+      <h1 className="text-display">Database Overview</h1>
 
       {data && data.length === 0 && (
-        <p className="mt-2 text-sm text-muted-foreground">No databases scanned yet.</p>
+        <p className="text-body mt-2">No databases scanned yet.</p>
       )}
 
       <ul className="mt-4">
@@ -45,9 +45,9 @@ export function DatabaseOverviewPage() {
               onClick={() => navigate(`/database/${database.id}`)}
               className="flex w-full items-center justify-between border-b border-border py-2 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset"
             >
-              <span>{database.name}</span>
-              <span className="text-sm text-muted-foreground">{database.db_type}</span>
-              <span className="text-sm text-muted-foreground">{database.status}</span>
+              <span className="text-section">{database.name}</span>
+              <span className="text-technical-muted">{database.db_type}</span>
+              <span className="text-technical-muted">{database.status}</span>
             </button>
           </li>
         ))}

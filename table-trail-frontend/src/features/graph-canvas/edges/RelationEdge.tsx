@@ -17,6 +17,12 @@ import type { RelationEdgeType } from '../../../utils/constraintsToEdges'
  * Styled as a small technical annotation (monospace, muted, thin border)
  * rather than a diagram badge, per the design constraints — the relation
  * line itself stays the primary piece of information.
+ *
+ * Step 30 switches the label to the shared `.text-technical-muted` class
+ * instead of a one-off `text-[9px]` — that size was smaller than the
+ * 10px floor established everywhere else once the typography system
+ * existed, which the accessibility requirements for this step flag as a
+ * concern ("keine zu kleinen technischen Texte").
  */
 export function RelationEdge({
   sourceX,
@@ -53,7 +59,7 @@ export function RelationEdge({
       {labelLines.length > 0 && (
         <EdgeLabelRenderer>
           <div
-            className="nodrag nopan absolute rounded-sm border border-border bg-panel px-1.5 py-0.5 font-mono text-[9px] leading-tight text-muted-foreground"
+            className="text-technical-muted nodrag nopan absolute rounded-sm border border-border bg-panel px-1.5 py-0.5 leading-tight"
             style={{
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
             }}

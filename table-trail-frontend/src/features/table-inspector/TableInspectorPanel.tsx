@@ -28,6 +28,14 @@ interface TableInspectorPanelProps {
  * meant to be scanned quickly, not browsed like a dashboard list. Same
  * principle applied to constraint groups: a small muted type heading
  * followed by a tight list, not a card per constraint.
+ *
+ * Step 30 switches every ad-hoc `font-mono` class here to the shared
+ * typography classes from index.css. One correction along the way: empty
+ * states ("No columns"/"No constraints") moved from a mono class to
+ * `.text-body` — they're UI prose describing an app state, not literal
+ * database data, so they shouldn't have been monospace in the first
+ * place. Data type badges also stopped forcing `uppercase`, matching the
+ * same fix in `TableNode`.
  */
 export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
   const selectedTableId = useUiStore((state) => state.selectedTableId)
@@ -70,7 +78,7 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
       {selectedTable && (
         <>
           <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
-            <span className="text-sm font-medium">{selectedTable.name}</span>
+            <span className="text-section">{selectedTable.name}</span>
 
             <button
               type="button"
@@ -83,35 +91,29 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
           </div>
 
           <div className="overflow-y-auto">
-            <p className="px-3 pt-2 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-              Columns
-            </p>
+            <p className="text-label px-3 pt-2">Columns</p>
 
             {sortedColumns.length === 0 ? (
-              <p className="px-3 py-3 font-mono text-[11px] text-muted-foreground">
-                No columns
-              </p>
+              <p className="text-body px-3 py-3">No columns</p>
             ) : (
               sortedColumns.map((column) => (
                 <div
                   key={column.id}
                   className="flex items-start gap-2 border-b border-border px-3 py-2"
                 >
-                  <span className="w-4 shrink-0 pt-0.5 text-right font-mono text-[10px] text-muted-foreground">
+                  <span className="text-technical-muted w-4 shrink-0 pt-0.5 text-right">
                     {column.ordinal_position}
                   </span>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate font-mono text-xs text-foreground">
-                        {column.name}
-                      </span>
-                      <span className="shrink-0 rounded-sm border border-border px-1 font-mono text-[10px] uppercase text-muted-foreground">
+                      <span className="text-technical truncate">{column.name}</span>
+                      <span className="text-technical-muted shrink-0 rounded-sm border border-border px-1">
                         {column.data_type}
                       </span>
                     </div>
 
-                    <div className="mt-0.5 flex items-center gap-3 font-mono text-[10px] text-muted-foreground">
+                    <div className="text-technical-muted mt-0.5 flex items-center gap-3">
                       <span>{column.is_nullable ? 'NULL' : 'NOT NULL'}</span>
                       <span>Default: {column.default_value ?? '—'}</span>
                     </div>
@@ -120,20 +122,14 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
               ))
             )}
 
-            <p className="px-3 pt-3 font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-              Constraints
-            </p>
+            <p className="text-label px-3 pt-3">Constraints</p>
 
             {groupedConstraints.size === 0 ? (
-              <p className="px-3 py-3 font-mono text-[11px] text-muted-foreground">
-                No constraints
-              </p>
+              <p className="text-body px-3 py-3">No constraints</p>
             ) : (
               Array.from(groupedConstraints.entries()).map(([type, constraints]) => (
                 <div key={type} className="border-b border-border px-3 py-2">
-                  <p className="font-mono text-[10px] uppercase text-muted-foreground">
-                    {type}
-                  </p>
+                  <p className="text-technical-muted">{type}</p>
 
                   <div className="mt-1 space-y-1">
                     {constraints.map((constraint) => {
@@ -145,7 +141,7 @@ export function TableInspectorPanel({ tables }: TableInspectorPanelProps) {
                           : undefined
 
                       return (
-                        <div key={constraint.id} className="font-mono text-xs text-foreground">
+                        <div key={constraint.id} className="text-technical">
                           <span>{constraint.constraint_name}</span>
                           {referencedTable && (
                             <span className="ml-1.5 text-muted-foreground">

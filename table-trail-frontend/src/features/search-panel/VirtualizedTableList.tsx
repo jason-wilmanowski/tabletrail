@@ -94,6 +94,14 @@ const TABLE_ROW_HEIGHT = 32
  * — reading it (not writing) to mirror the same `accent`-based selection
  * state now shown on `TableNode`, so a table selected via the sidebar
  * looks selected in the sidebar too, not just in the graph.
+ *
+ * Step 30 moves everything onto the shared typography classes. The
+ * schema group header stopped forcing `uppercase`: it displays a literal
+ * `schema_name` value, same as the schema badge in `TableNode`, and that
+ * one already preserves real case — this brings the two into agreement
+ * instead of showing the same identifier differently in two places.
+ * Empty states ("No tables"/"No matching tables") moved to `.text-body`
+ * since they're UI messages, not database data.
  */
 export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTableListProps) {
   const parentRef = useRef<HTMLDivElement>(null)
@@ -119,17 +127,11 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
   })
 
   if (tables.length === 0) {
-    return (
-      <div className="px-3 py-3 font-mono text-[11px] text-muted-foreground">No tables</div>
-    )
+    return <div className="text-body px-3 py-3">No tables</div>
   }
 
   if (filteredTables.length === 0) {
-    return (
-      <div className="px-3 py-3 font-mono text-[11px] text-muted-foreground">
-        No matching tables
-      </div>
-    )
+    return <div className="text-body px-3 py-3">No matching tables</div>
   }
 
   return (
@@ -154,7 +156,7 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
               <div
                 key={`header-${row.schemaName}`}
                 style={style}
-                className="flex items-end px-3 pb-1 font-mono text-[10px] uppercase tracking-wide text-muted-foreground"
+                className="text-technical-muted flex items-end px-3 pb-1"
               >
                 {row.schemaName}
               </div>
@@ -170,10 +172,8 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
               type="button"
               onClick={() => onSelectTable?.(table.id)}
               style={style}
-              className={`flex items-center gap-2 border-b border-border border-l-2 px-3 text-left font-mono text-xs transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset ${
-                isSelected
-                  ? 'border-l-accent bg-surface-hover text-foreground'
-                  : 'border-l-transparent text-foreground'
+              className={`text-technical flex items-center gap-2 border-b border-border border-l-2 px-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset ${
+                isSelected ? 'border-l-accent bg-surface-hover' : 'border-l-transparent'
               }`}
             >
               <span className="truncate">{table.name}</span>
