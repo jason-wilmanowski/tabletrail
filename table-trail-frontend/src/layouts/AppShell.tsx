@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Database } from 'lucide-react'
+import { Database, Plus } from 'lucide-react'
 
 interface AppShellProps {
   children?: ReactNode
@@ -35,9 +35,17 @@ function Sidebar() {
 
 function Topbar() {
   return (
-    <header className="flex h-14 items-center border-b border-border bg-panel px-4">
+    <header className="flex h-14 items-center justify-between border-b border-border bg-panel px-4">
       <Link to="/" className="text-section">
         TableTrail
+      </Link>
+
+      <Link
+        to="/connect"
+        className="flex items-center gap-1.5 rounded-md border border-border bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Connect Database
       </Link>
     </header>
   )
