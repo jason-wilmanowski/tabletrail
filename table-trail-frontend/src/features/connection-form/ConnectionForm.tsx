@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useScan } from '../../hooks/useScan'
+import { DatabaseTypeSelect } from './DatabaseTypeSelect'
 import type { DBType, ConnectionFields } from '../../types/common'
 
 interface FormValues {
@@ -15,12 +16,6 @@ interface FormValues {
 }
 
 type FormErrors = Partial<Record<keyof FormValues, string>>
-
-const DB_TYPE_OPTIONS: { value: DBType; label: string }[] = [
-  { value: 'postgresql', label: 'PostgreSQL' },
-  { value: 'mysql', label: 'MySQL' },
-  { value: 'mariadb', label: 'MariaDB' },
-]
 
 const INITIAL_VALUES: FormValues = {
   name: '',
@@ -140,19 +135,12 @@ export function ConnectionForm() {
         <label htmlFor="db_type" className={LABEL_CLASSES}>
           Database Type
         </label>
-        <select
+        <DatabaseTypeSelect
           id="db_type"
           value={values.db_type}
-          onChange={(e) => updateField('db_type', e.target.value as DBType)}
-          className={FIELD_CLASSES}
-        >
-          <option value="">Select a database type</option>
-          {DB_TYPE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => updateField('db_type', value)}
+          fieldClassName={FIELD_CLASSES}
+        />
         {errors.db_type && <p className="mt-1 text-xs text-danger">{errors.db_type}</p>}
       </div>
 

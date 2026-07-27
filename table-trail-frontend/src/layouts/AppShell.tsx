@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Database, Plus } from 'lucide-react'
+import { Database, Plus, Settings } from 'lucide-react'
 
 interface AppShellProps {
   children?: ReactNode
@@ -29,6 +29,15 @@ function Sidebar() {
         <Database className="h-4 w-4 shrink-0" />
         <span className="text-section hidden md:inline">Databases</span>
       </Link>
+
+      <button
+        type="button"
+        title="Settings"
+        className="mt-auto flex items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        <Settings className="h-4 w-4 shrink-0" />
+        <span className="text-section hidden md:inline">Settings</span>
+      </button>
     </aside>
   )
 }
@@ -36,7 +45,7 @@ function Sidebar() {
 function Topbar() {
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-panel px-4">
-      <Link to="/" className="text-section">
+      <Link to="/" className="text-lg font-bold tracking-tight text-foreground">
         TableTrail
       </Link>
 
