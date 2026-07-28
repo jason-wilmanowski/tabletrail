@@ -20,3 +20,7 @@ class Constraints(Base):
         back_populates="constraint",
         cascade="all, delete-orphan"
     )
+
+    @property
+    def column_names(self) -> list[str]:
+        return [cc.column.name for cc in self.constraint_columns]
