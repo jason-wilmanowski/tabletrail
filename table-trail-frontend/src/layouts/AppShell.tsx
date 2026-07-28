@@ -54,14 +54,14 @@ function Sidebar() {
         </div>
       )}
 
-      <button
-        type="button"
+      <Link
+        to="/settings"
         title="Settings"
         className="mt-auto flex items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
       >
         <Settings className="h-4 w-4 shrink-0" />
         <span className="text-section hidden md:inline">Settings</span>
-      </button>
+      </Link>
     </aside>
   )
 }
