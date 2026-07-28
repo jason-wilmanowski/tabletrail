@@ -9,6 +9,14 @@ import {
   ArrowRight,
 } from 'lucide-react'
 import { useDatabases } from '../hooks/useDatabases'
+import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
+import type { DBStatus } from '../types/common'
+
+const STATUS_DOT: Record<DBStatus, string> = {
+  ready: 'bg-success',
+  scanning: 'bg-accent',
+  error: 'bg-danger',
+}
 
 const FEATURES = [
   {
@@ -69,19 +77,27 @@ export function DatabaseOverviewPage() {
   if (hasDatabases) {
     return (
       <div className="p-6">
-        <h1 className="text-display">Connected Databases</h1>
+        <h1 className="flex items-center gap-2 text-display">
+          <Database className="h-5 w-5" />
+          Connected Databases
+        </h1>
 
-        <ul className="mt-4">
+        <ul className="mt-4 space-y-2">
           {data.map((database) => (
             <li key={database.id}>
               <button
                 type="button"
                 onClick={() => navigate(`/database/${database.id}`)}
-                className="flex w-full items-center justify-between border-b border-border py-2 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset"
+                className="flex w-full items-center gap-3 rounded-md border border-border p-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <span className="text-section">{database.name}</span>
-                <span className="text-technical-muted">{database.db_type}</span>
-                <span className="text-technical-muted">{database.status}</span>
+                <DatabaseTypeIcon type={database.db_type} className="h-5 w-5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-section truncate">{database.name}</p>
+                  <p className="text-technical-muted mt-0.5 flex items-center gap-1.5">
+                    <span className={`h-1.5 w-1.5 rounded-full ${STATUS_DOT[database.status]}`} />
+                    {database.status}
+                  </p>
+                </div>
               </button>
             </li>
           ))}
