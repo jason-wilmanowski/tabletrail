@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { scanDatabase } from '../api/scanner'
 
 /**
@@ -7,7 +7,12 @@ import { scanDatabase } from '../api/scanner'
  * loading/error/success state around the existing API function.
  */
 export function useScan() {
+  const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: scanDatabase,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['databases'] })
+    },
   })
 }

@@ -22,6 +22,7 @@ import type { TableResponse } from '../../types/table'
 
 interface GraphCanvasProps {
   tables: TableResponse[]
+  interactive?: boolean
 }
 
 /**
@@ -106,7 +107,7 @@ function buildGraph(tables: TableResponse[]): { nodes: Node[]; edges: Edge[] } {
  * can't be called in the same component that also renders `<ReactFlow>`
  * without the explicit provider wrapping.
  */
-function GraphCanvasInner({ tables }: GraphCanvasProps) {
+function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
   const [nodes, setNodes] = useState<Node[]>(() => buildGraph(tables).nodes)
   const [edges, setEdges] = useState<Edge[]>(() => buildGraph(tables).edges)
 
@@ -163,15 +164,20 @@ function GraphCanvasInner({ tables }: GraphCanvasProps) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         fitView
+        nodesDraggable={interactive}
+        nodesConnectable={false}
+        elementsSelectable={interactive}
+        panOnDrag={interactive}
+        zoomOnScroll={interactive}
+        zoomOnPinch={interactive}
+        zoomOnDoubleClick={interactive}
+        preventScrolling={interactive}
       >
         <Background color="hsl(var(--border))" gap={24} />
-        <Controls showInteractive={false} />
-        <MiniMap
-          pannable
-          zoomable
-          nodeStrokeWidth={1}
-          className="!border !border-border"
-        />
+        {interactive && <Controls showInteractive={false} />}
+        {interactive && (
+          <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
+        )}
       </ReactFlow>
     </div>
   )
@@ -183,10 +189,10 @@ function GraphCanvasInner({ tables }: GraphCanvasProps) {
  * use this export exactly as before; the provider wrapping is an internal
  * detail, not a change to this component's public API.
  */
-export function GraphCanvas({ tables }: GraphCanvasProps) {
+export function GraphCanvas({ tables, interactive }: GraphCanvasProps) {
   return (
     <ReactFlowProvider>
-      <GraphCanvasInner tables={tables} />
+      <GraphCanvasInner tables={tables} interactive={interactive} />
     </ReactFlowProvider>
   )
 }

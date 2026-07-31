@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Database, Plus, Settings } from 'lucide-react'
 import { useDatabases } from '../hooks/useDatabases'
+import { useUiStore } from '../store/uiStore'
 import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
 
 interface AppShellProps {
@@ -21,32 +22,37 @@ export function AppShell({ children }: AppShellProps) {
   )
 }
 
+const NAV_ITEM_CLASSES =
+  'flex w-full items-center justify-start gap-2.5 rounded-md px-2.5 py-2 text-foreground/75 transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+
 function Sidebar() {
   const { data } = useDatabases()
   const navigate = useNavigate()
+  const setPreviewDatabaseId = useUiStore((state) => state.setPreviewDatabaseId)
 
   return (
-    <aside className="flex w-16 flex-col items-center gap-2 overflow-y-auto border-r border-border bg-panel py-3 md:w-56 md:items-stretch md:px-3">
-      <Link
-        to="/"
-        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      >
-        <Database className="h-4 w-4 shrink-0" />
-        <span className="text-section hidden md:inline">Databases</span>
+    <aside className="flex w-[70px] flex-col items-center gap-2 overflow-y-auto border-r border-border bg-panel py-3 md:w-[248px] md:items-stretch md:px-3">
+      <Link to="/" className={NAV_ITEM_CLASSES}>
+        <Database className="h-[18px] w-[18px] shrink-0" />
+        <span className="text-section hidden text-base md:inline">Databases</span>
       </Link>
 
       {data && data.length > 0 && (
-        <div className="mt-1 flex flex-col gap-0.5">
+        <div
+          className="mt-1 flex w-full flex-col gap-0.5"
+          onMouseLeave={() => setPreviewDatabaseId(null)}
+        >
           {data.map((database) => (
             <button
               key={database.id}
               type="button"
               onClick={() => navigate(`/database/${database.id}`)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onMouseEnter={() => setPreviewDatabaseId(database.id)}
+              className={NAV_ITEM_CLASSES}
               title={database.name}
             >
-              <DatabaseTypeIcon type={database.db_type} className="h-3.5 w-3.5 shrink-0" />
-              <span className="text-technical hidden min-w-0 flex-1 truncate md:block">
+              <DatabaseTypeIcon type={database.db_type} className="h-4 w-4 shrink-0" />
+              <span className="text-technical hidden text-sm md:block md:max-w-[170px] md:truncate md:text-left">
                 {database.name}
               </span>
             </button>
@@ -54,13 +60,9 @@ function Sidebar() {
         </div>
       )}
 
-      <Link
-        to="/settings"
-        title="Settings"
-        className="mt-auto flex items-center gap-2 rounded-md px-2 py-1.5 text-muted-foreground transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-      >
-        <Settings className="h-4 w-4 shrink-0" />
-        <span className="text-section hidden md:inline">Settings</span>
+      <Link to="/settings" title="Settings" className={`mt-auto ${NAV_ITEM_CLASSES}`}>
+        <Settings className="h-[18px] w-[18px] shrink-0" />
+        <span className="text-section hidden text-base md:inline">Settings</span>
       </Link>
     </aside>
   )
@@ -69,7 +71,7 @@ function Sidebar() {
 function Topbar() {
   return (
     <header className="flex h-14 items-center justify-between border-b border-border bg-panel px-4">
-      <Link to="/" className="text-lg font-bold tracking-tight text-foreground">
+      <Link to="/welcome" className="text-lg font-bold tracking-tight text-foreground">
         TableTrail
       </Link>
 
