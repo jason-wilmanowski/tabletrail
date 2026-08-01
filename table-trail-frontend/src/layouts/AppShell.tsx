@@ -51,8 +51,8 @@ function Sidebar() {
               className={NAV_ITEM_CLASSES}
               title={database.name}
             >
-              <DatabaseTypeIcon type={database.db_type} className="h-4 w-4 shrink-0" />
-              <span className="text-technical hidden text-sm md:block md:max-w-[170px] md:truncate md:text-left">
+              <DatabaseTypeIcon type={database.db_type} className="h-5 w-5 shrink-0" />
+              <span className="text-technical hidden text-[17px] md:block md:max-w-[170px] md:truncate md:text-left">
                 {database.name}
               </span>
             </button>
