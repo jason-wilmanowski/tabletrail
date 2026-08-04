@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDatabase } from '../hooks/useDatabases'
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 import { TableInspectorPanel } from '../features/table-inspector/TableInspectorPanel'
 import { SearchInput } from '../features/search-panel/SearchInput'
 import { VirtualizedTableList } from '../features/search-panel/VirtualizedTableList'
+import { EditDatabaseModal } from '../features/database-detail/EditDatabaseModal'
 import { useUiStore } from '../store/uiStore'
 
 const INFO_ROWS = ['db_type', 'host', 'port', 'db_name'] as const
@@ -20,6 +22,7 @@ export function DatabaseDetailPage() {
 
   const { data, isLoading, error } = useDatabase(databaseId)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
+  const [isEditOpen, setIsEditOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -60,6 +63,7 @@ export function DatabaseDetailPage() {
 
           <button
             type="button"
+            onClick={() => setIsEditOpen(true)}
             className="mt-4 w-full rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             Edit Details
@@ -95,6 +99,10 @@ export function DatabaseDetailPage() {
         <GraphCanvas tables={data.tables} />
         <TableInspectorPanel tables={data.tables} />
       </div>
+
+      {isEditOpen && (
+        <EditDatabaseModal database={data} onClose={() => setIsEditOpen(false)} />
+      )}
     </div>
   )
 }
