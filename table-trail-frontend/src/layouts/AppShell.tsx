@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Database, Plus, Settings } from 'lucide-react'
+import { Database, Plus, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useDatabases } from '../hooks/useDatabases'
 import { useUiStore } from '../store/uiStore'
 import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
@@ -29,13 +29,34 @@ function Sidebar() {
   const { data } = useDatabases()
   const navigate = useNavigate()
   const setPreviewDatabaseId = useUiStore((state) => state.setPreviewDatabaseId)
+  const collapsed = useUiStore((state) => state.sidebarCollapsed)
+  const setSidebarCollapsed = useUiStore((state) => state.setSidebarCollapsed)
 
   return (
-    <aside className="flex w-[70px] flex-col items-center gap-2 overflow-y-auto border-r border-border bg-panel py-3 md:w-[248px] md:items-stretch md:px-3">
-      <Link to="/" className={NAV_ITEM_CLASSES}>
-        <Database className="h-[18px] w-[18px] shrink-0" />
-        <span className="text-section hidden text-base md:inline">Databases</span>
-      </Link>
+    <aside
+      className={`flex flex-col gap-2 overflow-y-auto border-r border-border bg-panel py-3 transition-all ${
+        collapsed ? 'w-[60px] items-center px-2' : 'w-[198px] items-stretch px-3'
+      }`}
+    >
+      <div className="flex w-full items-center gap-1">
+        <Link to="/" className={NAV_ITEM_CLASSES}>
+          <Database className="h-[18px] w-[18px] shrink-0" />
+          {!collapsed && <span className="text-section text-base">Databases</span>}
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setSidebarCollapsed(!collapsed)}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="shrink-0 rounded-md p-1.5 text-foreground/75 transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
+        </button>
+      </div>
 
       {data && data.length > 0 && (
         <div
@@ -52,9 +73,11 @@ function Sidebar() {
               title={database.name}
             >
               <DatabaseTypeIcon type={database.db_type} className="h-5 w-5 shrink-0" />
-              <span className="text-technical hidden text-[17px] md:block md:max-w-[170px] md:truncate md:text-left">
-                {database.name}
-              </span>
+              {!collapsed && (
+                <span className="text-technical block max-w-[140px] truncate text-left text-[17px]">
+                  {database.name}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -62,7 +85,7 @@ function Sidebar() {
 
       <Link to="/settings" title="Settings" className={`mt-auto ${NAV_ITEM_CLASSES}`}>
         <Settings className="h-[18px] w-[18px] shrink-0" />
-        <span className="text-section hidden text-base md:inline">Settings</span>
+        {!collapsed && <span className="text-section text-base">Settings</span>}
       </Link>
     </aside>
   )
