@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <title>
+        Database Report - {{ database.name }}
+    </title>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+
+        h1 {
+            color: #222;
+        }
+
+        h2 {
+            margin-top: 30px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        h3 {
+            margin-top: 20px;
+        }
+
+        .info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .table {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .column {
+            margin-left: 20px;
+        }
+
+        .constraint {
+            margin-left: 20px;
+            color: #555;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<h1>
+    Database Report
+</h1>
+
+
+<div class="info">
+
+    <p>
+        <strong>Name:</strong>
+        {{ database.name }}
+    </p>
+
+    <p>
+        <strong>Type:</strong>
+        {{ database.type }}
+    </p>
+
+    <p>
+        <strong>Generated:</strong>
+        {{ generated_at }}
+    </p>
+
+</div>
+
+
+
+<h2>
+    Tables
+</h2>
+
+
+
+{% for table in database.tables %}
+
+
+<div class="table">
+
+
+    <h3>
+        {{ table.name }}
+    </h3>
+
+
+    <h4>
+        Columns
+    </h4>
+
+
+    {% for column in table.columns %}
+
+        <div class="column">
+
+            {{ column.name }}
+
+            -
+            
+            {{ column.data_type }}
+
+        </div>
+
+
+    {% endfor %}
+
+
+
+
+
+    <h4>
+        Constraints
+    </h4>
+
+
+    {% for constraint in table.constraints %}
+
+        <div class="constraint">
+
+            {{ constraint.constraint_type }}
+
+            :
+
+            {{ constraint.constraint_name }}
+
+        </div>
+
+
+    {% endfor %}
+
+
+
+</div>
+
+
+{% endfor %}
+
+
+
+</body>
+
+</html>
