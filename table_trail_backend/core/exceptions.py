@@ -13,6 +13,13 @@ class ScanningSystemError(Exception):
         super().__init__(message)
 
 
+class ExportSystemError(Exception):
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
+
+
 
 # General Exceptions
 class NotAllowedError(DatabaseSystemError):
@@ -46,6 +53,15 @@ class ScannerUnsupportedDBError(ScanningSystemError):
     pass
 
 class ScannerDataError(ScanningSystemError):
+    pass
+
+
+# Export Errors
+
+class ExportTypeUnsupportedError(ExportSystemError):
+    pass
+
+class ExportRuntimeError(ExportSystemError):
     pass
 
 
