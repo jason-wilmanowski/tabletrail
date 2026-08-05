@@ -11,3 +11,9 @@ class DBStatus(Enum):
     SCANNING = "scanning"
     READY = "ready"
     ERROR = "error"
+
+
+class ExportType(Enum):
+    JSON = "json"
+    PDF = "pdf"
+    MARKDOWN = "markdown"
