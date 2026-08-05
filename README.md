@@ -27,7 +27,7 @@ Work in progress — MVP under active development.
 git clone https://github.com/jason-wilmanowski/tabletrail.git
 cd tabletrail
 cp .env.example .env
-docker-compose up
+docker-compose up --build
 ```
 
 ## License
