@@ -1,4 +1,6 @@
 from table_trail_backend.core.enums import ExportType
+from table_trail_backend.generators.html_generator import HTMLGenerator
+from table_trail_backend.generators.pdf_export import PdfExport
 from table_trail_backend.repositories.database_repository import DatabasesRepository
 from table_trail_backend.schemas.export_schema import CreateExport
 from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
@@ -42,7 +44,7 @@ class ExportService:
         export_class = self._get_export_type(export_details.export_type)
 
         try:
-            export_file = export_class.export()
+            export_file = export_class.run_export()
         except ExportRuntimeError:
             raise
 
@@ -55,6 +57,6 @@ class ExportService:
             ExportType.MARKDOWN: MarkdownExport,
         }
         if export_type not in export_map:
-            raise ExportTypeUnsupportedError(message="Unsupported database type",
+            raise ExportTypeUnsupportedError(message="Unsupported export file type",
                                             status_code=422)
         return export_map[export_type]()
