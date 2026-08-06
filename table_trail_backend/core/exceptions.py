@@ -64,5 +64,8 @@ class ExportTypeUnsupportedError(ExportSystemError):
 class ExportRuntimeError(ExportSystemError):
     pass
 
+class ExportPdfError(ExportSystemError):
+    pass
+
 
 
