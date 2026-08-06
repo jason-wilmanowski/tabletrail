@@ -1,5 +1,5 @@
-from table_trail_backend.generators.html_generator import HTMLGenerator
-from table_trail_backend.generators.pdf_generator import PdfGenerator
+from table_trail_backend.export.generators.html_generator import HTMLGenerator
+from table_trail_backend.export.generators.pdf_generator import PdfGenerator
 from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
 
 

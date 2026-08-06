@@ -1,6 +1,5 @@
 from table_trail_backend.core.enums import ExportType
-from table_trail_backend.generators.html_generator import HTMLGenerator
-from table_trail_backend.generators.pdf_export import PdfExport
+from table_trail_backend.export.pdf_export import PdfExport
 from table_trail_backend.repositories.database_repository import DatabasesRepository
 from table_trail_backend.schemas.export_schema import CreateExport
 from table_trail_backend.schemas.database_schema import DatabaseStructureResponse

@@ -10,7 +10,7 @@ class HTMLGenerator:
     @staticmethod
     def generate_html(database: DatabaseStructureResponse):
 
-        env = Environment(loader=FileSystemLoader('templates'))
+        env = Environment(loader=FileSystemLoader('../templates'))
         template = env.get_template('generated/pdf.html')
 
         generated_html = template.render(
