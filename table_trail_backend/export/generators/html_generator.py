@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from table_trail_backend.core.exceptions import ExportPdfError
@@ -10,8 +11,11 @@ class HTMLGenerator:
     @staticmethod
     def generate_html(database: DatabaseStructureResponse):
 
-        env = Environment(loader=FileSystemLoader('../templates'))
-        template = env.get_template('generated/pdf.html')
+        base_directory = Path(__file__).resolve().parent.parent
+        template_dir = base_directory / "templates"
+
+        env = Environment(loader=FileSystemLoader(template_dir))
+        template = env.get_template('database_pdf.html')
 
         generated_html = template.render(
             database=database,
