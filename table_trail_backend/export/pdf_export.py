@@ -1,7 +1,7 @@
 from table_trail_backend.export.generators.html_generator import HTMLGenerator
 from table_trail_backend.export.generators.pdf_generator import PdfGenerator
 from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
-
+from table_trail_backend.schemas.export_schema import ExportResult
 
 class PdfExport:
 
@@ -20,6 +20,12 @@ class PdfExport:
         # 2. generate pdf file as bytes with html
         pdf_bytes = self.pdf_gen.generate_pdf(html)
 
-        # 3. return pdf bytes to service for stateless streaming response
-        return pdf_bytes
+        # 3. create export return dict
+        pdf_file = ExportResult(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            filename=f"{self.database.name}-Structure.pdf"
+        )
+        # 4. return pdf bytes to service for stateless streaming response
+        return pdf_file
 
