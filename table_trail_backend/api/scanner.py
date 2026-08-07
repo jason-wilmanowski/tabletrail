@@ -30,6 +30,27 @@ async def create_database(database_details: CreateDatabase, db: AsyncSession = D
     return database_structure
 
 
+@router.patch("", response_model=DatabaseStructureResponse)
+async def rescan_database(database_details: CreateDatabase, db: AsyncSession = Depends(get_db)) -> DatabaseStructureResponse:
+
+    scanner_service = ScanService(db)
+    database_service = DatabaseService(db)
+
+    try:
+        # call service to update and scan db via database details
+        database = await scanner_service.execute_scan(database_details)
+    except ScanningSystemError as error:
+        raise HTTPException(status_code=error.status_code, detail=error.message)
+
+    try:
+        # get full updated database structure via database id
+        database_structure = await database_service.get_full_database(database.id)
+    except DatabaseSystemError as error:
+        raise HTTPException(status_code=error.status_code, detail=error.message)
+
+    return database_structure
+
+
 
 
 
