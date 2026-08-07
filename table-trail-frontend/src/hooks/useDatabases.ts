@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
-import { getAllDatabases, getDatabase } from '../api/databases'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getAllDatabases, getDatabase, updateDatabase } from '../api/databases'
+import type { UpdateDatabaseRequest } from '../api/databases'
 import type { DatabaseOverviewResponse, DatabaseStructureResponse } from '../types/database'
 
 /**
@@ -25,5 +26,28 @@ export function useDatabase(id: number) {
     queryKey: ['database', id],
     queryFn: () => getDatabase(id),
     enabled: Boolean(id),
+  })
+}
+
+/**
+ * Wraps `updateDatabase(id, data)`. The endpoint returns only connection
+ * fields (`DatabaseResponse`, no `tables`), so on success those fields are
+ * merged into the existing `['database', id]` cache entry directly — the
+ * detail page updates immediately without waiting for a refetch and
+ * without losing the already-loaded `tables`. `['databases']` (shared by
+ * the overview page and the global sidebar) is invalidated so both pick
+ * up the change from a single shared query, not a duplicated request.
+ */
+export function useUpdateDatabase(id: number) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (data: UpdateDatabaseRequest) => updateDatabase(id, data),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<DatabaseStructureResponse>(['database', id], (old) =>
+        old ? { ...old, ...updated } : old
+      )
+      queryClient.invalidateQueries({ queryKey: ['databases'] })
+    },
   })
 }

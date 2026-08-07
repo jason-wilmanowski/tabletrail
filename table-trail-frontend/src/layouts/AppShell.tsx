@@ -35,14 +35,16 @@ function Sidebar() {
   return (
     <aside
       className={`flex flex-col gap-2 overflow-y-auto border-r border-border bg-panel py-3 transition-all ${
-        collapsed ? 'w-[60px] items-center px-2' : 'w-[198px] items-stretch px-3'
+        collapsed ? 'w-[55px] items-center px-1.5' : 'w-[198px] items-stretch px-3'
       }`}
     >
-      <div className="flex w-full items-center gap-1">
-        <Link to="/" className={NAV_ITEM_CLASSES}>
-          <Database className="h-[18px] w-[18px] shrink-0" />
-          {!collapsed && <span className="text-section text-base">Databases</span>}
-        </Link>
+      <div className={`flex w-full items-center ${collapsed ? 'justify-center' : 'gap-1'}`}>
+        {!collapsed && (
+          <Link to="/" className={NAV_ITEM_CLASSES}>
+            <Database className="h-[18px] w-[18px] shrink-0" />
+            <span className="text-section text-base">Databases</span>
+          </Link>
+        )}
 
         <button
           type="button"
@@ -58,7 +60,7 @@ function Sidebar() {
         </button>
       </div>
 
-      {data && data.length > 0 && (
+      {!collapsed && data && data.length > 0 && (
         <div
           className="mt-1 flex w-full flex-col gap-0.5"
           onMouseLeave={() => setPreviewDatabaseId(null)}
@@ -73,17 +75,19 @@ function Sidebar() {
               title={database.name}
             >
               <DatabaseTypeIcon type={database.db_type} className="h-5 w-5 shrink-0" />
-              {!collapsed && (
-                <span className="text-technical block max-w-[140px] truncate text-left text-[17px]">
-                  {database.name}
-                </span>
-              )}
+              <span className="text-technical block max-w-[140px] truncate text-left text-[17px]">
+                {database.name}
+              </span>
             </button>
           ))}
         </div>
       )}
 
-      <Link to="/settings" title="Settings" className={`mt-auto ${NAV_ITEM_CLASSES}`}>
+      <Link
+        to="/settings"
+        title="Settings"
+        className={collapsed ? 'mt-auto rounded-md p-1.5 text-foreground/75 transition-colors hover:bg-surface-hover hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring' : `mt-auto ${NAV_ITEM_CLASSES}`}
+      >
         <Settings className="h-[18px] w-[18px] shrink-0" />
         {!collapsed && <span className="text-section text-base">Settings</span>}
       </Link>
