@@ -1,5 +1,6 @@
 from table_trail_backend.core.enums import ExportType
 from table_trail_backend.export.json_export import JsonExport
+from table_trail_backend.export.markdown_export import MarkdownExport
 from table_trail_backend.export.pdf_export import PdfExport
 from table_trail_backend.repositories.database_repository import DatabasesRepository
 from table_trail_backend.schemas.export_schema import CreateExport
@@ -61,6 +62,7 @@ class ExportService:
         export_map = {
             ExportType.PDF: PdfExport,
             ExportType.JSON: JsonExport,
+            ExportType.MARKDOWN: MarkdownExport,
         }
         if export_type not in export_map:
             raise ExportTypeUnsupportedError(message="Unsupported export file type",
