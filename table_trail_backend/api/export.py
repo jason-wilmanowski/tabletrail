@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 import io
 from table_trail_backend.core.dependencies import get_db
-from table_trail_backend.core.exceptions import ExportSystemError
+from table_trail_backend.core.exceptions import ExportSystemError, DatabaseSystemError
 from table_trail_backend.schemas.export_schema import CreateExport
 from table_trail_backend.services.export_service import ExportService
 
@@ -19,6 +19,8 @@ async def create_export(export_details : CreateExport, db: AsyncSession = Depend
     try:
         export_file = await export_service.execute_export(export_details)
     except ExportSystemError as error:
+        raise HTTPException(status_code=error.status_code, detail=error.message)
+    except DatabaseSystemError as error:
         raise HTTPException(status_code=error.status_code, detail=error.message)
 
     return StreamingResponse(
