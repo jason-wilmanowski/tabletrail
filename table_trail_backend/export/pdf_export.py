@@ -20,11 +20,11 @@ class PdfExport:
         pdf_bytes = self.pdf_gen.generate_pdf(html)
 
         # 3. create export return dict
-        pdf_file = ExportResult(
+        pdf_export = ExportResult(
             content=pdf_bytes,
             media_type="application/pdf",
             filename=f"{database.name}-Structure.pdf"
         )
         # 4. return pdf bytes to service for stateless streaming response
-        return pdf_file
+        return pdf_export
 

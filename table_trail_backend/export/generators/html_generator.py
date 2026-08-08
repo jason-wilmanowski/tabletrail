@@ -1,7 +1,6 @@
 from datetime import datetime
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
-
 from table_trail_backend.core.exceptions import ExportPdfError
 from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
 
