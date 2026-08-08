@@ -12,7 +12,7 @@ class ScanningSystemError(Exception):
         self.status_code = status_code
         super().__init__(message)
 
-
+# Base Export Exception
 class ExportSystemError(Exception):
     def __init__(self, message: str, status_code: int):
         self.message = message

@@ -1,5 +1,4 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from table_trail_backend.api.database import update_database
 from table_trail_backend.core.enums import DBType, DBStatus
 from table_trail_backend.core.exceptions import (

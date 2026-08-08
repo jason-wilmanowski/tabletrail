@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 
 
-# Instert Section
+# Insert Section
 class CreateConstraint(BaseModel):
     constraint_type : str
     constraint_name : str
