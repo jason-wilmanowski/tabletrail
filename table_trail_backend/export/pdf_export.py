@@ -5,17 +5,16 @@ from table_trail_backend.schemas.export_schema import ExportResult
 
 class PdfExport:
 
-    def __init__(self, database: DatabaseStructureResponse):
-        self.database = database
+    def __init__(self):
         self.pdf_gen = PdfGenerator()
         self.html_gen = HTMLGenerator()
 
 
 
-    def run_export(self):
+    def run_export(self, database: DatabaseStructureResponse):
 
         # 1. generate dynamic html file with database structure
-        html = self.html_gen.generate_html(database=self.database)
+        html = self.html_gen.generate_html(database=database)
 
         # 2. generate pdf file as bytes with html
         pdf_bytes = self.pdf_gen.generate_pdf(html)
@@ -24,7 +23,7 @@ class PdfExport:
         pdf_file = ExportResult(
             content=pdf_bytes,
             media_type="application/pdf",
-            filename=f"{self.database.name}-Structure.pdf"
+            filename=f"{database.name}-Structure.pdf"
         )
         # 4. return pdf bytes to service for stateless streaming response
         return pdf_file
