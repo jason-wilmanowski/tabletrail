@@ -5,20 +5,6 @@ class DatabaseSystemError(Exception):
         self.status_code = status_code
         super().__init__(message)
 
-# Base Scanning Exception
-class ScanningSystemError(Exception):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
-
-# Base Export Exception
-class ExportSystemError(Exception):
-    def __init__(self, message: str, status_code: int):
-        self.message = message
-        self.status_code = status_code
-        super().__init__(message)
-
 
 
 # General Exceptions
@@ -44,6 +30,14 @@ class ConstraintError(DatabaseSystemError):
 
 
 
+# Base Scanning Exception
+class ScanningSystemError(Exception):
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
+
+
 # Scanning Exceptions
 class ScannerConnectionError(ScanningSystemError):
     pass
@@ -56,6 +50,15 @@ class ScannerDataError(ScanningSystemError):
     pass
 
 
+
+# Base Export Exception
+class ExportSystemError(Exception):
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
+
+
 # Export Errors
 
 class ExportTypeUnsupportedError(ExportSystemError):
@@ -65,6 +68,12 @@ class ExportRuntimeError(ExportSystemError):
     pass
 
 class ExportPdfError(ExportSystemError):
+    pass
+
+class ExportJsonError(ExportSystemError):
+    pass
+
+class ExportMarkdownError(ExportSystemError):
     pass
 
 
