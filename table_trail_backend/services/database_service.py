@@ -34,7 +34,10 @@ class DatabaseService:
         if database is None:
             raise DatabaseError(message=f"Database with id {db_id} not found",
                                 status_code=404)
-        return await self.db_repo.update(db_id, update_data)
+
+        updated_database = await self.db_repo.update(db_id, update_data)
+        await self.db.commit()
+        return updated_database
 
     async def search_database_components(self, db_id: int, search: str):
 
@@ -60,3 +63,4 @@ class DatabaseService:
                                 status_code=404)
         await self.db_repo.delete_database(db_id)
         await self.db.commit()
+        return
