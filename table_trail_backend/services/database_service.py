@@ -27,7 +27,7 @@ class DatabaseService:
         return await self.db_repo.get_all_databases()
 
     async def update_database(self, db_id: int, update_data: UpdateDatabase):
-        if not update_data:
+        if all(value is None for value in update_data.model_dump().values()):
             raise DatabaseError(message=f"No update data provided",
                                 status_code=400)
         database = await self.db_repo.get_one_database(db_id)
