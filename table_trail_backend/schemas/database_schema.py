@@ -26,7 +26,7 @@ class UpdateDatabase(BaseModel):
     name: str | None = None
     db_type : DBType | None = None
     host: str | None = None
-    port: str | None = None
+    port: int | None = None
     db_name: str | None = None
     username: str | None = None
     password: str | None = None
