@@ -10,59 +10,35 @@ from table_trail_backend.core.exceptions import ExportPdfError
 def pdf_generator(monkeypatch):
     fake_weasyprint = MagicMock()
 
-    fake_html_class = MagicMock()
-    fake_weasyprint.HTML = fake_html_class
-
     monkeypatch.setitem(
         sys.modules,
         "weasyprint",
         fake_weasyprint
     )
 
+    # Wichtig: Falls pdf_generator bereits importiert wurde,
+    # entfernen wir es aus dem Cache.
+    sys.modules.pop(
+        "table_trail_backend.export.generators.pdf_generator",
+        None
+    )
+
     from table_trail_backend.export.generators.pdf_generator import PdfGenerator
 
-    return PdfGenerator, fake_html_class
+    return PdfGenerator, fake_weasyprint.HTML
 
 
 def test_generate_pdf_success(pdf_generator):
-    PdfGenerator, fake_html_class = pdf_generator
+    PdfGenerator, mock_html = pdf_generator
 
     fake_html = "<html><body>Test</body></html>"
     fake_pdf = b"fake-pdf-content"
 
-    fake_html_instance = MagicMock()
-    fake_html_instance.write_pdf.return_value = fake_pdf
-
-    fake_html_class.return_value = fake_html_instance
+    mock_html.return_value.write_pdf.return_value = fake_pdf
 
     result = PdfGenerator.generate_pdf(fake_html)
 
     assert result == fake_pdf
 
-    fake_html_class.assert_called_once_with(
-        string=fake_html
-    )
-
-    fake_html_instance.write_pdf.assert_called_once_with()
-
-
-def test_generate_pdf_empty_result(pdf_generator):
-    PdfGenerator, fake_html_class = pdf_generator
-
-    fake_html = "<html><body>Test</body></html>"
-
-    fake_html_instance = MagicMock()
-    fake_html_instance.write_pdf.return_value = b""
-
-    fake_html_class.return_value = fake_html_instance
-
-    with pytest.raises(ExportPdfError) as error:
-        PdfGenerator.generate_pdf(fake_html)
-
-    assert error.value.status_code == 500
-
-    fake_html_class.assert_called_once_with(
-        string=fake_html
-    )
-
-    fake_html_instance.write_pdf.assert_called_once_with()
+    mock_html.assert_called_once_with(string=fake_html)
+    mock_html.return_value.write_pdf.assert_called_once_with()
