@@ -1,8 +1,6 @@
 import sys
 from unittest.mock import MagicMock
-
 import pytest
-
 from table_trail_backend.core.exceptions import ExportPdfError
 
 
@@ -16,8 +14,6 @@ def pdf_generator(monkeypatch):
         fake_weasyprint
     )
 
-    # Wichtig: Falls pdf_generator bereits importiert wurde,
-    # entfernen wir es aus dem Cache.
     sys.modules.pop(
         "table_trail_backend.export.generators.pdf_generator",
         None
