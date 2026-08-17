@@ -1,5 +1,4 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from table_trail_backend.api.database import update_database
 from table_trail_backend.core.enums import DBType, DBStatus
 from table_trail_backend.core.exceptions import (
     ScannerConnectionError,
@@ -77,7 +76,7 @@ class ScanService:
             name=database_details.name,
             db_type=database_details.db_type,
             host=database_details.host,
-            port=database_details.port,
+            port=int(database_details.port),
             db_name=database_details.db_name,
             username=database_details.username,
             password=database_details.password,

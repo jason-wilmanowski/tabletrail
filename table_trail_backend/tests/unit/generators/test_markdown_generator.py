@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock
-
 import pytest
-
 from table_trail_backend.core.exceptions import ExportMarkdownError
 from table_trail_backend.export.generators.markdown_generator import MarkdownGenerator
 

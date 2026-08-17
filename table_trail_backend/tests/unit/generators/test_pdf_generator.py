@@ -1,7 +1,6 @@
 import sys
 from unittest.mock import MagicMock
 import pytest
-from table_trail_backend.core.exceptions import ExportPdfError
 
 
 @pytest.fixture

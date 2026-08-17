@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete, and_
+from sqlalchemy import select, and_
 from table_trail_backend.db.models.constraints import Constraints
 from table_trail_backend.db.models.constraint_columns import ConstraintColumn
 from table_trail_backend.schemas.constraint_schema import CreateConstraint, UpdateConstraint
