@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+      DATABASE_URL: "postgresql+asyncpg://test:test@localhost:5432/test"
       FRONTEND_URL: "http://localhost:3000"
 
     steps:
