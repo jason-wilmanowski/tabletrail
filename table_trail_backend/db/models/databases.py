@@ -11,7 +11,7 @@ class Databases(Base):
     name: Mapped[str] = mapped_column()
     db_type: Mapped[DBType] = mapped_column(Enum(DBType))
     host : Mapped[str] = mapped_column()
-    port : Mapped[str] = mapped_column()
+    port : Mapped[int] = mapped_column()
     db_name : Mapped[str] = mapped_column()
     password : Mapped[str] = mapped_column()
     username : Mapped[str] = mapped_column()
