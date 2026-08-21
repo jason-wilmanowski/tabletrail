@@ -21,6 +21,8 @@ from table_trail_backend.schemas.column_schema import CreateColumn
 from table_trail_backend.schemas.constraint_schema import CreateConstraint
 
 
+# TODO: remove database status as input from client
+
 class ScanService:
 
     def __init__(self, db: AsyncSession):
@@ -70,7 +72,7 @@ class ScanService:
 
     async def _initialize_scan(self, database_details: CreateDatabase) -> Databases:
 
-        existing_database = await self.db_repo.get_database_by_connection(database_details.host, database_details.port, database_details.db_name)
+        existing_database = await self.db_repo.get_database_by_connection(database_details.host, int(database_details.port), database_details.db_name)
         if existing_database:
             database = await self.db_repo.update(existing_database.id, UpdateDatabase(
             name=database_details.name,
@@ -88,7 +90,7 @@ class ScanService:
                 name=database_details.name,
                 db_type=database_details.db_type,
                 host=database_details.host,
-                port=database_details.port,
+                port=int(database_details.port),
                 db_name=database_details.db_name,
                 username=database_details.username,
                 password=database_details.password,

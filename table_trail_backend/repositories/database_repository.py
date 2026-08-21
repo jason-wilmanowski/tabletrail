@@ -45,7 +45,7 @@ class DatabasesRepository:
         )
         return database.unique().scalar_one_or_none()
 
-    async def get_database_by_connection(self, host: str, port: str, db_name: str):
+    async def get_database_by_connection(self, host: str, port: int, db_name: str):
         database = await self.db.execute(
             select(Databases).where(and_(Databases.host == host,
                                          Databases.port == port,

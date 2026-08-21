@@ -11,7 +11,7 @@ class CreateDatabase(BaseModel):
     name: str
     db_type: DBType
     host: str
-    port: str
+    port: int
     db_name: str
     username: str
     password: str
