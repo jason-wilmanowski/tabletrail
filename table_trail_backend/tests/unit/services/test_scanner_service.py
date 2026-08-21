@@ -218,7 +218,7 @@ async def test_initialize_scan_creates_new_database(
 
     service.db_repo.get_database_by_connection.assert_awaited_once_with(
         database_details.host,
-        database_details.port,
+        int(database_details.port),
         database_details.db_name,
     )
 
@@ -229,7 +229,7 @@ async def test_initialize_scan_creates_new_database(
     assert create_data.name == database_details.name
     assert create_data.db_type == database_details.db_type
     assert create_data.host == database_details.host
-    assert create_data.port == database_details.port
+    assert create_data.port == int(database_details.port)
     assert create_data.db_name == database_details.db_name
     assert create_data.username == database_details.username
     assert create_data.password == database_details.password

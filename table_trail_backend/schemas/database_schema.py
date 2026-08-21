@@ -58,7 +58,7 @@ class DatabaseOverviewResponse(BaseModel):
     db_type: DBType
     status: DBStatus
     host: str
-    port: str
+    port: int
     username: str
     db_name: str
     created_at : datetime
