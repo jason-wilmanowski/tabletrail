@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { Modal } from '../../components/ui/Modal'
 import { DatabaseTypeSelect } from '../connection-form/DatabaseTypeSelect'
+import { useUpdateDatabase } from '../../hooks/useDatabases'
 import type { DatabaseStructureResponse } from '../../types/database'
 import type { DBType } from '../../types/common'
 
@@ -24,6 +25,15 @@ export function EditDatabaseModal({ database, onClose }: EditDatabaseModalProps)
   const [username, setUsername] = useState(database.username)
   const [password, setPassword] = useState(database.password)
   const [showPassword, setShowPassword] = useState(false)
+
+  const updateDatabaseMutation = useUpdateDatabase(database.id)
+
+  function handleSave() {
+    updateDatabaseMutation.mutate(
+      { name, db_type: dbType, host, port, db_name: dbName, username, password },
+      { onSuccess: onClose }
+    )
+  }
 
   return (
     <Modal onClose={onClose}>
@@ -105,12 +115,17 @@ export function EditDatabaseModal({ database, onClose }: EditDatabaseModalProps)
         </div>
       </div>
 
+      {updateDatabaseMutation.isError && (
+        <p className="mt-3 text-sm text-danger">{updateDatabaseMutation.error.message}</p>
+      )}
+
       <button
         type="button"
-        onClick={onClose}
-        className="mt-5 w-full rounded-md border border-border bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        onClick={handleSave}
+        disabled={updateDatabaseMutation.isPending}
+        className="mt-5 w-full rounded-md border border-border bg-accent px-3 py-1.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Save Changes
+        {updateDatabaseMutation.isPending ? 'Saving...' : 'Save Changes'}
       </button>
     </Modal>
   )

@@ -17,3 +17,15 @@ import type { ConnectionFields } from '../types/common'
 export function scanDatabase(payload: ConnectionFields): Promise<DatabaseStructureResponse> {
   return apiClient.post<DatabaseStructureResponse>('/scanner', payload)
 }
+
+/**
+ * PATCH /scanner — rescans an already-connected database.
+ *
+ * Confirmed from backend `rescan_database` (table_trail_backend/api/scanner.py):
+ * request body is the full `CreateDatabase` shape (no id) — the backend
+ * matches the existing row by host/port/db_name. Response is the full
+ * `DatabaseStructureResponse`, same as the initial scan.
+ */
+export function rescanDatabase(payload: ConnectionFields): Promise<DatabaseStructureResponse> {
+  return apiClient.patch<DatabaseStructureResponse>('/scanner', payload)
+}

@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { getAllDatabases, getDatabase, updateDatabase } from '../api/databases'
+import { getAllDatabases, getDatabase, updateDatabase, deleteDatabase } from '../api/databases'
+import { rescanDatabase } from '../api/scanner'
 import type { UpdateDatabaseRequest } from '../api/databases'
 import type { DatabaseOverviewResponse, DatabaseStructureResponse } from '../types/database'
+import type { ConnectionFields } from '../types/common'
 
 /**
  * Wraps `getAllDatabases()` from the Step 3 API layer in a TanStack Query
@@ -47,6 +49,42 @@ export function useUpdateDatabase(id: number) {
       queryClient.setQueryData<DatabaseStructureResponse>(['database', id], (old) =>
         old ? { ...old, ...updated } : old
       )
+      queryClient.invalidateQueries({ queryKey: ['databases'] })
+    },
+  })
+}
+
+/**
+ * Wraps `deleteDatabase(id)`. On success the removed database's own
+ * `['database', id]` cache entry is dropped and `['databases']` is
+ * invalidated so the sidebar and overview page drop it immediately.
+ */
+export function useDeleteDatabase() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) => deleteDatabase(id),
+    onSuccess: (_data, id) => {
+      queryClient.removeQueries({ queryKey: ['database', id] })
+      queryClient.invalidateQueries({ queryKey: ['databases'] })
+    },
+  })
+}
+
+/**
+ * Wraps `rescanDatabase(payload)`. The endpoint returns the full
+ * `DatabaseStructureResponse` (including refreshed `tables`), which is
+ * written directly into the `['database', id]` cache entry so the graph
+ * and sidebar re-render with the new structure without a refetch.
+ * `['databases']` is invalidated too since scan status/timestamps change.
+ */
+export function useRescanDatabase(id: number) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: ConnectionFields) => rescanDatabase(payload),
+    onSuccess: (updated) => {
+      queryClient.setQueryData<DatabaseStructureResponse>(['database', id], updated)
       queryClient.invalidateQueries({ queryKey: ['databases'] })
     },
   })
