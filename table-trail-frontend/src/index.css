@@ -58,3 +58,44 @@
     @apply bg-background text-foreground;
   }
 }
+
+/**
+ * Shared typography scale, referenced throughout the app as
+ * `.text-display` / `.text-section` / `.text-technical` /
+ * `.text-technical-muted` / `.text-label` / `.text-body`. Defined in the
+ * `components` layer (not `utilities`) so a plain Tailwind size utility
+ * placed alongside one of these classes in a component (e.g.
+ * `text-section text-base`) still wins the cascade, matching how these
+ * classes are already used as an overridable base rather than a fixed size.
+ */
+@layer components {
+  /* Page-level heading. */
+  .text-display {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  /* Panel/dialog/section titles — one step down from `.text-display`. */
+  .text-section {
+    @apply text-sm font-semibold text-foreground;
+  }
+
+  /* Literal database identifiers (table/column names, host, port, ...). */
+  .text-technical {
+    @apply font-mono text-[13px] text-foreground;
+  }
+
+  /* Secondary/meta technical detail — data types, flags, badges. */
+  .text-technical-muted {
+    @apply font-mono text-[11px] text-muted-foreground;
+  }
+
+  /* Small field or group label. */
+  .text-label {
+    @apply text-[11px] font-medium uppercase tracking-wider text-muted-foreground;
+  }
+
+  /* Regular UI prose — empty states, descriptions, status copy. */
+  .text-body {
+    @apply text-sm text-muted-foreground;
+  }
+}
