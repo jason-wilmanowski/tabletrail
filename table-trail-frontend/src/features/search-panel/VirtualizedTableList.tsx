@@ -71,7 +71,7 @@ function groupTablesBySchema(tables: TableResponse[]): ListRow[] {
 /** Estimated row heights in px — header rows are shorter than table rows.
  * Rows are simple single-line entries in this step, so fixed estimates
  * per type are accurate enough; no per-row measurement needed. */
-const HEADER_ROW_HEIGHT = 24
+const HEADER_ROW_HEIGHT = 26
 const TABLE_ROW_HEIGHT = 32
 
 /**
@@ -156,7 +156,7 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
               <div
                 key={`header-${row.schemaName}`}
                 style={style}
-                className="text-technical-muted flex items-end px-3 pb-1"
+                className="text-label flex items-center justify-center border-b border-border/60 bg-surface/40 px-3 text-center text-foreground/80"
               >
                 {row.schemaName}
               </div>
@@ -172,7 +172,7 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
               type="button"
               onClick={() => onSelectTable?.(table.id)}
               style={style}
-              className={`text-technical flex items-center gap-2 border-b border-border border-l-2 px-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset ${
+              className={`text-technical flex items-center gap-2 border-b border-border border-l-2 pl-6 pr-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset ${
                 isSelected ? 'border-l-accent bg-surface-hover' : 'border-l-transparent'
               }`}
             >

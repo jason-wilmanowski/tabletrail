@@ -7,6 +7,7 @@ import { SearchInput } from '../features/search-panel/SearchInput'
 import { VirtualizedTableList } from '../features/search-panel/VirtualizedTableList'
 import { EditDatabaseModal } from '../features/database-detail/EditDatabaseModal'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
+import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
 import { useUiStore } from '../store/uiStore'
 
 const INFO_ROWS = ['db_type', 'host', 'port', 'db_name'] as const
@@ -82,13 +83,16 @@ export function DatabaseDetailPage() {
     <div className="flex h-full">
       <aside className="flex w-72 shrink-0 flex-col border-r border-border bg-panel">
         <div className="border-b border-border p-4">
-          <p className="text-section truncate">{data.name}</p>
+          <div className="flex items-center gap-2">
+            <DatabaseTypeIcon type={data.db_type} className="h-5 w-5 shrink-0" />
+            <p className="text-display truncate text-lg">{data.name}</p>
+          </div>
 
-          <div className="mt-3 space-y-1.5">
+          <div className="mt-4 space-y-1.5 border-t border-border/60 pt-3">
             {INFO_ROWS.map((key) => (
-              <div key={key} className="flex items-center justify-between gap-2">
-                <span className="text-label">{INFO_LABELS[key]}</span>
-                <span className="text-technical truncate">{data[key]}</span>
+              <div key={key} className="flex items-baseline justify-between gap-3">
+                <span className="text-label shrink-0">{INFO_LABELS[key]}</span>
+                <span className="text-technical truncate text-right">{data[key]}</span>
               </div>
             ))}
           </div>
