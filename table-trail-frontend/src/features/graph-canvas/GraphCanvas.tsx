@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import {
   ReactFlow,
@@ -9,6 +9,7 @@ import {
   MiniMap,
   applyNodeChanges,
   applyEdgeChanges,
+  getViewportForBounds,
 } from '@xyflow/react'
 import type { Node, Edge, NodeChange, EdgeChange, NodeTypes, EdgeTypes } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -24,6 +25,14 @@ interface GraphCanvasProps {
   tables: TableResponse[]
   interactive?: boolean
 }
+
+/**
+ * Width of `TableInspectorPanel`'s `w-72` overlay in px. It sits absolutely
+ * over the right edge of this canvas rather than shrinking it, so React
+ * Flow's own container size doesn't account for it — the centering effect
+ * below has to subtract it manually to target the actually-visible area.
+ */
+const INSPECTOR_PANEL_WIDTH = 288
 
 /**
  * Registered once, outside the component, so React Flow always sees the
@@ -97,21 +106,24 @@ function buildGraph(tables: TableResponse[]): { nodes: Node[]; edges: Edge[] } {
  * `RelationEdge` types, configures the built-in `Background`, `Controls`
  * and `MiniMap`, and — as of Step 27 — centers the view on the currently
  * selected table (`uiStore.selectedTableId`, the same field `TableNode`
- * writes to on click and `TableInspectorPanel` reads to open). No custom
- * zoom/pan/minimap/camera implementation: everything here is a React Flow
- * API (`fitView`) reacting to state, not a reimplementation of it.
+ * writes to on click and `TableInspectorPanel` reads to open) — via
+ * `setViewport` rather than `fitView` directly, since the target viewport
+ * has to be computed against the width visible next to the inspector
+ * panel overlay, not React Flow's own (wider) container bounds. See the
+ * centering effect below for details.
  *
  * Named `GraphCanvasInner` and wrapped in `ReactFlowProvider` below
- * because `useReactFlow()` (needed to call `fitView` imperatively) only
- * works inside a component rendered within that provider's tree — it
- * can't be called in the same component that also renders `<ReactFlow>`
- * without the explicit provider wrapping.
+ * because `useReactFlow()` (needed to call `setViewport` imperatively)
+ * only works inside a component rendered within that provider's tree —
+ * it can't be called in the same component that also renders
+ * `<ReactFlow>` without the explicit provider wrapping.
  */
 function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
   const [nodes, setNodes] = useState<Node[]>(() => buildGraph(tables).nodes)
   const [edges, setEdges] = useState<Edge[]>(() => buildGraph(tables).edges)
+  const wrapperRef = useRef<HTMLDivElement>(null)
 
-  const { fitView } = useReactFlow()
+  const { setViewport, getNodesBounds } = useReactFlow()
   const selectedTableId = useUiStore((state) => state.selectedTableId)
 
   // Re-derive nodes and edges when the underlying table data changes
@@ -129,20 +141,42 @@ function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
   // sidebar entry (Step 27), since both write to the same store field.
   // Silently no-ops for a selected id that doesn't match any node (e.g.
   // stale selection after a rescan) rather than throwing.
+  //
+  // Selecting a table also opens `TableInspectorPanel`, an absolute
+  // overlay on the right edge of this canvas rather than a layout sibling
+  // — so React Flow's own container width doesn't shrink to make room for
+  // it, and a plain `fitView` centers the node in the *full* canvas width,
+  // landing visibly right of center once the panel covers its share of
+  // the right side. Computing the viewport by hand against
+  // `containerWidth - INSPECTOR_PANEL_WIDTH` targets the actually-visible
+  // area instead, so the node ends up centered between the left sidebar
+  // and the inspector panel, not just within the raw canvas bounds.
   useEffect(() => {
     if (selectedTableId === null) {
       return
     }
 
     const nodeId = `table-${selectedTableId}`
-    const nodeExists = nodes.some((node) => node.id === nodeId)
+    const node = nodes.find((n) => n.id === nodeId)
+    const wrapper = wrapperRef.current
 
-    if (!nodeExists) {
+    if (!node || !wrapper) {
       return
     }
 
-    fitView({ nodes: [{ id: nodeId }], duration: 400, maxZoom: 1.25 })
-  }, [selectedTableId, nodes, fitView])
+    const bounds = getNodesBounds([node])
+    const visibleWidth = wrapper.clientWidth - INSPECTOR_PANEL_WIDTH
+    const { x, y, zoom } = getViewportForBounds(
+      bounds,
+      visibleWidth,
+      wrapper.clientHeight,
+      0.5,
+      1.25,
+      0.1
+    )
+
+    setViewport({ x, y, zoom }, { duration: 400 })
+  }, [selectedTableId, nodes, getNodesBounds, setViewport])
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((current) => applyNodeChanges(changes, current)),
@@ -155,7 +189,7 @@ function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
   )
 
   return (
-    <div className="h-full w-full" style={reactFlowTheme}>
+    <div ref={wrapperRef} className="h-full w-full" style={reactFlowTheme}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
