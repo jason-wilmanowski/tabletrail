@@ -125,6 +125,7 @@ function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
 
   const { setViewport, getNodesBounds } = useReactFlow()
   const selectedTableId = useUiStore((state) => state.selectedTableId)
+  const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan). Manual drag positions are intentionally not
@@ -188,6 +189,12 @@ function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
     []
   )
 
+  // Clicking empty canvas space clears the current selection, closing
+  // `TableInspectorPanel` the same way `Escape` already does — React
+  // Flow's own distinction between "pane" (background) and node clicks
+  // means this never fires for a click that lands on a `TableNode`.
+  const onPaneClick = useCallback(() => setSelectedTableId(null), [setSelectedTableId])
+
   return (
     <div ref={wrapperRef} className="h-full w-full" style={reactFlowTheme}>
       <ReactFlow
@@ -197,6 +204,7 @@ function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onPaneClick={onPaneClick}
         fitView
         nodesDraggable={interactive}
         nodesConnectable={false}
