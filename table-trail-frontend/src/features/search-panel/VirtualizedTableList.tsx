@@ -156,7 +156,7 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
               <div
                 key={`header-${row.schemaName}`}
                 style={style}
-                className="text-label flex items-center border-b border-border/60 bg-surface/40 px-3 text-foreground/80"
+                className="text-label flex items-center justify-center border-b border-border/60 bg-surface/40 px-3 text-center text-foreground/80"
               >
                 {row.schemaName}
               </div>
