@@ -1,12 +1,14 @@
 from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from table_trail_backend.core.enums import DBType, DBStatus
+
+from table_trail_backend.core.enums import DBStatus, DBType
 from table_trail_backend.core.exceptions import DatabaseError, DatabaseSystemError
 from table_trail_backend.schemas.database_schema import UpdateDatabase
 from table_trail_backend.services.database_service import DatabaseService
 
-
 # -- Get Full Database Tests --
+
 
 @pytest.mark.asyncio
 async def test_get_full_database_success():
@@ -16,14 +18,13 @@ async def test_get_full_database_success():
 
     service = DatabaseService(fake_db)
 
-    service.db_repo.get_full_database = AsyncMock(
-        return_value=fake_database
-    )
+    service.db_repo.get_full_database = AsyncMock(return_value=fake_database)
 
     result = await service.get_full_database(42)
 
     service.db_repo.get_full_database.assert_awaited_with(42)
     assert result is fake_database
+
 
 @pytest.mark.asyncio
 async def test_get_full_database_not_found():
@@ -32,9 +33,7 @@ async def test_get_full_database_not_found():
 
     service = DatabaseService(fake_db)
 
-    service.db_repo.get_full_database = AsyncMock(
-        return_value=None
-    )
+    service.db_repo.get_full_database = AsyncMock(return_value=None)
 
     with pytest.raises(DatabaseSystemError) as error:
         await service.get_full_database(42)
@@ -45,6 +44,7 @@ async def test_get_full_database_not_found():
 
 # -- Get all Databases Test --
 
+
 @pytest.mark.asyncio
 async def test_get_all_databases():
 
@@ -52,9 +52,7 @@ async def test_get_all_databases():
 
     service = DatabaseService(fake_db)
 
-    service.db_repo.get_all_databases = AsyncMock(
-        return_value=[]
-    )
+    service.db_repo.get_all_databases = AsyncMock(return_value=[])
 
     result = await service.get_all_databases()
 
@@ -64,30 +62,27 @@ async def test_get_all_databases():
 
 # -- Update Database Tests --
 
+
 @pytest.mark.asyncio
 async def test_update_database_success():
     fake_db = AsyncMock()
     service = DatabaseService(fake_db)
 
     update_data = UpdateDatabase(
-        name = "Test Update Database",
-        db_type = DBType.POSTGRESQL,
-        host = "localhost",
-        port = 5432,
-        db_name = "Test Database",
-        username = "Test User",
-        password = "Test-Password",
-        status = DBStatus.READY
+        name="Test Update Database",
+        db_type=DBType.POSTGRESQL,
+        host="localhost",
+        port=5432,
+        db_name="Test Database",
+        username="Test User",
+        password="Test-Password",
+        status=DBStatus.READY,
     )
 
     fake_database = MagicMock()
-    service.db_repo.get_one_database = AsyncMock(
-        return_value=fake_database
-    )
+    service.db_repo.get_one_database = AsyncMock(return_value=fake_database)
 
-    service.db_repo.update = AsyncMock(
-        return_value=update_data
-    )
+    service.db_repo.update = AsyncMock(return_value=update_data)
 
     result = await service.update_database(42, update_data)
 
@@ -98,6 +93,7 @@ async def test_update_database_success():
 
 
 # -- Search Database Components Tests --
+
 
 @pytest.mark.asyncio
 async def test_search_database_components_success():
@@ -110,37 +106,23 @@ async def test_search_database_components_success():
     fake_schema_tables = [MagicMock()]
     fake_columns = [MagicMock(), MagicMock(), MagicMock()]
 
-    service.db_repo.get_one_database = AsyncMock(
-        return_value=fake_database
-    )
+    service.db_repo.get_one_database = AsyncMock(return_value=fake_database)
 
-    service.table_repo.search_by_name = AsyncMock(
-        return_value=fake_tables
-    )
+    service.table_repo.search_by_name = AsyncMock(return_value=fake_tables)
 
-    service.table_repo.search_by_schema_name = AsyncMock(
-        return_value=fake_schema_tables
-    )
+    service.table_repo.search_by_schema_name = AsyncMock(return_value=fake_schema_tables)
 
-    service.column_repo.search_by_name = AsyncMock(
-        return_value=fake_columns
-    )
+    service.column_repo.search_by_name = AsyncMock(return_value=fake_columns)
 
     result = await service.search_database_components(42, "user")
 
     service.db_repo.get_one_database.assert_awaited_once_with(42)
 
-    service.table_repo.search_by_name.assert_awaited_once_with(
-        42, "user"
-    )
+    service.table_repo.search_by_name.assert_awaited_once_with(42, "user")
 
-    service.table_repo.search_by_schema_name.assert_awaited_once_with(
-        42, "user"
-    )
+    service.table_repo.search_by_schema_name.assert_awaited_once_with(42, "user")
 
-    service.column_repo.search_by_name.assert_awaited_once_with(
-        42, "user"
-    )
+    service.column_repo.search_by_name.assert_awaited_once_with(42, "user")
 
     assert result == {
         "tables": fake_tables,
@@ -148,14 +130,13 @@ async def test_search_database_components_success():
         "columns": fake_columns,
     }
 
+
 @pytest.mark.asyncio
 async def test_search_database_components_not_found():
     fake_db = AsyncMock()
     service = DatabaseService(fake_db)
 
-    service.db_repo.get_one_database = AsyncMock(
-        return_value=None
-    )
+    service.db_repo.get_one_database = AsyncMock(return_value=None)
 
     service.table_repo.search_by_name = AsyncMock()
     service.table_repo.search_by_schema_name = AsyncMock()
@@ -173,7 +154,6 @@ async def test_search_database_components_not_found():
     service.column_repo.search_by_name.assert_not_awaited()
 
 
-
 # -- Update Database Tests --
 @pytest.mark.asyncio
 async def test_update_database_not_found():
@@ -189,20 +169,19 @@ async def test_update_database_not_found():
         db_name="Test Database",
         username="Test User",
         password="Test-Password",
-        status=DBStatus.READY
+        status=DBStatus.READY,
     )
 
-    service.db_repo.get_one_database = AsyncMock(
-        return_value=None
-    )
+    service.db_repo.get_one_database = AsyncMock(return_value=None)
     service.db_repo.update = AsyncMock()
 
-    with pytest.raises(DatabaseSystemError) as error:
+    with pytest.raises(DatabaseSystemError):
         await service.update_database(42, update_data)
 
     service.db_repo.get_one_database.assert_awaited_once_with(42)
     service.db_repo.update.assert_not_awaited()
     fake_db.commit.assert_not_awaited()
+
 
 @pytest.mark.asyncio
 async def test_update_database_no_data():
@@ -212,19 +191,10 @@ async def test_update_database_no_data():
     fake_database = MagicMock()
 
     update_data = UpdateDatabase(
-        name=None,
-        db_type=None,
-        host=None,
-        port=None,
-        db_name=None,
-        username=None,
-        password=None,
-        status=None
+        name=None, db_type=None, host=None, port=None, db_name=None, username=None, password=None, status=None
     )
 
-    service.db_repo.get_one_database = AsyncMock(
-        return_value=fake_database
-    )
+    service.db_repo.get_one_database = AsyncMock(return_value=fake_database)
     service.db_repo.update = AsyncMock()
 
     with pytest.raises(DatabaseSystemError) as error:
@@ -237,8 +207,8 @@ async def test_update_database_no_data():
     assert error.value.status_code == 400
 
 
-
 # -- Delete Database Tests --
+
 
 @pytest.mark.asyncio
 async def test_delete_database_success():
@@ -248,9 +218,7 @@ async def test_delete_database_success():
 
     service = DatabaseService(fake_db)
 
-    service.db_repo.get_one_database = AsyncMock(
-        return_value=fake_database
-    )
+    service.db_repo.get_one_database = AsyncMock(return_value=fake_database)
     service.db_repo.delete_database = AsyncMock()
 
     # execute service method
@@ -261,6 +229,7 @@ async def test_delete_database_success():
     service.db_repo.delete_database.assert_awaited_once_with(42)
     fake_db.commit.assert_awaited_once()
 
+
 @pytest.mark.asyncio
 async def test_delete_database_not_found():
     # Arrange
@@ -268,9 +237,7 @@ async def test_delete_database_not_found():
 
     service = DatabaseService(fake_db)
 
-    service.db_repo.get_one_database = AsyncMock(
-        return_value=None
-    )
+    service.db_repo.get_one_database = AsyncMock(return_value=None)
     service.db_repo.delete_database = AsyncMock()
 
     # Act & Assert

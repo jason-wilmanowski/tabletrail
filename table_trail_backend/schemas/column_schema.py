@@ -20,6 +20,7 @@ class UpdateColumn(BaseModel):
 
 # Response Section
 
+
 class ColumnResponse(BaseModel):
     id: int
     name: str

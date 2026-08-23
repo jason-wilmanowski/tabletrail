@@ -9,27 +9,13 @@ def test_scan_success(monkeypatch):
 
     fake_engine.connect.return_value.__enter__.return_value = fake_connection
 
-    monkeypatch.setattr(
-        "table_trail_backend.db_scanner.mysql_scanner.create_engine",
-        lambda url: fake_engine
-    )
+    monkeypatch.setattr("table_trail_backend.db_scanner.mysql_scanner.create_engine", lambda url: fake_engine)
 
     scanner = MySQLScanner()
 
-    fake_tables = [
-        MagicMock(
-            name="users",
-            schema_name="app",
-            columns=[],
-            constraints=[]
-        )
-    ]
+    fake_tables = [MagicMock(name="users", schema_name="app", columns=[], constraints=[])]
 
-    monkeypatch.setattr(
-        scanner,
-        "_scan_tables",
-        MagicMock(return_value=fake_tables)
-    )
+    monkeypatch.setattr(scanner, "_scan_tables", MagicMock(return_value=fake_tables))
 
     result = scanner.scan("mysql://test")
 
@@ -51,11 +37,7 @@ def test_scan_columns():
         ("created_at", "datetime", "NO", "CURRENT_TIMESTAMP", 3),
     ]
 
-    result = scanner._scan_columns(
-        fake_connection,
-        "app",
-        "users"
-    )
+    result = scanner._scan_columns(fake_connection, "app", "users")
 
     assert len(result) == 3
 
@@ -101,11 +83,7 @@ def test_scan_constraints():
         ),
     ]
 
-    result = scanner._scan_constraints(
-        fake_connection,
-        "app",
-        "users"
-    )
+    result = scanner._scan_constraints(fake_connection, "app", "users")
 
     assert len(result) == 2
 
@@ -151,11 +129,7 @@ def test_scan_constraints_combines_columns_of_same_constraint():
         ),
     ]
 
-    result = scanner._scan_constraints(
-        fake_connection,
-        "app",
-        "example"
-    )
+    result = scanner._scan_constraints(fake_connection, "app", "example")
 
     assert len(result) == 1
 
@@ -186,11 +160,7 @@ def test_scan_constraints_check_constraint():
         ),
     ]
 
-    result = scanner._scan_constraints(
-        fake_connection,
-        "app",
-        "users"
-    )
+    result = scanner._scan_constraints(fake_connection, "app", "users")
 
     assert len(result) == 1
 

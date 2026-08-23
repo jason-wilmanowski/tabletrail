@@ -1,8 +1,8 @@
 from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
 from table_trail_backend.schemas.export_schema import ExportResult
 
-class JsonExport:
 
+class JsonExport:
     @staticmethod
     def run_export(database: DatabaseStructureResponse):
 

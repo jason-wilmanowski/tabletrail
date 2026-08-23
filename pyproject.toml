@@ -1,0 +1,14 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "BLE", "B"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Body"]
+
+[tool.ruff.lint.per-file-ignores]
+"table_trail_backend/tests/**/*.py" = ["E402"]
+"table_trail_backend/db/models/*.py" = ["F821"]
+"table_trail_backend/services/scanner_service.py" = ["BLE001"]

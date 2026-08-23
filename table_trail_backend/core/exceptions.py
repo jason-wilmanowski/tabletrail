@@ -6,7 +6,6 @@ class DatabaseSystemError(Exception):
         super().__init__(message)
 
 
-
 # General Exceptions
 class NotAllowedError(DatabaseSystemError):
     pass
@@ -16,18 +15,20 @@ class NotAllowedError(DatabaseSystemError):
 class DatabaseError(DatabaseSystemError):
     pass
 
+
 # Table Exceptions
 class TableError(DatabaseSystemError):
     pass
+
 
 # Column Exceptions
 class ColumnError(DatabaseSystemError):
     pass
 
+
 # Constraint Error
 class ConstraintError(DatabaseSystemError):
     pass
-
 
 
 # Base Scanning Exception
@@ -46,9 +47,9 @@ class ScannerConnectionError(ScanningSystemError):
 class ScannerUnsupportedDBError(ScanningSystemError):
     pass
 
+
 class ScannerDataError(ScanningSystemError):
     pass
-
 
 
 # Base Export Exception
@@ -61,20 +62,22 @@ class ExportSystemError(Exception):
 
 # Export Errors
 
+
 class ExportTypeUnsupportedError(ExportSystemError):
     pass
+
 
 class ExportRuntimeError(ExportSystemError):
     pass
 
+
 class ExportPdfError(ExportSystemError):
     pass
+
 
 class ExportJsonError(ExportSystemError):
     pass
 
+
 class ExportMarkdownError(ExportSystemError):
     pass
-
-
-
