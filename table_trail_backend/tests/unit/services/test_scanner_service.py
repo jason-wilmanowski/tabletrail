@@ -1,22 +1,19 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from table_trail_backend.services.scanner_service import ScanService
-from table_trail_backend.core.enums import DBType, DBStatus
+import pytest
+
+from table_trail_backend.core.enums import DBStatus, DBType
 from table_trail_backend.core.exceptions import (
     ScannerConnectionError,
-    ScannerUnsupportedDBError,
     ScannerDataError,
-    ScanningSystemError,
-)
-from table_trail_backend.schemas.database_schema import (
-    CreateDatabase,
-    UpdateDatabase,
-    DatabaseResponse,
+    ScannerUnsupportedDBError,
 )
 from table_trail_backend.db_scanner.base_scanner import ScannedDatabase
-
-
+from table_trail_backend.schemas.database_schema import (
+    CreateDatabase,
+    DatabaseResponse,
+)
+from table_trail_backend.services.scanner_service import ScanService
 
 # Fixtures
 
@@ -46,7 +43,6 @@ def database_details():
     return details
 
 
-
 # _prepare_url
 
 
@@ -55,10 +51,7 @@ def test_prepare_url_postgresql_localhost(service, database_details):
 
     result = service._prepare_url(database_details)
 
-    assert result == (
-        "postgresql+psycopg2://postgres:secret"
-        "@host.docker.internal:5432/test_db"
-    )
+    assert result == ("postgresql+psycopg2://postgres:secret@host.docker.internal:5432/test_db")
 
 
 def test_prepare_url_mysql(service, database_details):
@@ -67,10 +60,7 @@ def test_prepare_url_mysql(service, database_details):
 
     result = service._prepare_url(database_details)
 
-    assert result == (
-        "mysql+pymysql://postgres:secret"
-        "@192.168.1.10:5432/test_db"
-    )
+    assert result == ("mysql+pymysql://postgres:secret@192.168.1.10:5432/test_db")
 
 
 def test_prepare_url_mariadb(service, database_details):
@@ -79,10 +69,7 @@ def test_prepare_url_mariadb(service, database_details):
 
     result = service._prepare_url(database_details)
 
-    assert result == (
-        "mariadb+pymysql://postgres:secret"
-        "@192.168.1.20:5432/test_db"
-    )
+    assert result == ("mariadb+pymysql://postgres:secret@192.168.1.20:5432/test_db")
 
 
 def test_prepare_url_127_0_0_1_is_replaced(service, database_details):
@@ -92,7 +79,6 @@ def test_prepare_url_127_0_0_1_is_replaced(service, database_details):
 
     assert "host.docker.internal" in result
     assert "127.0.0.1" not in result
-
 
 
 # _get_scanner
@@ -111,10 +97,7 @@ def test_get_scanner_returns_correct_scanner(
     db_type,
     expected_scanner,
 ):
-    with patch(
-        f"table_trail_backend.services.scanner_service.{expected_scanner}"
-    ) as scanner_class:
-
+    with patch(f"table_trail_backend.services.scanner_service.{expected_scanner}") as scanner_class:
         scanner_class.return_value = MagicMock()
 
         result = service._get_scanner(db_type)
@@ -143,15 +126,10 @@ async def test_run_scanner_success(service):
     service._get_scanner = MagicMock(return_value=fake_scanner)
     fake_scanner.scan.return_value = fake_result
 
-    result = await service._run_scanner(
-        DBType.POSTGRESQL,
-        "postgresql+psycopg2://test"
-    )
+    result = await service._run_scanner(DBType.POSTGRESQL, "postgresql+psycopg2://test")
 
     service._get_scanner.assert_called_once_with(DBType.POSTGRESQL)
-    fake_scanner.scan.assert_called_once_with(
-        "postgresql+psycopg2://test"
-    )
+    fake_scanner.scan.assert_called_once_with("postgresql+psycopg2://test")
 
     assert result is fake_result
 
@@ -162,15 +140,10 @@ async def test_run_scanner_connection_error(service):
 
     service._get_scanner = MagicMock(return_value=fake_scanner)
 
-    fake_scanner.scan.side_effect = ConnectionError(
-        "Connection failed"
-    )
+    fake_scanner.scan.side_effect = ConnectionError("Connection failed")
 
     with pytest.raises(ScannerConnectionError) as error:
-        await service._run_scanner(
-            DBType.POSTGRESQL,
-            "postgresql+psycopg2://test"
-        )
+        await service._run_scanner(DBType.POSTGRESQL, "postgresql+psycopg2://test")
 
     assert error.value.status_code == 503
 
@@ -181,15 +154,10 @@ async def test_run_scanner_unexpected_error(service):
 
     service._get_scanner = MagicMock(return_value=fake_scanner)
 
-    fake_scanner.scan.side_effect = RuntimeError(
-        "Unexpected scanner error"
-    )
+    fake_scanner.scan.side_effect = RuntimeError("Unexpected scanner error")
 
     with pytest.raises(ScannerDataError) as error:
-        await service._run_scanner(
-            DBType.POSTGRESQL,
-            "postgresql+psycopg2://test"
-        )
+        await service._run_scanner(DBType.POSTGRESQL, "postgresql+psycopg2://test")
 
     assert error.value.status_code == 422
     assert "Unexpected scanner error" in error.value.message
@@ -203,16 +171,12 @@ async def test_initialize_scan_creates_new_database(
     service,
     database_details,
 ):
-    service.db_repo.get_database_by_connection = AsyncMock(
-        return_value=None
-    )
+    service.db_repo.get_database_by_connection = AsyncMock(return_value=None)
 
     fake_database = MagicMock()
     fake_database.id = 42
 
-    service.db_repo.create = AsyncMock(
-        return_value=fake_database
-    )
+    service.db_repo.create = AsyncMock(return_value=fake_database)
 
     result = await service._initialize_scan(database_details)
 
@@ -251,13 +215,9 @@ async def test_initialize_scan_updates_existing_database(
     updated_database = MagicMock()
     updated_database.id = 42
 
-    service.db_repo.get_database_by_connection = AsyncMock(
-        return_value=existing_database
-    )
+    service.db_repo.get_database_by_connection = AsyncMock(return_value=existing_database)
 
-    service.db_repo.update = AsyncMock(
-        return_value=updated_database
-    )
+    service.db_repo.update = AsyncMock(return_value=updated_database)
 
     result = await service._initialize_scan(database_details)
 
@@ -288,9 +248,7 @@ async def test_clear_existing_data_deletes_all_tables(service):
     table_2 = MagicMock()
     table_3 = MagicMock()
 
-    service.table_repo.get_database_tables = AsyncMock(
-        return_value=[table_1, table_2, table_3]
-    )
+    service.table_repo.get_database_tables = AsyncMock(return_value=[table_1, table_2, table_3])
 
     await service._clear_existing_data(42)
 
@@ -307,9 +265,7 @@ async def test_clear_existing_data_deletes_all_tables(service):
 
 @pytest.mark.asyncio
 async def test_clear_existing_data_with_no_tables(service):
-    service.table_repo.get_database_tables = AsyncMock(
-        return_value=[]
-    )
+    service.table_repo.get_database_tables = AsyncMock(return_value=[])
 
     await service._clear_existing_data(42)
 
@@ -360,17 +316,11 @@ async def test_persist_results_creates_table_columns_constraints(
     fake_constraint = MagicMock()
     fake_constraint.id = 30
 
-    service.table_repo.create_table = AsyncMock(
-        return_value=fake_table
-    )
+    service.table_repo.create_table = AsyncMock(return_value=fake_table)
 
-    service.column_repo.create_column = AsyncMock(
-        return_value=fake_column
-    )
+    service.column_repo.create_column = AsyncMock(return_value=fake_column)
 
-    service.constraint_repo.create_constraint = AsyncMock(
-        return_value=fake_constraint
-    )
+    service.constraint_repo.create_constraint = AsyncMock(return_value=fake_constraint)
 
     service.constraint_repo.create_column_constraint = AsyncMock()
 
@@ -433,21 +383,13 @@ async def test_persist_results_resolves_foreign_key_reference(
     fake_constraint = MagicMock()
     fake_constraint.id = 30
 
-    service.table_repo.create_table = AsyncMock(
-        return_value=fake_table
-    )
+    service.table_repo.create_table = AsyncMock(return_value=fake_table)
 
-    service.table_repo.get_table_by_name = AsyncMock(
-        return_value=fake_referenced_table
-    )
+    service.table_repo.get_table_by_name = AsyncMock(return_value=fake_referenced_table)
 
-    service.column_repo.create_column = AsyncMock(
-        return_value=fake_column
-    )
+    service.column_repo.create_column = AsyncMock(return_value=fake_column)
 
-    service.constraint_repo.create_constraint = AsyncMock(
-        return_value=fake_constraint
-    )
+    service.constraint_repo.create_constraint = AsyncMock(return_value=fake_constraint)
 
     await service._persist_results(42, scan_result)
 
@@ -456,11 +398,7 @@ async def test_persist_results_resolves_foreign_key_reference(
         table_name="users",
     )
 
-    constraint_data = (
-        service.constraint_repo
-        .create_constraint
-        .call_args.kwargs["data"]
-    )
+    constraint_data = service.constraint_repo.create_constraint.call_args.kwargs["data"]
 
     assert constraint_data.references_table_id == 99
 
@@ -493,25 +431,15 @@ async def test_persist_results_handles_missing_referenced_table(
     fake_constraint = MagicMock()
     fake_constraint.id = 30
 
-    service.table_repo.create_table = AsyncMock(
-        return_value=fake_table
-    )
+    service.table_repo.create_table = AsyncMock(return_value=fake_table)
 
-    service.table_repo.get_table_by_name = AsyncMock(
-        return_value=None
-    )
+    service.table_repo.get_table_by_name = AsyncMock(return_value=None)
 
-    service.constraint_repo.create_constraint = AsyncMock(
-        return_value=fake_constraint
-    )
+    service.constraint_repo.create_constraint = AsyncMock(return_value=fake_constraint)
 
     await service._persist_results(42, scan_result)
 
-    constraint_data = (
-        service.constraint_repo
-        .create_constraint
-        .call_args.kwargs["data"]
-    )
+    constraint_data = service.constraint_repo.create_constraint.call_args.kwargs["data"]
 
     assert constraint_data.references_table_id is None
 
@@ -544,13 +472,9 @@ async def test_persist_results_ignores_unknown_constraint_column(
     fake_constraint = MagicMock()
     fake_constraint.id = 30
 
-    service.table_repo.create_table = AsyncMock(
-        return_value=fake_table
-    )
+    service.table_repo.create_table = AsyncMock(return_value=fake_table)
 
-    service.constraint_repo.create_constraint = AsyncMock(
-        return_value=fake_constraint
-    )
+    service.constraint_repo.create_constraint = AsyncMock(return_value=fake_constraint)
 
     service.constraint_repo.create_column_constraint = AsyncMock()
 
@@ -580,7 +504,6 @@ async def test_update_status_updates_database_and_commits(service):
     service.db.commit.assert_awaited_once()
 
 
-
 # execute_scan
 
 
@@ -595,36 +518,24 @@ async def test_execute_scan_success(
     fake_scan_result = MagicMock(spec=ScannedDatabase)
     fake_response = MagicMock(spec=DatabaseResponse)
 
-    service._prepare_url = MagicMock(
-        return_value="prepared-url"
-    )
+    service._prepare_url = MagicMock(return_value="prepared-url")
 
-    service._initialize_scan = AsyncMock(
-        return_value=fake_database
-    )
+    service._initialize_scan = AsyncMock(return_value=fake_database)
 
-    service._run_scanner = AsyncMock(
-        return_value=fake_scan_result
-    )
+    service._run_scanner = AsyncMock(return_value=fake_scan_result)
 
     service._clear_existing_data = AsyncMock()
     service._persist_results = AsyncMock()
 
     service._update_status = AsyncMock()
 
-    service.db_repo.get_one_database = AsyncMock(
-        return_value=fake_response
-    )
+    service.db_repo.get_one_database = AsyncMock(return_value=fake_response)
 
     result = await service.execute_scan(database_details)
 
-    service._prepare_url.assert_called_once_with(
-        database_details
-    )
+    service._prepare_url.assert_called_once_with(database_details)
 
-    service._initialize_scan.assert_awaited_once_with(
-        database_details
-    )
+    service._initialize_scan.assert_awaited_once_with(database_details)
 
     service._run_scanner.assert_awaited_once_with(
         database_details.db_type,
@@ -663,17 +574,11 @@ async def test_execute_scan_handles_scanning_system_error(
         status_code=503,
     )
 
-    service._prepare_url = MagicMock(
-        return_value="prepared-url"
-    )
+    service._prepare_url = MagicMock(return_value="prepared-url")
 
-    service._initialize_scan = AsyncMock(
-        return_value=fake_database
-    )
+    service._initialize_scan = AsyncMock(return_value=fake_database)
 
-    service._run_scanner = AsyncMock(
-        side_effect=scanning_error
-    )
+    service._run_scanner = AsyncMock(side_effect=scanning_error)
 
     service._update_status = AsyncMock()
 
@@ -696,9 +601,7 @@ async def test_execute_scan_does_not_clear_existing_data_if_scanner_fails(
     fake_database = MagicMock()
     fake_database.id = 42
 
-    service._initialize_scan = AsyncMock(
-        return_value=fake_database
-    )
+    service._initialize_scan = AsyncMock(return_value=fake_database)
 
     service._run_scanner = AsyncMock(
         side_effect=ScannerConnectionError(
@@ -728,17 +631,11 @@ async def test_execute_scan_does_not_persist_when_clear_fails(
 
     fake_scan_result = MagicMock(spec=ScannedDatabase)
 
-    service._initialize_scan = AsyncMock(
-        return_value=fake_database
-    )
+    service._initialize_scan = AsyncMock(return_value=fake_database)
 
-    service._run_scanner = AsyncMock(
-        return_value=fake_scan_result
-    )
+    service._run_scanner = AsyncMock(return_value=fake_scan_result)
 
-    service._clear_existing_data = AsyncMock(
-        side_effect=RuntimeError("Clear failed")
-    )
+    service._clear_existing_data = AsyncMock(side_effect=RuntimeError("Clear failed"))
 
     service._persist_results = AsyncMock()
 

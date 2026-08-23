@@ -1,11 +1,16 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection
 
-from .base_scanner import BaseScanner, ScannedDatabase, ScannedTable, ScannedColumn, ScannedConstraint
+from .base_scanner import (
+    BaseScanner,
+    ScannedColumn,
+    ScannedConstraint,
+    ScannedDatabase,
+    ScannedTable,
+)
 
 
 class PostgresScanner(BaseScanner):
-
     def scan(self, connection_url: str) -> ScannedDatabase:
         engine = create_engine(connection_url)
         try:
@@ -16,13 +21,15 @@ class PostgresScanner(BaseScanner):
             engine.dispose()
 
     def _scan_tables(self, conn: Connection) -> list[ScannedTable]:
-        result = conn.execute(text("""
+        result = conn.execute(
+            text("""
             SELECT table_name, table_schema
             FROM information_schema.tables
             WHERE table_schema NOT IN ('information_schema', 'pg_catalog')
             AND table_type = 'BASE TABLE'
             ORDER BY table_schema, table_name
-        """))
+        """)
+        )
 
         tables = []
         for row in result.fetchall():
@@ -30,16 +37,14 @@ class PostgresScanner(BaseScanner):
             schema_name = row[1]
             columns = self._scan_columns(conn, schema_name, table_name)
             constraints = self._scan_constraints(conn, schema_name, table_name)
-            tables.append(ScannedTable(
-                name=table_name,
-                schema_name=schema_name,
-                columns=columns,
-                constraints=constraints
-            ))
+            tables.append(
+                ScannedTable(name=table_name, schema_name=schema_name, columns=columns, constraints=constraints)
+            )
         return tables
 
     def _scan_columns(self, conn: Connection, schema_name: str, table_name: str) -> list[ScannedColumn]:
-        result = conn.execute(text("""
+        result = conn.execute(
+            text("""
             SELECT
                 column_name,
                 data_type,
@@ -49,21 +54,26 @@ class PostgresScanner(BaseScanner):
             FROM information_schema.columns
             WHERE table_schema = :schema AND table_name = :table
             ORDER BY ordinal_position
-        """), {"schema": schema_name, "table": table_name})
+        """),
+            {"schema": schema_name, "table": table_name},
+        )
 
         columns = []
         for row in result.fetchall():
-            columns.append(ScannedColumn(
-                name=row[0],
-                data_type=row[1],
-                is_nullable=row[2] == "YES",
-                default_value=row[3],
-                ordinal_position=row[4]
-            ))
+            columns.append(
+                ScannedColumn(
+                    name=row[0],
+                    data_type=row[1],
+                    is_nullable=row[2] == "YES",
+                    default_value=row[3],
+                    ordinal_position=row[4],
+                )
+            )
         return columns
 
     def _scan_constraints(self, conn: Connection, schema_name: str, table_name: str) -> list[ScannedConstraint]:
-        result = conn.execute(text("""
+        result = conn.execute(
+            text("""
             SELECT
                 tc.constraint_name,
                 tc.constraint_type,
@@ -87,17 +97,19 @@ class PostgresScanner(BaseScanner):
             WHERE tc.table_schema = :schema
             AND   tc.table_name   = :table
             ORDER BY tc.constraint_name, kcu.ordinal_position
-        """), {"schema": schema_name, "table": table_name})
+        """),
+            {"schema": schema_name, "table": table_name},
+        )
 
         # Group rows by constraint_name (composite constraints span multiple rows)
         constraints_map: dict[str, ScannedConstraint] = {}
         for row in result.fetchall():
             constraint_name = row[0]
             constraint_type = row[1]
-            column_name     = row[2]
+            column_name = row[2]
             references_table = row[3]
-            on_delete        = row[4]
-            on_update        = row[5]
+            on_delete = row[4]
+            on_update = row[5]
             check_expression = row[6]
 
             if constraint_name not in constraints_map:
@@ -108,7 +120,7 @@ class PostgresScanner(BaseScanner):
                     references_table=references_table,
                     on_delete=on_delete,
                     on_update=on_update,
-                    check_expression=check_expression
+                    check_expression=check_expression,
                 )
 
             if column_name and column_name not in constraints_map[constraint_name].column_names:

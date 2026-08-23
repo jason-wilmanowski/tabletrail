@@ -1,5 +1,6 @@
 import sys
 from unittest.mock import MagicMock
+
 import pytest
 
 
@@ -7,16 +8,9 @@ import pytest
 def pdf_generator(monkeypatch):
     fake_weasyprint = MagicMock()
 
-    monkeypatch.setitem(
-        sys.modules,
-        "weasyprint",
-        fake_weasyprint
-    )
+    monkeypatch.setitem(sys.modules, "weasyprint", fake_weasyprint)
 
-    sys.modules.pop(
-        "table_trail_backend.export.generators.pdf_generator",
-        None
-    )
+    sys.modules.pop("table_trail_backend.export.generators.pdf_generator", None)
 
     from table_trail_backend.export.generators.pdf_generator import PdfGenerator
 

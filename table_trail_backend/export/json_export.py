@@ -1,11 +1,10 @@
 from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
 from table_trail_backend.schemas.export_schema import ExportResult
 
-class JsonExport:
 
+class JsonExport:
     @staticmethod
     def run_export(database: DatabaseStructureResponse):
-
         # 1. convert database structure to json
         json_export = database.model_dump_json(indent=4)
 

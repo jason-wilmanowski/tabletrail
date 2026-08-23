@@ -36,7 +36,6 @@ class ScannedDatabase:
 
 
 class BaseScanner(ABC):
-
     @abstractmethod
     def scan(self, connection_url: str) -> ScannedDatabase:
         pass

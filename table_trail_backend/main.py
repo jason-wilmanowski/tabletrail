@@ -1,9 +1,11 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from table_trail_backend.api import database, export, health_check, scanner
 from table_trail_backend.core.config import settings
-from table_trail_backend.db.database_config import engine, Base
-from table_trail_backend.api import scanner, database, health_check, export
+from table_trail_backend.db.database_config import Base, engine
 
 
 @asynccontextmanager
@@ -15,10 +17,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="TableTrail",
-    description="Self-hosted database schema explorer",
-    version="0.1.0",
-    lifespan=lifespan
+    title="TableTrail", description="Self-hosted database schema explorer", version="0.1.0", lifespan=lifespan
 )
 
 app.add_middleware(

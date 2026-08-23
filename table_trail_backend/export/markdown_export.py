@@ -5,13 +5,10 @@ from table_trail_backend.schemas.export_schema import ExportResult
 
 
 class MarkdownExport:
-
     def __init__(self):
-
         self.markdown_gen = MarkdownGenerator()
 
     def run_export(self, database: DatabaseStructureResponse):
-
         # 1. generate markdown string
         markdown_string = self.markdown_gen.generate_markdown(database)
 
