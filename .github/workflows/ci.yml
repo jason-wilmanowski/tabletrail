@@ -3,10 +3,10 @@ name: CI
 
 on:
   pull_request:
-
+    branches: [main]
 
 jobs:
-  tests:
+  unit-tests:
     runs-on: ubuntu-latest
 
     env:
@@ -20,7 +20,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
+          cache: pip
 
       - name: Install requirements
         run: |
@@ -29,3 +30,27 @@ jobs:
       - name: Run unit tests
         run: |
           python -m pytest
+
+  ruff-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Check linting
+        run: ruff check .
+
+      - name: Check formatting
+        run: ruff format --check .
+          
