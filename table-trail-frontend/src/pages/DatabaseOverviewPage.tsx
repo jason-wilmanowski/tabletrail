@@ -3,6 +3,7 @@ import { useDatabases, useDatabase } from '../hooks/useDatabases'
 import { useUiStore } from '../store/uiStore'
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 import { LandingView } from '../features/home/LandingView'
+import { DatabaseEmptyState } from '../features/database-detail/DatabaseEmptyState'
 
 export function DatabaseOverviewPage() {
   const { data, isLoading, error } = useDatabases()
@@ -28,7 +29,11 @@ export function DatabaseOverviewPage() {
   }
 
   if (previewDatabaseId !== null && previewData) {
-    return <GraphCanvas tables={previewData.tables} interactive={false} />
+    return previewData.tables.length > 0 ? (
+      <GraphCanvas tables={previewData.tables} interactive={false} />
+    ) : (
+      <DatabaseEmptyState />
+    )
   }
 
   return (

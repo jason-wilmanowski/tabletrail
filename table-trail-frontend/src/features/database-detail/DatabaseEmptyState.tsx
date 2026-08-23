@@ -17,14 +17,16 @@ export function DatabaseEmptyState() {
           No tables were found for this database. Here&apos;s what you can try next:
         </p>
 
-        <ul className="mt-8 w-full space-y-3 border-t border-border pt-6">
-          {NEXT_STEPS.map(({ icon: Icon, text }) => (
-            <li key={text} className="flex items-center justify-center gap-3">
-              <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <p className="text-body">{text}</p>
-            </li>
-          ))}
-        </ul>
+        <div className="mt-8 w-full border-t border-border pt-6">
+          <ul className="mx-auto flex w-fit flex-col gap-3">
+            {NEXT_STEPS.map(({ icon: Icon, text }) => (
+              <li key={text} className="flex items-center gap-3">
+                <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <p className="text-body">{text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   )
