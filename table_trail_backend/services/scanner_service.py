@@ -39,7 +39,6 @@ class ScanService:
     # Public Entry Point
 
     async def execute_scan(self, database_details: CreateDatabase) -> DatabaseResponse:
-
         prepared_url = self._prepare_url(database_details)
 
         # Initialize — sets status to SCANNING, commits immediately
@@ -74,7 +73,6 @@ class ScanService:
     # Private Workflow Steps
 
     async def _initialize_scan(self, database_details: CreateDatabase) -> Databases:
-
         existing_database = await self.db_repo.get_database_by_connection(
             database_details.host, int(database_details.port), database_details.db_name
         )

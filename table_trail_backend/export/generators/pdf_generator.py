@@ -6,7 +6,6 @@ from table_trail_backend.core.exceptions import ExportPdfError
 class PdfGenerator:
     @staticmethod
     def generate_pdf(html: str):
-
         pdf_bytes = HTML(string=html).write_pdf()
 
         if not pdf_bytes:

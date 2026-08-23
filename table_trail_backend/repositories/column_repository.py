@@ -8,7 +8,6 @@ from table_trail_backend.schemas.column_schema import CreateColumn, UpdateColumn
 
 class ColumnRepository:
     def __init__(self, session: AsyncSession):
-
         self.db = session
 
     async def create_column(self, table_id: int, data: CreateColumn):

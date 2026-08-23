@@ -10,7 +10,6 @@ class PdfExport:
         self.html_gen = HTMLGenerator()
 
     def run_export(self, database: DatabaseStructureResponse):
-
         # 1. generate dynamic html file with database structure
         html = self.html_gen.generate_html(database=database)
 

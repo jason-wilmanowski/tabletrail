@@ -20,7 +20,6 @@ class ExportService:
         self.db_repo = DatabasesRepository(db)
 
     async def execute_export(self, export_details: CreateExport):
-
         try:
             # 1. prepare database structure
             database_raw = await self._prepare_export_data(export_details.database_id)
@@ -39,7 +38,6 @@ class ExportService:
         return export_file
 
     async def _prepare_export_data(self, database_id: int):
-
         database = await self.db_repo.get_full_database(database_id)
 
         if not database:
@@ -48,7 +46,6 @@ class ExportService:
         return database
 
     def _run_export(self, export_details: CreateExport, database: DatabaseStructureResponse):
-
         # get dynamic export class via export type
         export_class = self._get_export_type(export_details.export_type)
 

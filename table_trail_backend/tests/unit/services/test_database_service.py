@@ -12,7 +12,6 @@ from table_trail_backend.services.database_service import DatabaseService
 
 @pytest.mark.asyncio
 async def test_get_full_database_success():
-
     fake_db = AsyncMock()
     fake_database = MagicMock()
 
@@ -28,7 +27,6 @@ async def test_get_full_database_success():
 
 @pytest.mark.asyncio
 async def test_get_full_database_not_found():
-
     fake_db = AsyncMock()
 
     service = DatabaseService(fake_db)
@@ -47,7 +45,6 @@ async def test_get_full_database_not_found():
 
 @pytest.mark.asyncio
 async def test_get_all_databases():
-
     fake_db = AsyncMock()
 
     service = DatabaseService(fake_db)
@@ -157,7 +154,6 @@ async def test_search_database_components_not_found():
 # -- Update Database Tests --
 @pytest.mark.asyncio
 async def test_update_database_not_found():
-
     fake_db = AsyncMock()
     service = DatabaseService(fake_db)
 
@@ -185,7 +181,6 @@ async def test_update_database_not_found():
 
 @pytest.mark.asyncio
 async def test_update_database_no_data():
-
     fake_db = AsyncMock()
     service = DatabaseService(fake_db)
     fake_database = MagicMock()

@@ -17,7 +17,6 @@ router = APIRouter(prefix="/scanner", tags=["scanner"])
 async def create_database(
     database_details: CreateDatabase, db: AsyncSession = Depends(get_db)
 ) -> DatabaseStructureResponse:
-
     scanner_service = ScanService(db)
     database_service = DatabaseService(db)
 
@@ -40,7 +39,6 @@ async def create_database(
 async def rescan_database(
     database_details: CreateDatabase, db: AsyncSession = Depends(get_db)
 ) -> DatabaseStructureResponse:
-
     scanner_service = ScanService(db)
     database_service = DatabaseService(db)
 

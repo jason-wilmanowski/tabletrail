@@ -6,7 +6,6 @@ from table_trail_backend.db.models.tables import Tables
 
 class TableRepository:
     def __init__(self, session: AsyncSession):
-
         self.db = session
 
     async def create_table(self, db_id: int, name: str, schema_name: str):
@@ -43,7 +42,6 @@ class TableRepository:
         return list(result.scalars().all())
 
     async def update_table(self, db_id: int, table_id: int, name: str | None = None, schema_name: str | None = None):
-
         database = await self.get_table_by_id(db_id, table_id)
         if name is not None:
             database.name = name

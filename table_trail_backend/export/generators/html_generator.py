@@ -10,7 +10,6 @@ from table_trail_backend.schemas.database_schema import DatabaseStructureRespons
 class HTMLGenerator:
     @staticmethod
     def generate_html(database: DatabaseStructureResponse):
-
         base_directory = Path(__file__).resolve().parent.parent
         template_dir = base_directory / "templates"
 

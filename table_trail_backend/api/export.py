@@ -14,7 +14,6 @@ router = APIRouter(prefix="/export", tags=["export"])
 
 @router.post("")
 async def create_export(export_details: CreateExport, db: AsyncSession = Depends(get_db)):
-
     export_service = ExportService(db)
 
     try:

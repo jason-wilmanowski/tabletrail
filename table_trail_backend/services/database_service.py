@@ -35,7 +35,6 @@ class DatabaseService:
         return updated_database
 
     async def search_database_components(self, db_id: int, search: str):
-
         database = await self.db_repo.get_one_database(db_id)
         if not database:
             raise DatabaseError(message=f"Database with id {db_id} not found", status_code=404)

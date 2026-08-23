@@ -17,7 +17,6 @@ router = APIRouter(prefix="/database", tags=["database"])
 
 @router.get("/all", response_model=list[DatabaseOverviewResponse])
 async def get_all_databases(db: AsyncSession = Depends(get_db)):
-
     database_service = DatabaseService(db)
 
     try:
@@ -30,7 +29,6 @@ async def get_all_databases(db: AsyncSession = Depends(get_db)):
 
 @router.get("/{db_id}", response_model=DatabaseStructureResponse)
 async def get_database(db_id: int, db: AsyncSession = Depends(get_db)):
-
     database_service = DatabaseService(db)
 
     try:
@@ -43,7 +41,6 @@ async def get_database(db_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.get("/{db_id}/search", response_model=SearchResponse)
 async def database_component_search(db_id: int, q: str, db: AsyncSession = Depends(get_db)):
-
     database_service = DatabaseService(db)
 
     try:
@@ -56,7 +53,6 @@ async def database_component_search(db_id: int, q: str, db: AsyncSession = Depen
 
 @router.put("/{db_id}", response_model=DatabaseResponse)
 async def update_database(db_id: int, update_data: UpdateDatabase, db: AsyncSession = Depends(get_db)):
-
     database_service = DatabaseService(db)
 
     try:
@@ -69,7 +65,6 @@ async def update_database(db_id: int, update_data: UpdateDatabase, db: AsyncSess
 
 @router.delete("/{db_id}")
 async def delete_database(db_id: int, db: AsyncSession = Depends(get_db)) -> dict:
-
     database_service = DatabaseService(db)
 
     try:

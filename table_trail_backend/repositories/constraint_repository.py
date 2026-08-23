@@ -11,7 +11,6 @@ from table_trail_backend.schemas.constraint_schema import (
 
 class ConstraintsRepository:
     def __init__(self, session: AsyncSession):
-
         self.db = session
 
     async def create_constraint(self, table_id: int, data: CreateConstraint):
