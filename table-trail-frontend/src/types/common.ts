@@ -6,6 +6,11 @@
 export type DBType = 'postgresql' | 'mysql' | 'mariadb'
 
 /**
+ * Mirrors backend `ExportType` enum (core/enums.py).
+ */
+export type ExportFormat = 'pdf' | 'json' | 'markdown'
+
+/**
  * Mirrors backend `DBStatus` enum (core/enums.py).
  * Exact string casing not directly observed in a response yet — inferred
  * from enum member names (SCANNING / READY / ERROR) discussed during backend work.

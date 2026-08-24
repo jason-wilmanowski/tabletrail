@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from table_trail_backend.core.exceptions import ExportPdfError
+from table_trail_backend.core.exceptions import ExportHtmlError
 from table_trail_backend.export.generators.html_generator import HTMLGenerator
 
 
@@ -46,7 +46,7 @@ def test_generate_html_empty_result(monkeypatch):
         "table_trail_backend.export.generators.html_generator.Environment", lambda **kwargs: fake_environment
     )
 
-    with pytest.raises(ExportPdfError) as error:
+    with pytest.raises(ExportHtmlError) as error:
         HTMLGenerator.generate_html(fake_database)
 
     assert error.value.status_code == 500

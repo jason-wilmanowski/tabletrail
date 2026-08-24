@@ -71,11 +71,11 @@ class ExportRuntimeError(ExportSystemError):
     pass
 
 
-class ExportPdfError(ExportSystemError):
+class ExportHtmlError(ExportSystemError):
     pass
 
 
-class ExportJsonError(ExportSystemError):
+class ExportPdfError(ExportSystemError):
     pass
 
 
