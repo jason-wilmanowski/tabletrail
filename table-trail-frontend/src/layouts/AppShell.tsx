@@ -75,7 +75,7 @@ function Sidebar() {
               title={database.name}
             >
               <DatabaseTypeIcon type={database.db_type} className="h-5 w-5 shrink-0" />
-              <span className="text-technical block max-w-[140px] truncate text-left text-[17px]">
+              <span className="text-section block max-w-[140px] truncate text-left text-[15px]">
                 {database.name}
               </span>
             </button>
