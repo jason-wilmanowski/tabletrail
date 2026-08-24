@@ -6,6 +6,7 @@ import { TableInspectorPanel } from '../features/table-inspector/TableInspectorP
 import { SearchInput } from '../features/search-panel/SearchInput'
 import { VirtualizedTableList } from '../features/search-panel/VirtualizedTableList'
 import { EditDatabaseModal } from '../features/database-detail/EditDatabaseModal'
+import { DatabaseEmptyState } from '../features/database-detail/DatabaseEmptyState'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
 import { useUiStore } from '../store/uiStore'
@@ -134,8 +135,14 @@ export function DatabaseDetailPage() {
       </aside>
 
       <div className="relative flex-1 overflow-hidden bg-background">
-        <GraphCanvas tables={data.tables} />
-        <TableInspectorPanel tables={data.tables} />
+        {data.tables.length > 0 ? (
+          <>
+            <GraphCanvas tables={data.tables} />
+            <TableInspectorPanel tables={data.tables} />
+          </>
+        ) : (
+          <DatabaseEmptyState />
+        )}
       </div>
 
       {isEditOpen && (
