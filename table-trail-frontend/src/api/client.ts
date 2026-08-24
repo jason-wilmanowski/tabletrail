@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1'
+export const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000/api/v1'
 
 /**
  * Thrown for any non-2xx response. Carries the HTTP status so callers
@@ -28,7 +28,7 @@ interface RequestOptions {
  * validation errors (e.g. a malformed path param), FastAPI instead returns
  * `{ "detail": [{ msg: string, ... }, ...] }` — both shapes are handled here.
  */
-async function extractErrorMessage(response: Response): Promise<string> {
+export async function extractErrorMessage(response: Response): Promise<string> {
   try {
     const data: unknown = await response.json()
     const detail = (data as { detail?: unknown } | null)?.detail

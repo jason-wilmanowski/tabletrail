@@ -7,6 +7,7 @@ import { SearchInput } from '../features/search-panel/SearchInput'
 import { VirtualizedTableList } from '../features/search-panel/VirtualizedTableList'
 import { EditDatabaseModal } from '../features/database-detail/EditDatabaseModal'
 import { DatabaseEmptyState } from '../features/database-detail/DatabaseEmptyState'
+import { ExportButton } from '../features/database-detail/ExportButton'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
 import { useUiStore } from '../store/uiStore'
@@ -117,6 +118,7 @@ export function DatabaseDetailPage() {
         </div>
 
         <div className="space-y-2 border-t border-border p-3">
+          <ExportButton databaseId={databaseId} />
           <button
             type="button"
             onClick={() => setIsRescanConfirmOpen(true)}
