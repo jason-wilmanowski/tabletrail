@@ -26,5 +26,5 @@ async def create_export(export_details: CreateExport, db: AsyncSession = Depends
     return StreamingResponse(
         io.BytesIO(export_file.content),
         media_type=export_file.media_type,
-        headers={"Content-Disposition": f"attachment; filename={export_file.filename}"},
+        headers={"Content-Disposition": ExportService.build_content_disposition(export_file.filename)},
     )
