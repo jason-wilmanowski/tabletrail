@@ -4,7 +4,7 @@ import type {
   DatabaseStructureResponse,
   DatabaseResponse,
 } from '../types/database'
-import type { DBType, DBStatus } from '../types/common'
+import type { DBType } from '../types/common'
 
 /**
  * Mirrors backend `UpdateDatabase` schema — all fields optional, matches
@@ -18,7 +18,6 @@ export interface UpdateDatabaseRequest {
   db_name?: string
   username?: string
   password?: string
-  status?: DBStatus
 }
 
 /**

@@ -20,7 +20,12 @@ from table_trail_backend.services.scanner_service import ScanService
 
 @pytest.fixture
 def db():
-    return AsyncMock()
+    session = AsyncMock()
+    # AsyncSession.add/add_all are synchronous methods; mock them as such so
+    # calling them doesn't create un-awaited coroutines (RuntimeWarning).
+    session.add = MagicMock()
+    session.add_all = MagicMock()
+    return session
 
 
 @pytest.fixture
