@@ -22,10 +22,8 @@ from table_trail_backend.schemas.database_schema import (
     CreateDatabase,
     CreateDatabaseInternal,
     DatabaseResponse,
-    UpdateDatabase,
+    UpdateDatabaseInternal,
 )
-
-# TODO: remove database status as input from client
 
 
 class ScanService:
@@ -79,7 +77,7 @@ class ScanService:
         if existing_database:
             database = await self.db_repo.update(
                 existing_database.id,
-                UpdateDatabase(
+                UpdateDatabaseInternal(
                     name=database_details.name,
                     db_type=database_details.db_type,
                     host=database_details.host,
@@ -178,7 +176,7 @@ class ScanService:
                         )
 
     async def _update_status(self, db_id: int, status: DBStatus) -> None:
-        await self.db_repo.update(db_id, UpdateDatabase(status=status))
+        await self.db_repo.update(db_id, UpdateDatabaseInternal(status=status))
         await self.db.commit()
 
     # Helper Methods

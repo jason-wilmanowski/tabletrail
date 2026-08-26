@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from table_trail_backend.core.enums import DBStatus, DBType
+from table_trail_backend.core.enums import DBType
 from table_trail_backend.core.exceptions import DatabaseError, DatabaseSystemError
 from table_trail_backend.schemas.database_schema import UpdateDatabase
 from table_trail_backend.services.database_service import DatabaseService
@@ -73,7 +73,6 @@ async def test_update_database_success():
         db_name="Test Database",
         username="Test User",
         password="Test-Password",
-        status=DBStatus.READY,
     )
 
     fake_database = MagicMock()
@@ -165,7 +164,6 @@ async def test_update_database_not_found():
         db_name="Test Database",
         username="Test User",
         password="Test-Password",
-        status=DBStatus.READY,
     )
 
     service.db_repo.get_one_database = AsyncMock(return_value=None)
@@ -186,7 +184,7 @@ async def test_update_database_no_data():
     fake_database = MagicMock()
 
     update_data = UpdateDatabase(
-        name=None, db_type=None, host=None, port=None, db_name=None, username=None, password=None, status=None
+        name=None, db_type=None, host=None, port=None, db_name=None, username=None, password=None
     )
 
     service.db_repo.get_one_database = AsyncMock(return_value=fake_database)

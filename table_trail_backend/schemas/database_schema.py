@@ -31,6 +31,9 @@ class UpdateDatabase(BaseModel):
     db_name: str | None = None
     username: str | None = None
     password: str | None = None
+
+
+class UpdateDatabaseInternal(UpdateDatabase):
     status: DBStatus | None = None
 
 
