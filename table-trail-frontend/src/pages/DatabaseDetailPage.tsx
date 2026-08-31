@@ -139,7 +139,7 @@ export function DatabaseDetailPage() {
       <div className="relative flex-1 overflow-hidden bg-background">
         {data.tables.length > 0 ? (
           <>
-            <GraphCanvas tables={data.tables} />
+            <GraphCanvas tables={data.tables} databaseId={databaseId} />
             <TableInspectorPanel tables={data.tables} />
           </>
         ) : (

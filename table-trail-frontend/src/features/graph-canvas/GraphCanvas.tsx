@@ -16,6 +16,7 @@ import '@xyflow/react/dist/style.css'
 import { tablesToNodes } from '../../utils/tablesToNodes'
 import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
 import { constraintsToEdges } from '../../utils/constraintsToEdges'
+import { getSavedLayout, saveLayout } from '../../utils/layoutStorage'
 import { TableNode } from './nodes/TableNode'
 import { RelationEdge } from './edges/RelationEdge'
 import { useUiStore } from '../../store/uiStore'
@@ -23,6 +24,7 @@ import type { TableResponse } from '../../types/table'
 
 interface GraphCanvasProps {
   tables: TableResponse[]
+  databaseId: number
   interactive?: boolean
 }
 
@@ -89,10 +91,20 @@ const reactFlowTheme: ReactFlowThemeVars = {
  * derive them the exact same way, in the right order: edges are needed
  * *before* layout so Dagre can account for relations when positioning
  * nodes (see `layoutAlgorithm`'s `edges` parameter).
+ *
+ * After Dagre lays out every node, any table with a manually-saved
+ * position (from a previous drag, see `layoutStorage`) has that position
+ * substituted back in — Dagre stays the fallback for tables that were
+ * never dragged.
  */
-function buildGraph(tables: TableResponse[]): { nodes: Node[]; edges: Edge[] } {
+function buildGraph(tables: TableResponse[], databaseId: number): { nodes: Node[]; edges: Edge[] } {
   const edges = constraintsToEdges(tables)
-  const nodes = layoutAlgorithm(tablesToNodes(tables), edges)
+  const layoutNodes = layoutAlgorithm(tablesToNodes(tables), edges)
+  const savedLayout = getSavedLayout(databaseId)
+  const nodes = layoutNodes.map((node) => {
+    const saved = savedLayout[node.id]
+    return saved ? { ...node, position: saved } : node
+  })
   return { nodes, edges }
 }
 
@@ -118,9 +130,9 @@ function buildGraph(tables: TableResponse[]): { nodes: Node[]; edges: Edge[] } {
  * it can't be called in the same component that also renders
  * `<ReactFlow>` without the explicit provider wrapping.
  */
-function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
-  const [nodes, setNodes] = useState<Node[]>(() => buildGraph(tables).nodes)
-  const [edges, setEdges] = useState<Edge[]>(() => buildGraph(tables).edges)
+function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanvasProps) {
+  const [nodes, setNodes] = useState<Node[]>(() => buildGraph(tables, databaseId).nodes)
+  const [edges, setEdges] = useState<Edge[]>(() => buildGraph(tables, databaseId).edges)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   const { setViewport, getNodesBounds } = useReactFlow()
@@ -128,14 +140,15 @@ function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
 
   // Re-derive nodes and edges when the underlying table data changes
-  // (e.g. after a rescan). Manual drag positions are intentionally not
-  // preserved here — that concern belongs to a later step once layout
-  // persistence exists.
+  // (e.g. after a rescan) or when a different database is shown. Manual
+  // drag positions are re-applied on top of the fresh Dagre layout by
+  // `buildGraph` itself (via `layoutStorage`), so they survive a rescan
+  // as long as the dragged table still exists.
   useEffect(() => {
-    const graph = buildGraph(tables)
+    const graph = buildGraph(tables, databaseId)
     setNodes(graph.nodes)
     setEdges(graph.edges)
-  }, [tables])
+  }, [tables, databaseId])
 
   // Centers the view on the node matching the current selection —
   // triggered both by clicking a TableNode directly and by clicking a
@@ -179,9 +192,29 @@ function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
     setViewport({ x, y, zoom }, { duration: 400 })
   }, [selectedTableId, nodes, getNodesBounds, setViewport])
 
+  // Persists node positions to `localStorage` once a drag finishes — React
+  // Flow reports drag progress as a stream of `position` changes with
+  // `dragging: true`, and fires one final `position` change with
+  // `dragging: false` when the user releases the node. Only that final
+  // change should trigger a write; saving on every intermediate step would
+  // thrash `localStorage` during the drag.
   const onNodesChange = useCallback(
-    (changes: NodeChange[]) => setNodes((current) => applyNodeChanges(changes, current)),
-    []
+    (changes: NodeChange[]) => {
+      setNodes((current) => {
+        const updated = applyNodeChanges(changes, current)
+
+        const dragEnded = changes.some(
+          (change) => change.type === 'position' && change.dragging === false
+        )
+        if (dragEnded) {
+          const positions = Object.fromEntries(updated.map((node) => [node.id, node.position]))
+          saveLayout(databaseId, positions)
+        }
+
+        return updated
+      })
+    },
+    [databaseId]
   )
 
   const onEdgesChange = useCallback(
@@ -231,10 +264,10 @@ function GraphCanvasInner({ tables, interactive = true }: GraphCanvasProps) {
  * use this export exactly as before; the provider wrapping is an internal
  * detail, not a change to this component's public API.
  */
-export function GraphCanvas({ tables, interactive }: GraphCanvasProps) {
+export function GraphCanvas({ tables, databaseId, interactive }: GraphCanvasProps) {
   return (
     <ReactFlowProvider>
-      <GraphCanvasInner tables={tables} interactive={interactive} />
+      <GraphCanvasInner tables={tables} databaseId={databaseId} interactive={interactive} />
     </ReactFlowProvider>
   )
 }
