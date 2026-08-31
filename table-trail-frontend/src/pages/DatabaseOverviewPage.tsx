@@ -30,7 +30,7 @@ export function DatabaseOverviewPage() {
 
   if (previewDatabaseId !== null && previewData) {
     return previewData.tables.length > 0 ? (
-      <GraphCanvas tables={previewData.tables} interactive={false} />
+      <GraphCanvas tables={previewData.tables} databaseId={previewDatabaseId} interactive={false} />
     ) : (
       <DatabaseEmptyState />
     )
