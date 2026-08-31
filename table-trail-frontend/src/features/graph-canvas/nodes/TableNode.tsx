@@ -57,7 +57,7 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
   return (
     <div
       onClick={() => setSelectedTableId(String(table.id))}
-      className={`min-w-[220px] rounded-md border bg-surface text-foreground transition-colors ${
+      className={`min-w-[220px] rounded-md border bg-surface text-foreground outline-none transition-colors ${
         isSelected ? 'border-accent ring-1 ring-accent' : 'border-border hover:border-muted-foreground'
       }`}
     >
