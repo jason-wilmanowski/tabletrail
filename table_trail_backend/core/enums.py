@@ -17,3 +17,12 @@ class ExportType(Enum):
     JSON = "json"
     PDF = "pdf"
     MARKDOWN = "markdown"
+
+
+class ColumnRelationColor(Enum):
+    GREEN = "green"
+    RED = "red"
+    YELLOW = "yellow"
+    BLUE = "blue"
+    MAGENTA = "magenta"
+    WHITE = "white"
