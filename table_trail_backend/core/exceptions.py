@@ -1,14 +1,17 @@
-# Base Database Exception
-class DatabaseSystemError(Exception):
+# General Exceptions
+class NotAllowedError(Exception):
     def __init__(self, message: str, status_code: int):
         self.message = message
         self.status_code = status_code
         super().__init__(message)
 
 
-# General Exceptions
-class NotAllowedError(DatabaseSystemError):
-    pass
+# Base Database Exception
+class DatabaseSystemError(Exception):
+    def __init__(self, message: str, status_code: int):
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
 
 
 # Database Exceptions
@@ -28,6 +31,11 @@ class ColumnError(DatabaseSystemError):
 
 # Constraint Error
 class ConstraintError(DatabaseSystemError):
+    pass
+
+
+# ColumnRelation Errors
+class ColumnRelationError(DatabaseSystemError):
     pass
 
 
