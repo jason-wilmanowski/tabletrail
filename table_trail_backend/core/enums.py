@@ -19,7 +19,7 @@ class ExportType(Enum):
     MARKDOWN = "markdown"
 
 
-class ColumnRelationType(Enum):
+class ColumnRelationColor(Enum):
     GREEN = "green"
     RED = "red"
     YELLOW = "yellow"
