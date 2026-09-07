@@ -1,4 +1,4 @@
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from '@xyflow/react'
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useViewport } from '@xyflow/react'
 import type { Edge, EdgeProps } from '@xyflow/react'
 import { StickyNote, X } from 'lucide-react'
 import { useColumnRelationStore } from '../../../store/columnRelationStore'
@@ -46,6 +46,12 @@ export function ColumnRelationEdge({
   const activePopoverId = useColumnRelationStore((state) => state.activePopoverId)
   const setActivePopover = useColumnRelationStore((state) => state.setActivePopover)
   const updateDraft = useColumnRelationStore((state) => state.updateDraft)
+  // `EdgeLabelRenderer` content lives inside React Flow's own pan/zoom
+  // transform, so a plain fixed-width popover would shrink/grow with the
+  // canvas zoom. Countering the ancestor's `scale(zoom)` with `scale(1/zoom)`
+  // (the same technique React Flow's own zoom-independent overlays use)
+  // keeps it a constant, always-legible size regardless of zoom level.
+  const { zoom } = useViewport()
 
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX,
@@ -73,7 +79,7 @@ export function ColumnRelationEdge({
           <div
             className="nodrag nopan absolute flex h-4 w-4 items-center justify-center rounded-full border border-border bg-panel"
             style={{
-              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              transform: `translate(${labelX}px, ${labelY}px) scale(${1 / zoom}) translate(-50%, -50%)`,
               pointerEvents: 'none',
             }}
           >
@@ -83,9 +89,15 @@ export function ColumnRelationEdge({
 
         {isPopoverOpen && (
           <div
+            // Stops clicks anywhere in the popover (swatches, textarea,
+            // close button) from bubbling up to React Flow's Pane, whose
+            // own click handler would otherwise fire right after and
+            // immediately clear this popover (and the table selection).
+            onClick={(event) => event.stopPropagation()}
             className="nodrag nopan absolute z-40 w-56 rounded-md border border-border bg-panel p-2.5 shadow-lg"
             style={{
-              transform: `translate(-50%, 8px) translate(${labelX}px, ${labelY}px)`,
+              transform: `translate(${labelX}px, ${labelY}px) scale(${1 / zoom}) translate(-50%, 8px)`,
+              pointerEvents: 'auto',
             }}
           >
             <div className="mb-2 flex items-center justify-between">
