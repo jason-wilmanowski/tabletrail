@@ -11,7 +11,15 @@ import {
   applyEdgeChanges,
   getViewportForBounds,
 } from '@xyflow/react'
-import type { Node, Edge, NodeChange, EdgeChange, NodeTypes, EdgeTypes } from '@xyflow/react'
+import type {
+  Node,
+  Edge,
+  NodeChange,
+  EdgeChange,
+  NodeTypes,
+  EdgeTypes,
+  EdgeMouseHandler,
+} from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { tablesToNodes } from '../../utils/tablesToNodes'
 import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
@@ -19,7 +27,11 @@ import { constraintsToEdges } from '../../utils/constraintsToEdges'
 import { getSavedLayout, saveLayout } from '../../utils/layoutStorage'
 import { TableNode } from './nodes/TableNode'
 import { RelationEdge } from './edges/RelationEdge'
+import { ColumnRelationEdge } from './edges/ColumnRelationEdge'
+import type { ColumnRelationEdgeType } from './edges/ColumnRelationEdge'
+import { ColumnRelationsPanel } from './column-relations/ColumnRelationsPanel'
 import { useUiStore } from '../../store/uiStore'
+import { useColumnRelationStore } from '../../store/columnRelationStore'
 import type { TableResponse } from '../../types/table'
 
 interface GraphCanvasProps {
@@ -47,6 +59,7 @@ const nodeTypes: NodeTypes = {
 
 const edgeTypes: EdgeTypes = {
   relation: RelationEdge,
+  columnRelation: ColumnRelationEdge,
 }
 
 /**
@@ -138,6 +151,31 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const { setViewport, getNodesBounds } = useReactFlow()
   const selectedTableId = useUiStore((state) => state.selectedTableId)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
+  const columnRelationDrafts = useColumnRelationStore((state) => state.drafts)
+  const setActiveColumnRelationPopover = useColumnRelationStore((state) => state.setActivePopover)
+  const resetColumnRelationsForDatabase = useColumnRelationStore((state) => state.resetForDatabase)
+
+  // Drafts reference column/table ids scoped to one database — clear them
+  // when the displayed database changes so a leftover local relation from
+  // a previous database never renders against the new one's tables.
+  useEffect(() => {
+    resetColumnRelationsForDatabase()
+  }, [databaseId, resetColumnRelationsForDatabase])
+
+  // Manually-drawn relations are derived straight from the store on every
+  // render rather than folded into the `edges` state above — they don't
+  // participate in `onNodesChange`/`applyEdgeChanges` (no drag/selection
+  // state of their own), so keeping them out of that state avoids two
+  // sources of truth for the same edge.
+  const columnRelationEdges: ColumnRelationEdgeType[] = columnRelationDrafts.map((draft) => ({
+    id: draft.id,
+    type: 'columnRelation',
+    source: `table-${draft.tableId1}`,
+    target: `table-${draft.tableId2}`,
+    sourceHandle: `col-${draft.columnId1}`,
+    targetHandle: `col-${draft.columnId2}`,
+    data: { color: draft.color, description: draft.description },
+  }))
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan) or when a different database is shown. Manual
@@ -226,18 +264,36 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // `TableInspectorPanel` the same way `Escape` already does — React
   // Flow's own distinction between "pane" (background) and node clicks
   // means this never fires for a click that lands on a `TableNode`.
-  const onPaneClick = useCallback(() => setSelectedTableId(null), [setSelectedTableId])
+  const onPaneClick = useCallback(() => {
+    setSelectedTableId(null)
+    setActiveColumnRelationPopover(null)
+  }, [setSelectedTableId, setActiveColumnRelationPopover])
+
+  // Opens the inline color/note popover for a clicked custom relation
+  // (edit mode: editable, otherwise read-only — see ColumnRelationEdge).
+  // Real FK edges (`type: 'relation'`) aren't clickable in this way.
+  const onEdgeClick: EdgeMouseHandler = useCallback(
+    (event, edge) => {
+      if (edge.type !== 'columnRelation') {
+        return
+      }
+      event.stopPropagation()
+      setActiveColumnRelationPopover(edge.id)
+    },
+    [setActiveColumnRelationPopover]
+  )
 
   return (
-    <div ref={wrapperRef} className="h-full w-full" style={reactFlowTheme}>
+    <div ref={wrapperRef} className="relative h-full w-full" style={reactFlowTheme}>
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={[...edges, ...columnRelationEdges]}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onPaneClick={onPaneClick}
+        onEdgeClick={onEdgeClick}
         fitView
         nodesDraggable={interactive}
         nodesConnectable={false}
@@ -254,6 +310,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
           <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
         )}
       </ReactFlow>
+      {interactive && <ColumnRelationsPanel />}
     </div>
   )
 }
