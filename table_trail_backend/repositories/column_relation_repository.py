@@ -39,6 +39,14 @@ class ColumnRelationRepository:
         )
         return column_relations.scalars().all()
 
+    async def get_column_relation_by_columns(self, column_id_1: int, column_id_2: int):
+        column_relations = await self.db.execute(
+            select(ColumnRelations).where(
+                and_(ColumnRelations.column_id_1 == column_id_1, ColumnRelations.column_id_2 == column_id_2)
+            )
+        )
+        return column_relations.scalars().one_or_none()
+
     async def update_column_relation(self, database_id: int, column_relation_id: int, data: UpdateColumnRelation):
         column_relation = await self.get_column_relation_by_id(database_id, column_relation_id)
         update_data = data.model_dump(exclude_none=True)

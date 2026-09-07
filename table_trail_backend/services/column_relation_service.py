@@ -24,6 +24,12 @@ class ColumnRelationService:
         if data.column_id_1 == data.column_id_2:
             raise ColumnRelationError(status_code=400, message="A column cannot be related to itself")
 
+        existing_column_relation = await self.column_rel_repo.get_column_relation_by_columns(
+            data.column_id_1, data.column_id_2
+        )
+        if existing_column_relation:
+            raise ColumnRelationError(status_code=400, message="Relation between these columns already exists")
+
         new_column_relation = await self.column_rel_repo.create_column_relation(database_id, data)
         await self.db.commit()
 
