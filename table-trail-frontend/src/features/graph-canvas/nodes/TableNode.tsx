@@ -1,9 +1,22 @@
 import { useState } from 'react'
 import { KeyRound, Link2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import type { TableNodeType } from '../../../utils/tablesToNodes'
 import { buildColumnConstraintMap } from '../../../utils/constraintGrouping'
 import { useUiStore } from '../../../store/uiStore'
+import { useColumnRelationStore } from '../../../store/columnRelationStore'
+
+/**
+ * Invisible, non-connectable — these exist purely as DOM anchors so a
+ * `ColumnRelationEdge` can compute its path against one specific column
+ * row (via `sourceHandle`/`targetHandle` ids matching `col-{column.id}`),
+ * not the table node's outer boundary. Selecting a column for a custom
+ * relation happens by clicking the row itself (see `onClick` below), not
+ * by dragging from these — real FK edges (`RelationEdge`) don't use them
+ * either, they stay table-to-table.
+ */
+const columnHandleStyle = { opacity: 0, width: 1, height: 1, pointerEvents: 'none' as const }
 
 /**
  * Tables with more columns than this are collapsed to the first N by
@@ -40,6 +53,9 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
   const [isExpanded, setIsExpanded] = useState(false)
   const selectedTableId = useUiStore((state) => state.selectedTableId)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
+  const isColumnRelationEditMode = useColumnRelationStore((state) => state.isEditMode)
+  const pendingColumn = useColumnRelationStore((state) => state.pendingColumn)
+  const selectColumnForRelation = useColumnRelationStore((state) => state.selectColumn)
 
   const isSelected = selectedTableId === String(table.id)
 
@@ -74,12 +90,40 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
       <div className="divide-y divide-border">
         {visibleColumns.map((column) => {
           const flags = columnConstraints.get(column.name)
+          const isPending = pendingColumn?.columnId === column.id
 
           return (
             <div
               key={column.id}
-              className="flex items-center justify-between gap-3 px-3 py-1.5"
+              onClick={(event) => {
+                if (!isColumnRelationEditMode) {
+                  return
+                }
+                // Stop propagation only in edit mode — outside it, a
+                // column click should keep bubbling up to select the
+                // table exactly as before this feature existed.
+                event.stopPropagation()
+                selectColumnForRelation(column.id, table.id)
+              }}
+              className={`relative flex items-center justify-between gap-3 px-3 py-1.5 ${
+                isColumnRelationEditMode ? 'cursor-pointer hover:bg-surface-hover' : ''
+              } ${isPending ? 'bg-accent/15 ring-1 ring-inset ring-accent' : ''}`}
             >
+              <Handle
+                type="target"
+                position={Position.Left}
+                id={`col-${column.id}`}
+                isConnectable={false}
+                style={columnHandleStyle}
+              />
+              <Handle
+                type="source"
+                position={Position.Right}
+                id={`col-${column.id}`}
+                isConnectable={false}
+                style={columnHandleStyle}
+              />
+
               <span className="flex min-w-0 items-center gap-1.5 font-mono text-xs text-foreground">
                 {flags?.isPrimaryKey && (
                   <KeyRound
