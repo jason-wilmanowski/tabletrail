@@ -73,10 +73,36 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
   return (
     <div
       onClick={() => setSelectedTableId(String(table.id))}
-      className={`min-w-[220px] rounded-md border bg-surface text-foreground outline-none transition-colors ${
+      className={`relative min-w-[220px] rounded-md border bg-surface text-foreground outline-none transition-colors ${
         isSelected ? 'border-accent ring-1 ring-accent' : 'border-border hover:border-muted-foreground'
       }`}
     >
+      {/*
+        Stable, table-level anchor for real FK edges (RelationEdge), which
+        never set a sourceHandle/targetHandle — React Flow resolves an
+        edge without one to the node's *first* registered handle. Now that
+        every column also has its own handle, that fallback would silently
+        land on the table's first column instead of the table itself.
+        Giving the table one explicit `id="table"` handle (matching
+        `constraintsToEdges.ts`) keeps FK edges anchored at the table
+        boundary regardless of column handles, order, or count. Position
+        matches the Dagre `rankdir: 'TB'` layout (layoutAlgorithm.ts).
+      */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="table"
+        isConnectable={false}
+        style={columnHandleStyle}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="table"
+        isConnectable={false}
+        style={columnHandleStyle}
+      />
+
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
         <span className="text-sm font-medium">{table.name}</span>
 
