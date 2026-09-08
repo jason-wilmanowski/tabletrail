@@ -397,7 +397,11 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
           <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
         )}
       </ReactFlow>
-      {interactive && <ColumnRelationsPanel />}
+      {/* Hidden while a table is selected — its trigger sits top-right
+          (`right-3 top-3`), directly over `TableInspectorPanel`'s header
+          (`absolute right-0 top-0 w-72`), so an open table's name/columns
+          would otherwise be partly covered by this icon. */}
+      {interactive && selectedTableId === null && <ColumnRelationsPanel />}
     </div>
   )
 }
