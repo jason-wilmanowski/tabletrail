@@ -92,7 +92,13 @@ export function ColumnRelationEdge({
 
   const commitDescription = () => {
     if (descriptionDraft !== (description ?? '')) {
-      requestUpdate(relationId, { description: descriptionDraft || null })
+      // Always send the raw string, including "" — the backend's update
+      // endpoint drops `None` fields entirely (`exclude_none=True`) and
+      // rejects an update where every field ends up `None` ("No update
+      // data provided"), so sending `null` here can never actually clear
+      // an existing note. An empty string is a real, sent value that
+      // does clear it.
+      requestUpdate(relationId, { description: descriptionDraft })
     }
   }
 
