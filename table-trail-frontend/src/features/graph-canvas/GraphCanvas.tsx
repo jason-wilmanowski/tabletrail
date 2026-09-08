@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import {
   ReactFlow,
@@ -11,7 +11,15 @@ import {
   applyEdgeChanges,
   getViewportForBounds,
 } from '@xyflow/react'
-import type { Node, Edge, NodeChange, EdgeChange, NodeTypes, EdgeTypes } from '@xyflow/react'
+import type {
+  Node,
+  Edge,
+  NodeChange,
+  EdgeChange,
+  NodeTypes,
+  EdgeTypes,
+  EdgeMouseHandler,
+} from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { tablesToNodes } from '../../utils/tablesToNodes'
 import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
@@ -19,7 +27,19 @@ import { constraintsToEdges } from '../../utils/constraintsToEdges'
 import { getSavedLayout, saveLayout } from '../../utils/layoutStorage'
 import { TableNode } from './nodes/TableNode'
 import { RelationEdge } from './edges/RelationEdge'
+import { ColumnRelationEdge } from './edges/ColumnRelationEdge'
+import type { ColumnRelationEdgeType } from './edges/ColumnRelationEdge'
+import { ColumnRelationsPanel } from './column-relations/ColumnRelationsPanel'
 import { useUiStore } from '../../store/uiStore'
+import { useColumnRelationStore } from '../../store/columnRelationStore'
+import { notifyError } from '../../store/notificationStore'
+import { getErrorMessage } from '../../api/client'
+import {
+  useColumnRelations,
+  useCreateColumnRelation,
+  useUpdateColumnRelation,
+  useDeleteColumnRelation,
+} from '../../hooks/useColumnRelations'
 import type { TableResponse } from '../../types/table'
 
 interface GraphCanvasProps {
@@ -47,6 +67,7 @@ const nodeTypes: NodeTypes = {
 
 const edgeTypes: EdgeTypes = {
   relation: RelationEdge,
+  columnRelation: ColumnRelationEdge,
 }
 
 /**
@@ -138,6 +159,110 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const { setViewport, getNodesBounds } = useReactFlow()
   const selectedTableId = useUiStore((state) => state.selectedTableId)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
+  const pendingColumnRelationAction = useColumnRelationStore((state) => state.pendingAction)
+  const clearPendingColumnRelationAction = useColumnRelationStore((state) => state.clearPendingAction)
+  const setActiveColumnRelationPopover = useColumnRelationStore((state) => state.setActivePopover)
+  const resetColumnRelationSelection = useColumnRelationStore((state) => state.resetSelection)
+
+  // Custom relations are server state (unlike FK edges, which are derived
+  // straight from `tables`) — TanStack Query keys the cache per
+  // `databaseId` on its own, so switching databases just refetches; only
+  // this component's own edit-mode/selection/popover state needs a
+  // manual reset (a leftover pending selection referencing the previous
+  // database's columns would otherwise dangle).
+  useEffect(() => {
+    resetColumnRelationSelection()
+  }, [databaseId, resetColumnRelationSelection])
+
+  const columnRelationsQuery = useColumnRelations(databaseId)
+  const createColumnRelation = useCreateColumnRelation(databaseId)
+  const updateColumnRelation = useUpdateColumnRelation(databaseId)
+  const deleteColumnRelation = useDeleteColumnRelation(databaseId)
+
+  // Surfaces a failed initial load — the graph would otherwise just
+  // silently show zero custom relations with no indication anything
+  // went wrong.
+  useEffect(() => {
+    if (columnRelationsQuery.error) {
+      notifyError(`Custom-Relationen konnten nicht geladen werden: ${getErrorMessage(columnRelationsQuery.error)}`)
+    }
+  }, [columnRelationsQuery.error])
+
+  // `TableNode`/`ColumnRelationEdge` don't hold `databaseId` or the
+  // mutation hooks themselves, so they just record what they want to
+  // happen (`pendingAction`) in the store; this effect is the one place
+  // that actually fires the request and reports failures, once, right
+  // after the action is requested.
+  useEffect(() => {
+    if (!pendingColumnRelationAction) {
+      return
+    }
+    const action = pendingColumnRelationAction
+    clearPendingColumnRelationAction()
+
+    if (action.type === 'create') {
+      createColumnRelation.mutate(
+        { column_id_1: action.columnId1, column_id_2: action.columnId2 },
+        {
+          onSuccess: (created) => setActiveColumnRelationPopover(String(created.id)),
+          onError: (error) => notifyError(`Relation konnte nicht erstellt werden: ${getErrorMessage(error)}`),
+        }
+      )
+    } else if (action.type === 'update') {
+      updateColumnRelation.mutate(
+        { id: action.id, data: { relation_color: action.patch.color, description: action.patch.description } },
+        { onError: (error) => notifyError(`Änderung konnte nicht gespeichert werden: ${getErrorMessage(error)}`) }
+      )
+    } else {
+      deleteColumnRelation.mutate(action.id, {
+        onError: (error) => notifyError(`Relation konnte nicht gelöscht werden: ${getErrorMessage(error)}`),
+      })
+    }
+  }, [
+    pendingColumnRelationAction,
+    clearPendingColumnRelationAction,
+    createColumnRelation,
+    updateColumnRelation,
+    deleteColumnRelation,
+    setActiveColumnRelationPopover,
+  ])
+
+  // Real relations only carry column ids (matching the backend response),
+  // so rendering them as edges needs each column's owning table id —
+  // built once per `tables` change rather than scanning on every relation.
+  const columnToTableId = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const table of tables) {
+      for (const column of table.columns) {
+        map.set(column.id, table.id)
+      }
+    }
+    return map
+  }, [tables])
+
+  // Manually-drawn relations are derived straight from the query cache on
+  // every render rather than folded into the `edges` state above — they
+  // don't participate in `onNodesChange`/`applyEdgeChanges` (no drag/
+  // selection state of their own), so keeping them out of that state
+  // avoids two sources of truth for the same edge.
+  const columnRelationEdges: ColumnRelationEdgeType[] = (columnRelationsQuery.data ?? []).flatMap((relation) => {
+    const tableId1 = columnToTableId.get(relation.column_id_1)
+    const tableId2 = columnToTableId.get(relation.column_id_2)
+    if (tableId1 === undefined || tableId2 === undefined) {
+      return []
+    }
+    return [
+      {
+        id: String(relation.id),
+        type: 'columnRelation',
+        source: `table-${tableId1}`,
+        target: `table-${tableId2}`,
+        sourceHandle: `col-${relation.column_id_1}`,
+        targetHandle: `col-${relation.column_id_2}`,
+        data: { color: relation.relation_color, description: relation.description },
+      },
+    ]
+  })
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan) or when a different database is shown. Manual
@@ -226,18 +351,36 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // `TableInspectorPanel` the same way `Escape` already does — React
   // Flow's own distinction between "pane" (background) and node clicks
   // means this never fires for a click that lands on a `TableNode`.
-  const onPaneClick = useCallback(() => setSelectedTableId(null), [setSelectedTableId])
+  const onPaneClick = useCallback(() => {
+    setSelectedTableId(null)
+    setActiveColumnRelationPopover(null)
+  }, [setSelectedTableId, setActiveColumnRelationPopover])
+
+  // Opens the inline color/note popover for a clicked custom relation
+  // (edit mode: editable, otherwise read-only — see ColumnRelationEdge).
+  // Real FK edges (`type: 'relation'`) aren't clickable in this way.
+  const onEdgeClick: EdgeMouseHandler = useCallback(
+    (event, edge) => {
+      if (edge.type !== 'columnRelation') {
+        return
+      }
+      event.stopPropagation()
+      setActiveColumnRelationPopover(edge.id)
+    },
+    [setActiveColumnRelationPopover]
+  )
 
   return (
-    <div ref={wrapperRef} className="h-full w-full" style={reactFlowTheme}>
+    <div ref={wrapperRef} className="relative h-full w-full" style={reactFlowTheme}>
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={[...edges, ...columnRelationEdges]}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onPaneClick={onPaneClick}
+        onEdgeClick={onEdgeClick}
         fitView
         nodesDraggable={interactive}
         nodesConnectable={false}
@@ -254,6 +397,11 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
           <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
         )}
       </ReactFlow>
+      {/* Hidden while a table is selected — its trigger sits top-right
+          (`right-3 top-3`), directly over `TableInspectorPanel`'s header
+          (`absolute right-0 top-0 w-72`), so an open table's name/columns
+          would otherwise be partly covered by this icon. */}
+      {interactive && selectedTableId === null && <ColumnRelationsPanel />}
     </div>
   )
 }

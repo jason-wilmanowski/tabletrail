@@ -4,6 +4,7 @@ import { Database, Plus, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-
 import { useDatabases } from '../hooks/useDatabases'
 import { useUiStore } from '../store/uiStore'
 import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
+import { NotificationViewport } from '../components/ui/NotificationViewport'
 
 interface AppShellProps {
   children?: ReactNode
@@ -18,6 +19,8 @@ export function AppShell({ children }: AppShellProps) {
         <Sidebar />
         <main className="overflow-hidden">{children}</main>
       </div>
+
+      <NotificationViewport />
     </div>
   )
 }

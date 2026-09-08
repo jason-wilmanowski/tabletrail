@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from table_trail_backend.api import database, export, health_check, scanner
+from table_trail_backend.api import column_relation, database, export, health_check, scanner
 from table_trail_backend.core.config import settings
 from table_trail_backend.db.database_config import Base, engine
 
@@ -34,3 +34,4 @@ app.include_router(scanner.router, prefix="/api/v1")
 app.include_router(database.router, prefix="/api/v1")
 app.include_router(health_check.router, prefix="/api/v1")
 app.include_router(export.router, prefix="/api/v1")
+app.include_router(column_relation.router, prefix="/api/v1")

@@ -59,6 +59,14 @@ export function constraintsToEdges(tables: TableResponse[]): RelationEdgeType[] 
         type: 'relation',
         source: sourceNodeId,
         target: targetNodeId,
+        // Explicit table-level handle (see TableNode.tsx) rather than
+        // leaving source/targetHandle unset — React Flow resolves an
+        // edge without one to the node's *first* registered handle,
+        // which since column relations added per-column handles would
+        // otherwise land on the table's first column instead of the
+        // table itself.
+        sourceHandle: 'table',
+        targetHandle: 'table',
         markerEnd: { type: MarkerType.ArrowClosed },
         data: {
           onDelete: constraint.on_delete,

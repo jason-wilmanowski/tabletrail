@@ -99,3 +99,33 @@
     @apply text-sm text-muted-foreground;
   }
 }
+
+@layer utilities {
+  /* Entrance animation for `NotificationViewport` toasts. */
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-toast-in {
+    animation: toast-in 0.2s ease-out;
+  }
+}
+
+/*
+ * `.react-flow__edgelabel-renderer` (edge notes, the column-relation
+ * mini-menu) renders before `.react-flow__nodes` in React Flow's own DOM
+ * order, so without an explicit z-index a table node paints over it —
+ * e.g. a relation popover opened near/under a node would be clipped.
+ * `elevateNodesOnSelect` can push a selected node's z-index to ~1000, so
+ * this needs to clear that comfortably to always stay the top layer.
+ */
+.react-flow__edgelabel-renderer {
+  z-index: 1000;
+}
