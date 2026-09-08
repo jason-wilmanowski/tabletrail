@@ -25,6 +25,13 @@ interface ColumnRelationState {
   pendingAction: PendingColumnRelationAction | null
   /** Id (as a string, matching the edge's own `id`) of the relation whose popover is open. */
   activePopoverId: string | null
+  /**
+   * Relation ids whose note window is hidden on the canvas. Absence from
+   * this set means visible — that way a freshly created/loaded relation
+   * with a description shows its note by default without needing an
+   * entry here first.
+   */
+  hiddenNoteIds: Set<number>
 
   toggleEditMode: () => void
   selectColumn: (columnId: number) => void
@@ -32,6 +39,7 @@ interface ColumnRelationState {
   requestDelete: (id: number) => void
   clearPendingAction: () => void
   setActivePopover: (id: string | null) => void
+  toggleNoteVisibility: (id: number) => void
   resetSelection: () => void
 }
 
@@ -47,6 +55,7 @@ export const useColumnRelationStore = create<ColumnRelationState>((set) => ({
   pendingColumn: null,
   pendingAction: null,
   activePopoverId: null,
+  hiddenNoteIds: new Set(),
 
   toggleEditMode: () =>
     set((state) => ({
@@ -82,6 +91,17 @@ export const useColumnRelationStore = create<ColumnRelationState>((set) => ({
   clearPendingAction: () => set({ pendingAction: null }),
 
   setActivePopover: (id) => set({ activePopoverId: id }),
+
+  toggleNoteVisibility: (id) =>
+    set((state) => {
+      const hiddenNoteIds = new Set(state.hiddenNoteIds)
+      if (hiddenNoteIds.has(id)) {
+        hiddenNoteIds.delete(id)
+      } else {
+        hiddenNoteIds.add(id)
+      }
+      return { hiddenNoteIds }
+    }),
 
   // Switching databases doesn't need to touch the TanStack Query cache
   // (it's keyed per databaseId already) — only this UI-only interaction
