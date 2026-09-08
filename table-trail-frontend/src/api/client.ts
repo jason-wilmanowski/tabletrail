@@ -72,6 +72,21 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 /**
+ * Turns any error caught from an `apiClient` call (or thrown elsewhere)
+ * into a short, user-presentable string — for surfacing in a
+ * notification rather than swallowing it silently.
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    return error.message
+  }
+  if (error instanceof Error) {
+    return error.message
+  }
+  return 'Unbekannter Fehler'
+}
+
+/**
  * Central HTTP client used by all API modules (databases.ts, scanner.ts,
  * search.ts). No UI dependencies — safe to import from hooks or plain
  * TypeScript modules alike.

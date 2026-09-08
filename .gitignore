@@ -33,6 +33,8 @@ dist/
 .env.local
 .env.*.local
 
+CLAUDE.md
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
