@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import {
   ReactFlow,
@@ -32,6 +32,14 @@ import type { ColumnRelationEdgeType } from './edges/ColumnRelationEdge'
 import { ColumnRelationsPanel } from './column-relations/ColumnRelationsPanel'
 import { useUiStore } from '../../store/uiStore'
 import { useColumnRelationStore } from '../../store/columnRelationStore'
+import { notifyError } from '../../store/notificationStore'
+import { getErrorMessage } from '../../api/client'
+import {
+  useColumnRelations,
+  useCreateColumnRelation,
+  useUpdateColumnRelation,
+  useDeleteColumnRelation,
+} from '../../hooks/useColumnRelations'
 import type { TableResponse } from '../../types/table'
 
 interface GraphCanvasProps {
@@ -151,31 +159,110 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const { setViewport, getNodesBounds } = useReactFlow()
   const selectedTableId = useUiStore((state) => state.selectedTableId)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
-  const columnRelationDrafts = useColumnRelationStore((state) => state.drafts)
+  const pendingColumnRelationAction = useColumnRelationStore((state) => state.pendingAction)
+  const clearPendingColumnRelationAction = useColumnRelationStore((state) => state.clearPendingAction)
   const setActiveColumnRelationPopover = useColumnRelationStore((state) => state.setActivePopover)
-  const resetColumnRelationsForDatabase = useColumnRelationStore((state) => state.resetForDatabase)
+  const resetColumnRelationSelection = useColumnRelationStore((state) => state.resetSelection)
 
-  // Drafts reference column/table ids scoped to one database — clear them
-  // when the displayed database changes so a leftover local relation from
-  // a previous database never renders against the new one's tables.
+  // Custom relations are server state (unlike FK edges, which are derived
+  // straight from `tables`) — TanStack Query keys the cache per
+  // `databaseId` on its own, so switching databases just refetches; only
+  // this component's own edit-mode/selection/popover state needs a
+  // manual reset (a leftover pending selection referencing the previous
+  // database's columns would otherwise dangle).
   useEffect(() => {
-    resetColumnRelationsForDatabase()
-  }, [databaseId, resetColumnRelationsForDatabase])
+    resetColumnRelationSelection()
+  }, [databaseId, resetColumnRelationSelection])
 
-  // Manually-drawn relations are derived straight from the store on every
-  // render rather than folded into the `edges` state above — they don't
-  // participate in `onNodesChange`/`applyEdgeChanges` (no drag/selection
-  // state of their own), so keeping them out of that state avoids two
-  // sources of truth for the same edge.
-  const columnRelationEdges: ColumnRelationEdgeType[] = columnRelationDrafts.map((draft) => ({
-    id: draft.id,
-    type: 'columnRelation',
-    source: `table-${draft.tableId1}`,
-    target: `table-${draft.tableId2}`,
-    sourceHandle: `col-${draft.columnId1}`,
-    targetHandle: `col-${draft.columnId2}`,
-    data: { color: draft.color, description: draft.description },
-  }))
+  const columnRelationsQuery = useColumnRelations(databaseId)
+  const createColumnRelation = useCreateColumnRelation(databaseId)
+  const updateColumnRelation = useUpdateColumnRelation(databaseId)
+  const deleteColumnRelation = useDeleteColumnRelation(databaseId)
+
+  // Surfaces a failed initial load — the graph would otherwise just
+  // silently show zero custom relations with no indication anything
+  // went wrong.
+  useEffect(() => {
+    if (columnRelationsQuery.error) {
+      notifyError(`Custom-Relationen konnten nicht geladen werden: ${getErrorMessage(columnRelationsQuery.error)}`)
+    }
+  }, [columnRelationsQuery.error])
+
+  // `TableNode`/`ColumnRelationEdge` don't hold `databaseId` or the
+  // mutation hooks themselves, so they just record what they want to
+  // happen (`pendingAction`) in the store; this effect is the one place
+  // that actually fires the request and reports failures, once, right
+  // after the action is requested.
+  useEffect(() => {
+    if (!pendingColumnRelationAction) {
+      return
+    }
+    const action = pendingColumnRelationAction
+    clearPendingColumnRelationAction()
+
+    if (action.type === 'create') {
+      createColumnRelation.mutate(
+        { column_id_1: action.columnId1, column_id_2: action.columnId2 },
+        {
+          onSuccess: (created) => setActiveColumnRelationPopover(String(created.id)),
+          onError: (error) => notifyError(`Relation konnte nicht erstellt werden: ${getErrorMessage(error)}`),
+        }
+      )
+    } else if (action.type === 'update') {
+      updateColumnRelation.mutate(
+        { id: action.id, data: { relation_color: action.patch.color, description: action.patch.description } },
+        { onError: (error) => notifyError(`Änderung konnte nicht gespeichert werden: ${getErrorMessage(error)}`) }
+      )
+    } else {
+      deleteColumnRelation.mutate(action.id, {
+        onError: (error) => notifyError(`Relation konnte nicht gelöscht werden: ${getErrorMessage(error)}`),
+      })
+    }
+  }, [
+    pendingColumnRelationAction,
+    clearPendingColumnRelationAction,
+    createColumnRelation,
+    updateColumnRelation,
+    deleteColumnRelation,
+    setActiveColumnRelationPopover,
+  ])
+
+  // Real relations only carry column ids (matching the backend response),
+  // so rendering them as edges needs each column's owning table id —
+  // built once per `tables` change rather than scanning on every relation.
+  const columnToTableId = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const table of tables) {
+      for (const column of table.columns) {
+        map.set(column.id, table.id)
+      }
+    }
+    return map
+  }, [tables])
+
+  // Manually-drawn relations are derived straight from the query cache on
+  // every render rather than folded into the `edges` state above — they
+  // don't participate in `onNodesChange`/`applyEdgeChanges` (no drag/
+  // selection state of their own), so keeping them out of that state
+  // avoids two sources of truth for the same edge.
+  const columnRelationEdges: ColumnRelationEdgeType[] = (columnRelationsQuery.data ?? []).flatMap((relation) => {
+    const tableId1 = columnToTableId.get(relation.column_id_1)
+    const tableId2 = columnToTableId.get(relation.column_id_2)
+    if (tableId1 === undefined || tableId2 === undefined) {
+      return []
+    }
+    return [
+      {
+        id: String(relation.id),
+        type: 'columnRelation',
+        source: `table-${tableId1}`,
+        target: `table-${tableId2}`,
+        sourceHandle: `col-${relation.column_id_1}`,
+        targetHandle: `col-${relation.column_id_2}`,
+        data: { color: relation.relation_color, description: relation.description },
+      },
+    ]
+  })
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan) or when a different database is shown. Manual

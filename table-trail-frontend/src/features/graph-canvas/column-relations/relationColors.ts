@@ -1,4 +1,4 @@
-import type { ColumnRelationColor } from '../../../store/columnRelationStore'
+import type { ColumnRelationColor } from '../../../types/columnRelation'
 
 /**
  * Display colors for each `ColumnRelationColor` value. Chosen to read

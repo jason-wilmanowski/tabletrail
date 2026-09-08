@@ -129,7 +129,7 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
                 // column click should keep bubbling up to select the
                 // table exactly as before this feature existed.
                 event.stopPropagation()
-                selectColumnForRelation(column.id, table.id)
+                selectColumnForRelation(column.id)
               }}
               className={`relative flex items-center justify-between gap-3 px-3 py-1.5 ${
                 isColumnRelationEditMode ? 'cursor-pointer hover:bg-surface-hover' : ''

@@ -1,59 +1,51 @@
 import { create } from 'zustand'
-
-/** Mirrors backend `ColumnRelationColor` enum values exactly. */
-export type ColumnRelationColor = 'green' | 'red' | 'yellow' | 'blue' | 'magenta' | 'white'
+import type { ColumnRelationColor } from '../types/columnRelation'
 
 export interface PendingColumnSelection {
   columnId: number
-  tableId: number
 }
 
-/**
- * A manually-drawn column-to-column relation. Step 1: local-only, `id` is
- * a client-generated placeholder — Step 2 (backend wiring) will replace
- * this with the real `ColumnRelationResponse` shape (`column_id_1`/
- * `column_id_2`/`relation_color`, numeric `id` from the API).
- */
-export interface ColumnRelationDraft {
-  id: string
-  columnId1: number
-  tableId1: number
-  columnId2: number
-  tableId2: number
-  color: ColumnRelationColor
-  description: string | null
-}
+export type PendingColumnRelationAction =
+  | { type: 'create'; columnId1: number; columnId2: number }
+  | { type: 'update'; id: number; patch: { color?: ColumnRelationColor; description?: string | null } }
+  | { type: 'delete'; id: number }
 
 interface ColumnRelationState {
   /** "Relation ziehen" mode — while active, clicking columns builds a relation instead of selecting a table. */
   isEditMode: boolean
   /** First column clicked, waiting for the second one to complete a relation. */
   pendingColumn: PendingColumnSelection | null
-  drafts: ColumnRelationDraft[]
-  /** Id of the draft whose popover (edit or read-only) is currently open. */
+  /**
+   * A create/update/delete request waiting to be sent. Set synchronously
+   * by UI components (`TableNode`, `ColumnRelationEdge`) that don't own
+   * the mutation hooks themselves; `GraphCanvas` (which does, since it
+   * already holds `databaseId`) watches this and fires the matching
+   * request, then clears it.
+   */
+  pendingAction: PendingColumnRelationAction | null
+  /** Id (as a string, matching the edge's own `id`) of the relation whose popover is open. */
   activePopoverId: string | null
 
   toggleEditMode: () => void
-  selectColumn: (columnId: number, tableId: number) => void
-  updateDraft: (id: string, patch: Partial<Pick<ColumnRelationDraft, 'color' | 'description'>>) => void
+  selectColumn: (columnId: number) => void
+  requestUpdate: (id: number, patch: { color?: ColumnRelationColor; description?: string | null }) => void
+  requestDelete: (id: number) => void
+  clearPendingAction: () => void
   setActivePopover: (id: string | null) => void
-  resetForDatabase: () => void
+  resetSelection: () => void
 }
 
 /**
- * Local client state for manually-drawn column relations, kept separate
- * from `uiStore` since it's specific to the graph-canvas custom-relations
- * feature rather than app-wide UI state.
- *
- * Step 1 (current): `drafts` lives only here, nothing is persisted.
- * Step 2 will add loading real relations from the backend and syncing
- * create/update/delete through the API — this store's shape is already
- * close to that so the wiring change stays small.
+ * Client state for manually-drawn column relations — the actual data
+ * (the relations themselves) lives in the TanStack Query cache via
+ * `useColumnRelations` (server state), matching the rest of this app's
+ * hooks/store split. This store only holds interaction state: edit mode,
+ * the in-progress two-click selection, and requests waiting to be sent.
  */
 export const useColumnRelationStore = create<ColumnRelationState>((set) => ({
   isEditMode: false,
   pendingColumn: null,
-  drafts: [],
+  pendingAction: null,
   activePopoverId: null,
 
   toggleEditMode: () =>
@@ -62,14 +54,14 @@ export const useColumnRelationStore = create<ColumnRelationState>((set) => ({
       pendingColumn: null,
     })),
 
-  selectColumn: (columnId, tableId) =>
+  selectColumn: (columnId) =>
     set((state) => {
       if (!state.isEditMode) {
         return state
       }
 
       if (!state.pendingColumn) {
-        return { pendingColumn: { columnId, tableId } }
+        return { pendingColumn: { columnId } }
       }
 
       // Clicking the already-pending column again cancels the selection.
@@ -77,38 +69,28 @@ export const useColumnRelationStore = create<ColumnRelationState>((set) => ({
         return { pendingColumn: null }
       }
 
-      const draft: ColumnRelationDraft = {
-        id: `draft-${crypto.randomUUID()}`,
-        columnId1: state.pendingColumn.columnId,
-        tableId1: state.pendingColumn.tableId,
-        columnId2: columnId,
-        tableId2: tableId,
-        color: 'green',
-        description: null,
-      }
-
       return {
         pendingColumn: null,
-        drafts: [...state.drafts, draft],
-        activePopoverId: draft.id,
+        pendingAction: { type: 'create', columnId1: state.pendingColumn.columnId, columnId2: columnId },
       }
     }),
 
-  updateDraft: (id, patch) =>
-    set((state) => ({
-      drafts: state.drafts.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)),
-    })),
+  requestUpdate: (id, patch) => set({ pendingAction: { type: 'update', id, patch } }),
+
+  requestDelete: (id) => set({ pendingAction: { type: 'delete', id } }),
+
+  clearPendingAction: () => set({ pendingAction: null }),
 
   setActivePopover: (id) => set({ activePopoverId: id }),
 
-  // Drafts reference column/table ids scoped to one database — without
-  // this, switching to a different database (the Zustand store outlives
-  // route changes) would keep rendering the previous database's relations.
-  resetForDatabase: () =>
+  // Switching databases doesn't need to touch the TanStack Query cache
+  // (it's keyed per databaseId already) — only this UI-only interaction
+  // state, so a stale selection/popover from the previous database isn't
+  // left dangling.
+  resetSelection: () =>
     set({
       isEditMode: false,
       pendingColumn: null,
-      drafts: [],
       activePopoverId: null,
     }),
 }))
