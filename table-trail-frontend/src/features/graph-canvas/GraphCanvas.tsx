@@ -25,6 +25,7 @@ import { tablesToNodes } from '../../utils/tablesToNodes'
 import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
 import { constraintsToEdges } from '../../utils/constraintsToEdges'
 import { getSavedLayout, saveLayout } from '../../utils/layoutStorage'
+import { computeCollisionOffsets } from '../../utils/collisionOffset'
 import { TableNode } from './nodes/TableNode'
 import { RelationEdge } from './edges/RelationEdge'
 import { ColumnRelationEdge } from './edges/ColumnRelationEdge'
@@ -285,12 +286,53 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
     [columnRelationsQuery.data, columnToTableId]
   )
 
+  // Small nudge away from dead-center for notes whose relations land
+  // close enough to another visible one to otherwise overlap. Uses each
+  // relation's source/target *table* center as a cheap stand-in for its
+  // true edge midpoint (exact handle-level positions aren't available
+  // here without duplicating React Flow's own internal layout math) —
+  // close enough to detect "these two are near each other", which is all
+  // collision avoidance needs. Only relations that actually render a
+  // note (has a description, not hidden) are considered, so an edge with
+  // no visible note can't crowd out ones that do.
+  //
+  // Recomputed on every `nodes` change (e.g. every drag frame) since
+  // table positions move, but `computeCollisionOffsets` itself is a
+  // single cheap O(n) bucketing pass over just the column-relation count
+  // — not the full table count — so this stays proportional to how many
+  // manually-drawn relations exist, independent of database size.
+  const hiddenNoteIds = useColumnRelationStore((state) => state.hiddenNoteIds)
+  const columnRelationOffsets = useMemo(() => {
+    const nodePositionById = new Map(nodes.map((node) => [node.id, node.position]))
+    const points = columnRelationEdges.flatMap((edge) => {
+      if (!edge.data?.description || hiddenNoteIds.has(Number(edge.id))) {
+        return []
+      }
+      const source = nodePositionById.get(edge.source)
+      const target = nodePositionById.get(edge.target)
+      if (!source || !target) {
+        return []
+      }
+      return [{ id: edge.id, point: { x: (source.x + target.x) / 2, y: (source.y + target.y) / 2 } }]
+    })
+    return computeCollisionOffsets(points)
+  }, [columnRelationEdges, nodes, hiddenNoteIds])
+
   // Same reasoning as `columnRelationEdges` above — the array passed to
   // `<ReactFlow edges>` needs a stable reference across renders where
   // neither `edges` nor `columnRelationEdges` actually changed, otherwise
   // every render (including drag frames) forces React Flow to rebuild its
   // internal edge lookups from scratch.
-  const allEdges = useMemo(() => [...edges, ...columnRelationEdges], [edges, columnRelationEdges])
+  const allEdges = useMemo(() => {
+    const withOffsets = columnRelationEdges.map((edge) => {
+      const offset = columnRelationOffsets.get(edge.id)
+      if (!offset) {
+        return edge
+      }
+      return { ...edge, data: { ...edge.data!, offsetX: offset.x, offsetY: offset.y } }
+    })
+    return [...edges, ...withOffsets]
+  }, [edges, columnRelationEdges, columnRelationOffsets])
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan) or when a different database is shown. Manual

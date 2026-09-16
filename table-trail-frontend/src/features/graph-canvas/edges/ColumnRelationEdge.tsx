@@ -5,13 +5,32 @@ import { Eye, EyeOff, Trash2, X } from 'lucide-react'
 import { useColumnRelationStore } from '../../../store/columnRelationStore'
 import type { ColumnRelationColor } from '../../../types/columnRelation'
 import { COLUMN_RELATION_COLORS, COLUMN_RELATION_COLOR_OPTIONS } from '../column-relations/relationColors'
+import { useClampedNoteText } from './useClampedNoteText'
 
 const TEXTAREA_CLASSES =
   'w-full resize-none rounded-md border border-border bg-surface px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
+/**
+ * Reference size: roughly the width of `RelationEdge`'s FK "ON DELETE
+ * .../ON UPDATE ..." label at the shared `.text-technical-muted` type
+ * scale, so custom-relation notes read as the same order of magnitude of
+ * annotation on the canvas, not a noticeably bigger box.
+ */
+const NOTE_MAX_WIDTH_REM = 8.4
+const NOTE_MAX_WIDTH_PX = NOTE_MAX_WIDTH_REM * 16
+
 export interface ColumnRelationEdgeData extends Record<string, unknown> {
   color: ColumnRelationColor
   description: string | null
+  /**
+   * Small nudge (graph coordinate px) away from the relation's true
+   * midpoint, set by `GraphCanvas` when this note's midpoint lands too
+   * close to another currently-visible note's — see
+   * `utils/collisionOffset.ts`. Absent (or zero) for the common case of
+   * no nearby collision, in which case the note sits exactly centered.
+   */
+  offsetX?: number
+  offsetY?: number
 }
 
 export type ColumnRelationEdgeType = Edge<ColumnRelationEdgeData, 'columnRelation'>
@@ -19,10 +38,11 @@ export type ColumnRelationEdgeType = Edge<ColumnRelationEdgeData, 'columnRelatio
 /**
  * Custom edge for manually-drawn, column-to-column relations — distinct
  * from real FK relations (`RelationEdge.tsx`): dashed stroke in the
- * relation's own color, plus a fixed-size note window (like
- * `RelationEdge`'s ON DELETE/ON UPDATE label) whenever a description is
- * set and its visibility hasn't been toggled off, so the two never look
- * alike at a glance.
+ * relation's own color, plus a note window (like `RelationEdge`'s ON
+ * DELETE/ON UPDATE label, sized to content up to the same order of
+ * magnitude — see `ColumnRelationNote`) whenever a description is set and
+ * its visibility hasn't been toggled off, so the two never look alike at
+ * a glance.
  *
  * Clicking the edge (wired via `onEdgeClick` in `GraphCanvas`) opens a
  * small inline popover at the edge midpoint via `EdgeLabelRenderer` —
@@ -110,7 +130,11 @@ export function ColumnRelationEdge({
 
       <EdgeLabelRenderer>
         {description && !isNoteHidden && !isPopoverOpen && (
-          <ColumnRelationNote labelX={labelX} labelY={labelY} description={description} />
+          <ColumnRelationNote
+            labelX={labelX + (data?.offsetX ?? 0)}
+            labelY={labelY + (data?.offsetY ?? 0)}
+            description={description}
+          />
         )}
 
         {isPopoverOpen && (
@@ -137,18 +161,22 @@ export function ColumnRelationEdge({
 }
 
 /**
- * `EdgeLabelRenderer` content lives inside React Flow's own pan/zoom
- * transform, so a plain fixed-width overlay would shrink/grow with the
- * canvas zoom. Countering the ancestor's `scale(zoom)` with `scale(1/zoom)`
- * (the same technique React Flow's own zoom-independent overlays use)
- * keeps it a constant, always-legible size regardless of zoom level.
+ * Unlike `ColumnRelationPopover` below, this note deliberately does
+ * *not* counter-scale against zoom (no `useViewport()`/`scale(1/zoom)`)
+ * — it lives inside `EdgeLabelRenderer`'s pan/zoom-transformed space with
+ * no counter-transform applied, same as `RelationEdge`'s FK label and
+ * every table node, so it grows/shrinks with the rest of the canvas on
+ * zoom instead of staying a fixed screen size while everything around it
+ * scales. `NOTE_MAX_WIDTH_PX` is a fixed size in that same graph
+ * coordinate space, so it doesn't grow unbounded on zoom-in either — it
+ * just becomes visually larger together with the rest of the canvas, the
+ * same way a table node does.
  *
- * `useViewport()` re-renders its subscriber on every pan/zoom tick, so
- * this is split out from `ColumnRelationEdge` into its own component that
- * only mounts (and therefore only subscribes) while a note is actually
- * visible for this edge — with many column relations on a large graph,
- * most edges show no note at any given time, and previously all of them
- * still re-rendered on every zoom/pan frame regardless.
+ * Width: `shrinkToFit` sizes the box to short text instead of always
+ * reserving the full max width (see `useClampedNoteText`); text longer
+ * than that gets pre-truncated with an ellipsis by the same hook, via
+ * real DOM measurement rather than CSS `-webkit-line-clamp` (which
+ * turned out unreliable here — see that hook's docstring).
  */
 function ColumnRelationNote({
   labelX,
@@ -159,27 +187,22 @@ function ColumnRelationNote({
   labelY: number
   description: string
 }) {
-  const { zoom } = useViewport()
+  const { text, shrinkToFit } = useClampedNoteText(description, NOTE_MAX_WIDTH_PX)
 
   return (
-    // Fixed at the max width (not shrink-to-fit): a shrink-to-fit width
-    // paired with `line-clamp`'s `display: -webkit-box` does not reliably
-    // re-clamp to `max-width` once text wraps onto a second line (observed
-    // overflowing past it in Chrome) — a definite `w-[8.4rem]` sidesteps
-    // that entirely, and is what makes `line-clamp-2` correctly cap the
-    // text at two lines with a trailing "…" once it doesn't fit.
-    // `translate(-50%, -50%)` then centers this fixed, predictable box on
-    // the edge midpoint. Styled to match `RelationEdge`'s ON DELETE/ON
-    // UPDATE label (border/padding/type scale) so real and custom
-    // relations read as the same kind of annotation on the canvas.
+    // Styled to match RelationEdge's ON DELETE/ON UPDATE label
+    // (border/padding/type scale) so real and custom relations read as
+    // the same kind of annotation on the canvas.
     <div
-      className="nodrag nopan text-technical-muted absolute w-[8.4rem] rounded-sm border border-border bg-panel px-1.5 py-0.5 leading-tight"
+      className="nodrag nopan text-technical-muted absolute rounded-sm border border-border bg-panel px-1.5 py-0.5 leading-tight break-words"
       style={{
-        transform: `translate(${labelX}px, ${labelY}px) scale(${1 / zoom}) translate(-50%, -50%)`,
+        width: shrinkToFit ? 'fit-content' : `${NOTE_MAX_WIDTH_REM}rem`,
+        maxWidth: `${NOTE_MAX_WIDTH_REM}rem`,
+        transform: `translate(${labelX}px, ${labelY}px) translate(-50%, -50%)`,
         pointerEvents: 'none',
       }}
     >
-      <div className="line-clamp-2 break-words">{description}</div>
+      {text}
     </div>
   )
 }
