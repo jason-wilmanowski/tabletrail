@@ -152,8 +152,17 @@ function buildGraph(tables: TableResponse[], databaseId: number): { nodes: Node[
  * `<ReactFlow>` without the explicit provider wrapping.
  */
 function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanvasProps) {
-  const [nodes, setNodes] = useState<Node[]>(() => buildGraph(tables, databaseId).nodes)
-  const [edges, setEdges] = useState<Edge[]>(() => buildGraph(tables, databaseId).edges)
+  // `buildGraph` runs Dagre over every table/edge — computed once via a
+  // ref (not `useMemo`, since a *stale* value here is fine: the effect
+  // below re-derives `nodes`/`edges` on every `tables`/`databaseId`
+  // change anyway) and reused for both initial states below, instead of
+  // calling `buildGraph` twice on mount.
+  const initialGraphRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
+  if (initialGraphRef.current === null) {
+    initialGraphRef.current = buildGraph(tables, databaseId)
+  }
+  const [nodes, setNodes] = useState<Node[]>(() => initialGraphRef.current!.nodes)
+  const [edges, setEdges] = useState<Edge[]>(() => initialGraphRef.current!.edges)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   const { setViewport, getNodesBounds } = useReactFlow()
@@ -240,29 +249,48 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
     return map
   }, [tables])
 
-  // Manually-drawn relations are derived straight from the query cache on
-  // every render rather than folded into the `edges` state above — they
-  // don't participate in `onNodesChange`/`applyEdgeChanges` (no drag/
-  // selection state of their own), so keeping them out of that state
-  // avoids two sources of truth for the same edge.
-  const columnRelationEdges: ColumnRelationEdgeType[] = (columnRelationsQuery.data ?? []).flatMap((relation) => {
-    const tableId1 = columnToTableId.get(relation.column_id_1)
-    const tableId2 = columnToTableId.get(relation.column_id_2)
-    if (tableId1 === undefined || tableId2 === undefined) {
-      return []
-    }
-    return [
-      {
-        id: String(relation.id),
-        type: 'columnRelation',
-        source: `table-${tableId1}`,
-        target: `table-${tableId2}`,
-        sourceHandle: `col-${relation.column_id_1}`,
-        targetHandle: `col-${relation.column_id_2}`,
-        data: { color: relation.relation_color, description: relation.description },
-      },
-    ]
-  })
+  // Manually-drawn relations are derived straight from the query cache
+  // rather than folded into the `edges` state above — they don't
+  // participate in `onNodesChange`/`applyEdgeChanges` (no drag/selection
+  // state of their own), so keeping them out of that state avoids two
+  // sources of truth for the same edge.
+  //
+  // Memoized (keyed on the actual inputs, not recomputed on every render
+  // of this component) because React Flow's own `StoreUpdater` compares
+  // its `edges` prop by reference and, on any change, fully rebuilds its
+  // internal connection/edge lookup maps by iterating every edge
+  // (`updateConnectionLookup`). Without this, a fresh array here on every
+  // render — e.g. on every node-drag frame — would re-trigger that full
+  // rebuild for no reason.
+  const columnRelationEdges: ColumnRelationEdgeType[] = useMemo(
+    () =>
+      (columnRelationsQuery.data ?? []).flatMap((relation) => {
+        const tableId1 = columnToTableId.get(relation.column_id_1)
+        const tableId2 = columnToTableId.get(relation.column_id_2)
+        if (tableId1 === undefined || tableId2 === undefined) {
+          return []
+        }
+        return [
+          {
+            id: String(relation.id),
+            type: 'columnRelation' as const,
+            source: `table-${tableId1}`,
+            target: `table-${tableId2}`,
+            sourceHandle: `col-${relation.column_id_1}`,
+            targetHandle: `col-${relation.column_id_2}`,
+            data: { color: relation.relation_color, description: relation.description },
+          },
+        ]
+      }),
+    [columnRelationsQuery.data, columnToTableId]
+  )
+
+  // Same reasoning as `columnRelationEdges` above — the array passed to
+  // `<ReactFlow edges>` needs a stable reference across renders where
+  // neither `edges` nor `columnRelationEdges` actually changed, otherwise
+  // every render (including drag frames) forces React Flow to rebuild its
+  // internal edge lookups from scratch.
+  const allEdges = useMemo(() => [...edges, ...columnRelationEdges], [edges, columnRelationEdges])
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan) or when a different database is shown. Manual
@@ -374,7 +402,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
     <div ref={wrapperRef} className="relative h-full w-full" style={reactFlowTheme}>
       <ReactFlow
         nodes={nodes}
-        edges={[...edges, ...columnRelationEdges]}
+        edges={allEdges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
@@ -382,6 +410,16 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         onPaneClick={onPaneClick}
         onEdgeClick={onEdgeClick}
         fitView
+        // Without this, React Flow mounts every node/edge regardless of
+        // what's actually in the viewport (confirmed in its own source:
+        // `useVisibleNodeIds`/`useVisibleEdgeIds` return every id when
+        // this is off). At 400 tables that's thousands of DOM elements
+        // (column rows, handles) kept mounted at all times, which is the
+        // main cost behind pan/zoom jank at that scale. Node/edge state
+        // itself (positions, saved layout, selection) lives in the store
+        // regardless of what's mounted, so this only changes what's in
+        // the DOM, not any of the existing features.
+        onlyRenderVisibleElements
         nodesDraggable={interactive}
         nodesConnectable={false}
         elementsSelectable={interactive}

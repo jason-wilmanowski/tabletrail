@@ -51,13 +51,24 @@ const COLLAPSE_THRESHOLD = 15
 export function TableNode({ data }: NodeProps<TableNodeType>) {
   const { table } = data
   const [isExpanded, setIsExpanded] = useState(false)
-  const selectedTableId = useUiStore((state) => state.selectedTableId)
+  // Selecting the derived boolean (not the raw `selectedTableId`, compared
+  // afterwards) matters here: every TableNode subscribes independently, so
+  // zustand re-renders a subscriber whenever its selector's return value
+  // changes. With the raw id, all ~400 nodes re-rendered on every click;
+  // with the boolean, an unaffected node's selector keeps returning the
+  // same value, so zustand skips it.
+  const isSelected = useUiStore((state) => state.selectedTableId === String(table.id))
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
   const isColumnRelationEditMode = useColumnRelationStore((state) => state.isEditMode)
-  const pendingColumn = useColumnRelationStore((state) => state.pendingColumn)
+  // Same reasoning as `isSelected` above, for the pending-column highlight:
+  // scoped to "is the pending column one of *this* table's columns" so an
+  // unrelated table's selector output doesn't flip on every click.
+  const pendingColumnId = useColumnRelationStore((state) =>
+    table.columns.some((column) => column.id === state.pendingColumn?.columnId)
+      ? state.pendingColumn!.columnId
+      : null
+  )
   const selectColumnForRelation = useColumnRelationStore((state) => state.selectColumn)
-
-  const isSelected = selectedTableId === String(table.id)
 
   const sortedColumns = [...table.columns].sort(
     (a, b) => a.ordinal_position - b.ordinal_position
@@ -116,7 +127,7 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
       <div className="divide-y divide-border">
         {visibleColumns.map((column) => {
           const flags = columnConstraints.get(column.name)
-          const isPending = pendingColumn?.columnId === column.id
+          const isPending = pendingColumnId === column.id
 
           return (
             <div
