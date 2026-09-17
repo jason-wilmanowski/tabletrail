@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useViewport } from '@xyflow/react'
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, Position, useInternalNode, useViewport } from '@xyflow/react'
 import type { Edge, EdgeProps } from '@xyflow/react'
 import { Eye, EyeOff, Trash2, X } from 'lucide-react'
 import { useColumnRelationStore } from '../../../store/columnRelationStore'
 import type { ColumnRelationColor } from '../../../types/columnRelation'
 import { COLUMN_RELATION_COLORS, COLUMN_RELATION_COLOR_OPTIONS } from '../column-relations/relationColors'
+import { pickHorizontalSide } from '../../../utils/floatingEdgeGeometry'
 import { useClampedNoteText } from './useClampedNoteText'
 
 const TEXTAREA_CLASSES =
@@ -61,6 +62,8 @@ export type ColumnRelationEdgeType = Edge<ColumnRelationEdgeData, 'columnRelatio
  */
 export function ColumnRelationEdge({
   id,
+  source,
+  target,
   sourceX,
   sourceY,
   targetX,
@@ -97,13 +100,48 @@ export function ColumnRelationEdge({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPopoverOpen])
 
+  // A column's anchor Y is fixed by its row inside the table — `sourceY`/
+  // `targetY` as resolved by React Flow from the column's handle are
+  // already correct regardless of which side is picked (the Left and
+  // Right handles for the same column sit on the same row). Only the
+  // horizontal side is recomputed here, from the two tables' actual
+  // positions (`pickHorizontalSide`, same floating-edge technique as
+  // `RelationEdge`) — otherwise a relation always exits its source
+  // column's fixed Right handle and enters the target's fixed Left one,
+  // which sends the line the long way around whenever the target table
+  // is actually to the *left* of the source.
+  const sourceNode = useInternalNode(source)
+  const targetNode = useInternalNode(target)
+  const horizontalSides =
+    sourceNode && targetNode
+      ? pickHorizontalSide(
+          sourceNode.internals.positionAbsolute.x + (sourceNode.measured.width ?? 0) / 2,
+          targetNode.internals.positionAbsolute.x + (targetNode.measured.width ?? 0) / 2
+        )
+      : null
+
+  // A handle's X sits at its node's left boundary (Position.Left) or right
+  // boundary (Position.Right) — recompute whichever boundary the picked
+  // side now points at, since the node only ever registers a source handle
+  // on the right and a target handle on the left (see TableNode.tsx).
+  const resolvedSourceX =
+    horizontalSides && sourceNode
+      ? sourceNode.internals.positionAbsolute.x +
+        (horizontalSides.sourcePosition === Position.Right ? (sourceNode.measured.width ?? 0) : 0)
+      : sourceX
+  const resolvedTargetX =
+    horizontalSides && targetNode
+      ? targetNode.internals.positionAbsolute.x +
+        (horizontalSides.targetPosition === Position.Right ? (targetNode.measured.width ?? 0) : 0)
+      : targetX
+
   const [edgePath, labelX, labelY] = getSmoothStepPath({
-    sourceX,
+    sourceX: resolvedSourceX,
     sourceY,
-    sourcePosition,
-    targetX,
+    sourcePosition: horizontalSides?.sourcePosition ?? sourcePosition,
+    targetX: resolvedTargetX,
     targetY,
-    targetPosition,
+    targetPosition: horizontalSides?.targetPosition ?? targetPosition,
   })
 
   const strokeColor = COLUMN_RELATION_COLORS[activeColor]
