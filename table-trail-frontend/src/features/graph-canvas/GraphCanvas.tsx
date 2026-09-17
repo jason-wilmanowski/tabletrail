@@ -31,8 +31,10 @@ import { RelationEdge } from './edges/RelationEdge'
 import { ColumnRelationEdge } from './edges/ColumnRelationEdge'
 import type { ColumnRelationEdgeType } from './edges/ColumnRelationEdge'
 import { ColumnRelationsPanel } from './column-relations/ColumnRelationsPanel'
+import { VisibilityPanel } from './visibility/VisibilityPanel'
 import { useUiStore } from '../../store/uiStore'
 import { useColumnRelationStore } from '../../store/columnRelationStore'
+import { useGraphVisibilityStore } from '../../store/graphVisibilityStore'
 import { notifyError } from '../../store/notificationStore'
 import { getErrorMessage } from '../../api/client'
 import {
@@ -174,6 +176,13 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const setActiveColumnRelationPopover = useColumnRelationStore((state) => state.setActivePopover)
   const resetColumnRelationSelection = useColumnRelationStore((state) => state.resetSelection)
 
+  // Purely visual layer toggles (Teil 1 of the UX update, via
+  // `VisibilityPanel`) — absence from `hiddenLayerIds` means visible, same
+  // convention as `hiddenNoteIds` above.
+  const hiddenLayerIds = useGraphVisibilityStore((state) => state.hiddenLayerIds)
+  const isCustomRelationsVisible = !hiddenLayerIds.has('customRelations')
+  const isForeignKeyRelationsVisible = !hiddenLayerIds.has('foreignKeyRelations')
+
   // Custom relations are server state (unlike FK edges, which are derived
   // straight from `tables`) — TanStack Query keys the cache per
   // `databaseId` on its own, so switching databases just refetches; only
@@ -263,28 +272,29 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // (`updateConnectionLookup`). Without this, a fresh array here on every
   // render — e.g. on every node-drag frame — would re-trigger that full
   // rebuild for no reason.
-  const columnRelationEdges: ColumnRelationEdgeType[] = useMemo(
-    () =>
-      (columnRelationsQuery.data ?? []).flatMap((relation) => {
-        const tableId1 = columnToTableId.get(relation.column_id_1)
-        const tableId2 = columnToTableId.get(relation.column_id_2)
-        if (tableId1 === undefined || tableId2 === undefined) {
-          return []
-        }
-        return [
-          {
-            id: String(relation.id),
-            type: 'columnRelation' as const,
-            source: `table-${tableId1}`,
-            target: `table-${tableId2}`,
-            sourceHandle: `col-${relation.column_id_1}`,
-            targetHandle: `col-${relation.column_id_2}`,
-            data: { color: relation.relation_color, description: relation.description },
-          },
-        ]
-      }),
-    [columnRelationsQuery.data, columnToTableId]
-  )
+  const columnRelationEdges: ColumnRelationEdgeType[] = useMemo(() => {
+    if (!isCustomRelationsVisible) {
+      return []
+    }
+    return (columnRelationsQuery.data ?? []).flatMap((relation) => {
+      const tableId1 = columnToTableId.get(relation.column_id_1)
+      const tableId2 = columnToTableId.get(relation.column_id_2)
+      if (tableId1 === undefined || tableId2 === undefined) {
+        return []
+      }
+      return [
+        {
+          id: String(relation.id),
+          type: 'columnRelation' as const,
+          source: `table-${tableId1}`,
+          target: `table-${tableId2}`,
+          sourceHandle: `col-${relation.column_id_1}`,
+          targetHandle: `col-${relation.column_id_2}`,
+          data: { color: relation.relation_color, description: relation.description },
+        },
+      ]
+    })
+  }, [columnRelationsQuery.data, columnToTableId, isCustomRelationsVisible])
 
   // Small nudge away from dead-center for notes whose relations land
   // close enough to another visible one to otherwise overlap. Uses each
@@ -331,8 +341,9 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
       }
       return { ...edge, data: { ...edge.data!, offsetX: offset.x, offsetY: offset.y } }
     })
-    return [...edges, ...withOffsets]
-  }, [edges, columnRelationEdges, columnRelationOffsets])
+    const relationEdges = isForeignKeyRelationsVisible ? edges : []
+    return [...relationEdges, ...withOffsets]
+  }, [edges, columnRelationEdges, columnRelationOffsets, isForeignKeyRelationsVisible])
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan) or when a different database is shown. Manual
@@ -480,8 +491,14 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
       {/* Hidden while a table is selected — its trigger sits top-right
           (`right-3 top-3`), directly over `TableInspectorPanel`'s header
           (`absolute right-0 top-0 w-72`), so an open table's name/columns
-          would otherwise be partly covered by this icon. */}
-      {interactive && selectedTableId === null && <ColumnRelationsPanel />}
+          would otherwise be partly covered by this icon. `VisibilityPanel`
+          stacks directly below it for the same reason. */}
+      {interactive && selectedTableId === null && (
+        <>
+          <ColumnRelationsPanel />
+          <VisibilityPanel />
+        </>
+      )}
     </div>
   )
 }
