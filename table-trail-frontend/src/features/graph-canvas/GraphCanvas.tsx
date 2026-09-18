@@ -488,16 +488,19 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
           <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
         )}
       </ReactFlow>
-      {/* Hidden while a table is selected — its trigger sits top-right
+      {/* Hidden while a table is selected — the top trigger sits top-right
           (`right-3 top-3`), directly over `TableInspectorPanel`'s header
           (`absolute right-0 top-0 w-72`), so an open table's name/columns
-          would otherwise be partly covered by this icon. `VisibilityPanel`
-          stacks directly below it for the same reason. */}
+          would otherwise be partly covered by this icon. `ColumnRelationsPanel`
+          and `VisibilityPanel` are plain (non-absolute) flex children here —
+          this wrapper is the single absolutely-positioned overlay, so when
+          either panel's dropdown opens, normal flex flow pushes the other
+          trigger down instead of it getting covered by a hardcoded offset. */}
       {interactive && selectedTableId === null && (
-        <>
+        <div className="absolute right-3 top-3 z-30 flex flex-col items-end gap-2">
           <ColumnRelationsPanel />
           <VisibilityPanel />
-        </>
+        </div>
       )}
     </div>
   )
