@@ -4,7 +4,7 @@
  * don't affect layout metrics. Kept in sync with the classes actually
  * used on the rendered note in `ColumnRelationEdge.tsx`.
  */
-const MEASURER_CLASSES = 'text-technical-muted border px-1.5 py-0.5 leading-tight break-words'
+const MEASURER_CLASSES = 'text-technical-muted-lg border px-1.5 py-0.5 leading-tight break-words'
 
 let measurerEl: HTMLDivElement | null = null
 

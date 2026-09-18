@@ -89,6 +89,13 @@
     @apply font-mono text-[11px] text-muted-foreground;
   }
 
+  /* Same role as `.text-technical-muted`, ~15% larger — used for
+     custom-relation notes so they stand out against real FK relation
+     labels (`RelationEdge`) at a glance. */
+  .text-technical-muted-lg {
+    @apply font-mono text-[12.65px] text-muted-foreground;
+  }
+
   /* Small field or group label. */
   .text-label {
     @apply text-[11px] font-medium uppercase tracking-wider text-muted-foreground;

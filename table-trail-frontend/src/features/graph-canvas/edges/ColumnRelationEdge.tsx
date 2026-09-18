@@ -13,9 +13,10 @@ const TEXTAREA_CLASSES =
 
 /**
  * Reference size: roughly the width of `RelationEdge`'s FK "ON DELETE
- * .../ON UPDATE ..." label at the shared `.text-technical-muted` type
- * scale, so custom-relation notes read as the same order of magnitude of
- * annotation on the canvas, not a noticeably bigger box.
+ * .../ON UPDATE ..." label, so custom-relation notes stay the same order
+ * of magnitude of annotation on the canvas — not a noticeably bigger box,
+ * even though the note text itself renders ~15% larger (see
+ * `.text-technical-muted-lg`) so custom relations stand out over FK ones.
  */
 const NOTE_MAX_WIDTH_REM = 8.4
 const NOTE_MAX_WIDTH_PX = NOTE_MAX_WIDTH_REM * 16
@@ -215,6 +216,11 @@ export function ColumnRelationEdge({
  * than that gets pre-truncated with an ellipsis by the same hook, via
  * real DOM measurement rather than CSS `-webkit-line-clamp` (which
  * turned out unreliable here — see that hook's docstring).
+ *
+ * Text sized via `.text-technical-muted-lg` (~15% larger than
+ * `RelationEdge`'s FK label) so custom notes read as the more prominent
+ * annotation on the canvas — `noteMeasurement.ts`'s measurer mirrors this
+ * class so wrap/truncation math stays accurate for the actual rendered size.
  */
 function ColumnRelationNote({
   labelX,
@@ -232,7 +238,7 @@ function ColumnRelationNote({
     // (border/padding/type scale) so real and custom relations read as
     // the same kind of annotation on the canvas.
     <div
-      className="nodrag nopan text-technical-muted absolute rounded-sm border border-border bg-panel px-1.5 py-0.5 leading-tight break-words"
+      className="nodrag nopan text-technical-muted-lg absolute rounded-sm border border-border bg-panel px-1.5 py-0.5 leading-tight break-words"
       style={{
         width: shrinkToFit ? 'fit-content' : `${NOTE_MAX_WIDTH_REM}rem`,
         maxWidth: `${NOTE_MAX_WIDTH_REM}rem`,
