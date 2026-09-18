@@ -7,6 +7,7 @@ import { SearchInput } from '../features/search-panel/SearchInput'
 import { VirtualizedTableList } from '../features/search-panel/VirtualizedTableList'
 import { EditDatabaseModal } from '../features/database-detail/EditDatabaseModal'
 import { DatabaseEmptyState } from '../features/database-detail/DatabaseEmptyState'
+import { DatabaseLoadingState } from '../features/database-detail/DatabaseLoadingState'
 import { ExportButton } from '../features/database-detail/ExportButton'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
@@ -60,12 +61,7 @@ export function DatabaseDetailPage() {
   }
 
   if (isLoading) {
-    return (
-      <div className="p-6">
-        <h1 className="text-display">Database Detail</h1>
-        <p className="text-body mt-2">Loading database...</p>
-      </div>
-    )
+    return <DatabaseLoadingState />
   }
 
   if (error) {
