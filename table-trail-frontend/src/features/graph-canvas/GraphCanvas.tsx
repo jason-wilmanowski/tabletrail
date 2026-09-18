@@ -296,37 +296,61 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
     })
   }, [columnRelationsQuery.data, columnToTableId, isCustomRelationsVisible])
 
-  // Small nudge away from dead-center for notes whose relations land
-  // close enough to another visible one to otherwise overlap. Uses each
-  // relation's source/target *table* center as a cheap stand-in for its
-  // true edge midpoint (exact handle-level positions aren't available
-  // here without duplicating React Flow's own internal layout math) —
-  // close enough to detect "these two are near each other", which is all
-  // collision avoidance needs. Only relations that actually render a
-  // note (has a description, not hidden) are considered, so an edge with
-  // no visible note can't crowd out ones that do.
+  // Small nudge away from dead-center for any relation label whose true
+  // midpoint lands close enough to another currently-visible label's to
+  // otherwise overlap — run over FK relation labels (`edges`, the "ON
+  // DELETE"/"ON UPDATE" annotation from `RelationEdge`) and custom-relation
+  // notes (`columnRelationEdges`) *together*, in one pass, so a label never
+  // overlaps another label regardless of which kind either side is: FK vs
+  // FK, custom vs custom, or FK vs custom all get caught the same way.
   //
-  // Recomputed on every `nodes` change (e.g. every drag frame) since
-  // table positions move, but `computeCollisionOffsets` itself is a
-  // single cheap O(n) bucketing pass over just the column-relation count
-  // — not the full table count — so this stays proportional to how many
-  // manually-drawn relations exist, independent of database size.
+  // Uses each relation's source/target *table* center as a cheap stand-in
+  // for its true edge midpoint (exact handle-level positions aren't
+  // available here without duplicating React Flow's own internal layout
+  // math) — close enough to detect "these two are near each other", which
+  // is all collision avoidance needs. Only relations that actually render
+  // a visible label are considered (FK: `onDelete`/`onUpdate` present and
+  // the FK layer isn't hidden; custom: has a description, not hidden, and
+  // the custom-relations layer isn't hidden) — an edge with no visible
+  // label can't crowd out ones that do.
+  //
+  // Recomputed on every `nodes` change (e.g. every drag frame) since table
+  // positions move, but `computeCollisionOffsets` stays close to O(n) over
+  // just the currently-labeled relation count — not the full table count —
+  // so this stays proportional to how many labels actually exist,
+  // independent of database size.
   const hiddenNoteIds = useColumnRelationStore((state) => state.hiddenNoteIds)
-  const columnRelationOffsets = useMemo(() => {
+  const labelCollisionOffsets = useMemo(() => {
     const nodePositionById = new Map(nodes.map((node) => [node.id, node.position]))
-    const points = columnRelationEdges.flatMap((edge) => {
+    const midpointOf = (source: string, target: string) => {
+      const sourcePos = nodePositionById.get(source)
+      const targetPos = nodePositionById.get(target)
+      if (!sourcePos || !targetPos) {
+        return null
+      }
+      return { x: (sourcePos.x + targetPos.x) / 2, y: (sourcePos.y + targetPos.y) / 2 }
+    }
+
+    const relationLabelPoints = isForeignKeyRelationsVisible
+      ? edges.flatMap((edge) => {
+          if (!edge.data?.onDelete && !edge.data?.onUpdate) {
+            return []
+          }
+          const point = midpointOf(edge.source, edge.target)
+          return point ? [{ id: edge.id, point }] : []
+        })
+      : []
+
+    const notePoints = columnRelationEdges.flatMap((edge) => {
       if (!edge.data?.description || hiddenNoteIds.has(Number(edge.id))) {
         return []
       }
-      const source = nodePositionById.get(edge.source)
-      const target = nodePositionById.get(edge.target)
-      if (!source || !target) {
-        return []
-      }
-      return [{ id: edge.id, point: { x: (source.x + target.x) / 2, y: (source.y + target.y) / 2 } }]
+      const point = midpointOf(edge.source, edge.target)
+      return point ? [{ id: edge.id, point }] : []
     })
-    return computeCollisionOffsets(points)
-  }, [columnRelationEdges, nodes, hiddenNoteIds])
+
+    return computeCollisionOffsets([...relationLabelPoints, ...notePoints])
+  }, [edges, columnRelationEdges, nodes, hiddenNoteIds, isForeignKeyRelationsVisible])
 
   // Same reasoning as `columnRelationEdges` above — the array passed to
   // `<ReactFlow edges>` needs a stable reference across renders where
@@ -334,16 +358,24 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // every render (including drag frames) forces React Flow to rebuild its
   // internal edge lookups from scratch.
   const allEdges = useMemo(() => {
-    const withOffsets = columnRelationEdges.map((edge) => {
-      const offset = columnRelationOffsets.get(edge.id)
+    const withNoteOffsets = columnRelationEdges.map((edge) => {
+      const offset = labelCollisionOffsets.get(edge.id)
       if (!offset) {
         return edge
       }
       return { ...edge, data: { ...edge.data!, offsetX: offset.x, offsetY: offset.y } }
     })
-    const relationEdges = isForeignKeyRelationsVisible ? edges : []
-    return [...relationEdges, ...withOffsets]
-  }, [edges, columnRelationEdges, columnRelationOffsets, isForeignKeyRelationsVisible])
+    const relationEdges = isForeignKeyRelationsVisible
+      ? edges.map((edge) => {
+          const offset = labelCollisionOffsets.get(edge.id)
+          if (!offset) {
+            return edge
+          }
+          return { ...edge, data: { ...edge.data, offsetX: offset.x, offsetY: offset.y } }
+        })
+      : []
+    return [...relationEdges, ...withNoteOffsets]
+  }, [edges, columnRelationEdges, labelCollisionOffsets, isForeignKeyRelationsVisible])
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan) or when a different database is shown. Manual

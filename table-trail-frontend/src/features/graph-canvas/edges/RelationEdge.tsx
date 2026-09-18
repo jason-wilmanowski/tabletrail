@@ -24,6 +24,13 @@ import { getFloatingEdgeParams } from '../../../utils/floatingEdgeGeometry'
  * 10px floor established everywhere else once the typography system
  * existed, which the accessibility requirements for this step flag as a
  * concern ("keine zu kleinen technischen Texte").
+ *
+ * `data.offsetX`/`data.offsetY` (graph coordinate px, default 0) apply on
+ * top of the computed `labelX`/`labelY` the same way `ColumnRelationEdge`'s
+ * note applies its own offset — both come out of the same collision pass
+ * in `GraphCanvas` (`utils/collisionOffset.ts`) run over FK labels and
+ * custom-relation notes together, so this label never overlaps another FK
+ * label *or* a custom-relation note, not just other FK labels.
  */
 export function RelationEdge({
   source,
@@ -93,7 +100,7 @@ export function RelationEdge({
           <div
             className="text-technical-muted nodrag nopan absolute rounded-sm border border-border bg-panel px-1.5 py-0.5 leading-tight"
             style={{
-              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              transform: `translate(${labelX + (data?.offsetX ?? 0)}px, ${labelY + (data?.offsetY ?? 0)}px) translate(-50%, -50%)`,
             }}
           >
             {labelLines.map((line) => (
