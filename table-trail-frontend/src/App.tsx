@@ -13,7 +13,7 @@ export function App() {
         <Route path="/" element={<DatabaseOverviewPage />} />
         <Route path="/connect" element={<NewConnectionPage />} />
         <Route path="/database/:id" element={<DatabaseDetailPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings/:categoryId?" element={<SettingsPage />} />
         <Route path="/welcome" element={<WelcomePage />} />
       </Routes>
     </AppShell>
