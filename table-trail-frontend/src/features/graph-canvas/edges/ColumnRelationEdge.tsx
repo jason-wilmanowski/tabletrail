@@ -50,7 +50,7 @@ export type ColumnRelationEdgeType = Edge<ColumnRelationEdgeData, 'columnRelatio
  * small inline popover at the edge midpoint via `EdgeLabelRenderer` —
  * never a modal, so the rest of the graph stays interactive. The popover
  * is always editable (color swatches + note field): earlier this was
- * gated behind the global "Relation ziehen" edit mode, which meant a
+ * gated behind the global "Draw relation" edit mode, which meant a
  * relation became edit-only-at-creation-time and permanently
  * read-only+deletable after a page reload (edit mode always starts
  * off). Editing an existing relation has nothing to do with drawing new
@@ -299,7 +299,7 @@ function ColumnRelationPopover({
             type="button"
             onClick={onToggleNoteVisibility}
             className="text-muted-foreground hover:text-foreground"
-            aria-label={isNoteHidden ? 'Notiz einblenden' : 'Notiz ausblenden'}
+            aria-label={isNoteHidden ? 'Show note' : 'Hide note'}
             aria-pressed={!isNoteHidden}
           >
             {isNoteHidden ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -308,7 +308,7 @@ function ColumnRelationPopover({
             type="button"
             onClick={onDelete}
             className="text-muted-foreground hover:text-danger"
-            aria-label="Relation löschen"
+            aria-label="Delete relation"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -316,7 +316,7 @@ function ColumnRelationPopover({
             type="button"
             onClick={onClose}
             className="text-muted-foreground hover:text-foreground"
-            aria-label="Schließen"
+            aria-label="Close"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -341,7 +341,7 @@ function ColumnRelationPopover({
         value={descriptionDraft}
         onChange={(event) => onDescriptionDraftChange(event.target.value)}
         onBlur={onDescriptionCommit}
-        placeholder="Notiz (optional)"
+        placeholder="Note (optional)"
         rows={2}
         className={TEXTAREA_CLASSES}
       />

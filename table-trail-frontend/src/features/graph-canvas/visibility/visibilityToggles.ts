@@ -12,6 +12,6 @@ export interface GraphVisibilityToggleDef {
  * checkboxes, it just maps over this list.
  */
 export const GRAPH_VISIBILITY_TOGGLES: GraphVisibilityToggleDef[] = [
-  { id: 'customRelations', label: 'Custom Relations anzeigen' },
-  { id: 'foreignKeyRelations', label: 'Fremdschlüssel-Relationen anzeigen' },
+  { id: 'customRelations', label: 'Show custom relations' },
+  { id: 'foreignKeyRelations', label: 'Show foreign key relations' },
 ]

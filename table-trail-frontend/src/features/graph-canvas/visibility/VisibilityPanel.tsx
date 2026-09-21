@@ -43,7 +43,7 @@ export function VisibilityPanel() {
               type="button"
               onClick={() => setIsPanelOpen(false)}
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Panel schließen"
+              aria-label="Close panel"
             >
               <X className="h-3.5 w-3.5" />
             </button>

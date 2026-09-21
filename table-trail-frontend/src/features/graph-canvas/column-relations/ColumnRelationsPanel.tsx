@@ -47,7 +47,7 @@ export function ColumnRelationsPanel() {
               type="button"
               onClick={() => setIsPanelOpen(false)}
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Panel schließen"
+              aria-label="Close panel"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -62,12 +62,12 @@ export function ColumnRelationsPanel() {
                 : 'border-border bg-surface text-foreground hover:bg-surface-hover'
             }`}
           >
-            Relation ziehen{isEditMode ? ' (aktiv)' : ''}
+            Draw relation{isEditMode ? ' (active)' : ''}
           </button>
 
           {isEditMode && (
             <p className="mt-2 text-body">
-              {pendingColumn ? 'Zweite Spalte auswählen …' : 'Erste Spalte auswählen.'}
+              {pendingColumn ? 'Select the second column …' : 'Select the first column.'}
             </p>
           )}
         </div>

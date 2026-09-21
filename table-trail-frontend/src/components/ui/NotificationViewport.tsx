@@ -44,7 +44,7 @@ export function NotificationViewport() {
               type="button"
               onClick={() => dismiss(notification.id)}
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Schließen"
+              aria-label="Close"
             >
               <X className="h-3.5 w-3.5" />
             </button>

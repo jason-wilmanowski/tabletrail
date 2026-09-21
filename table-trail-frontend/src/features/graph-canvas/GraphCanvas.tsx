@@ -224,17 +224,17 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         { column_id_1: action.columnId1, column_id_2: action.columnId2 },
         {
           onSuccess: (created) => setActiveColumnRelationPopover(String(created.id)),
-          onError: (error) => notifyError(`Relation konnte nicht erstellt werden: ${getErrorMessage(error)}`),
+          onError: (error) => notifyError(`Could not create relation: ${getErrorMessage(error)}`),
         }
       )
     } else if (action.type === 'update') {
       updateColumnRelation.mutate(
         { id: action.id, data: { relation_color: action.patch.color, description: action.patch.description } },
-        { onError: (error) => notifyError(`Änderung konnte nicht gespeichert werden: ${getErrorMessage(error)}`) }
+        { onError: (error) => notifyError(`Could not save changes: ${getErrorMessage(error)}`) }
       )
     } else {
       deleteColumnRelation.mutate(action.id, {
-        onError: (error) => notifyError(`Relation konnte nicht gelöscht werden: ${getErrorMessage(error)}`),
+        onError: (error) => notifyError(`Could not delete relation: ${getErrorMessage(error)}`),
       })
     }
   }, [
