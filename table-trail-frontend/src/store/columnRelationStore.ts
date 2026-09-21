@@ -11,7 +11,7 @@ export type PendingColumnRelationAction =
   | { type: 'delete'; id: number }
 
 interface ColumnRelationState {
-  /** "Relation ziehen" mode — while active, clicking columns builds a relation instead of selecting a table. */
+  /** "Draw relation" mode — while active, clicking columns builds a relation instead of selecting a table. */
   isEditMode: boolean
   /** First column clicked, waiting for the second one to complete a relation. */
   pendingColumn: PendingColumnSelection | null

@@ -4,6 +4,7 @@ import { useUiStore } from '../store/uiStore'
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 import { LandingView } from '../features/home/LandingView'
 import { DatabaseEmptyState } from '../features/database-detail/DatabaseEmptyState'
+import { DatabaseLoadingState } from '../features/database-detail/DatabaseLoadingState'
 
 export function DatabaseOverviewPage() {
   const { data, isLoading, error } = useDatabases()
@@ -28,7 +29,14 @@ export function DatabaseOverviewPage() {
     return <LandingView />
   }
 
-  if (previewDatabaseId !== null && previewData) {
+  if (previewDatabaseId !== null) {
+    // Large databases (e.g. Odoo-scale schemas) can take a few seconds to
+    // fetch — without this branch, the preview still shows the "Hover
+    // over a database" hint below even though the user is already
+    // hovering and a fetch is in flight.
+    if (!previewData) {
+      return <DatabaseLoadingState />
+    }
     return previewData.tables.length > 0 ? (
       <GraphCanvas tables={previewData.tables} databaseId={previewDatabaseId} interactive={false} />
     ) : (

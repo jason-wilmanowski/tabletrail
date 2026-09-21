@@ -11,6 +11,16 @@ import type { TableResponse } from '../types/table'
 export interface RelationEdgeData extends Record<string, unknown> {
   onDelete: string | null
   onUpdate: string | null
+  /**
+   * Small nudge (graph coordinate px) away from this relation's true
+   * midpoint, set by `GraphCanvas` when this label's midpoint lands too
+   * close to another currently-visible FK label's or custom-relation
+   * note's — see `utils/collisionOffset.ts`. Absent (or zero) for the
+   * common case of no nearby collision, in which case the label sits
+   * exactly centered.
+   */
+  offsetX?: number
+  offsetY?: number
 }
 
 export type RelationEdgeType = Edge<RelationEdgeData, 'relation'>

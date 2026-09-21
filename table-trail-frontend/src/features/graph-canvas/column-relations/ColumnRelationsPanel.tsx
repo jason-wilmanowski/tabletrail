@@ -7,10 +7,16 @@ import { useColumnRelationStore } from '../../../store/columnRelationStore'
  * own pane, same absolute-overlay pattern as `TableInspectorPanel`), that
  * opens an inline panel for manually-drawn column relations.
  *
- * Deliberately not a modal: the panel is a plain absolutely-positioned
- * sibling of `<ReactFlow>`, so it never intercepts pan/zoom/node clicks
- * on the canvas underneath it, and stays open while the user keeps
- * interacting with the graph.
+ * Deliberately not a modal: the panel is a plain sibling of `<ReactFlow>`,
+ * so it never intercepts pan/zoom/node clicks on the canvas underneath it,
+ * and stays open while the user keeps interacting with the graph.
+ *
+ * Not absolutely positioned itself — `GraphCanvas` stacks this and
+ * `VisibilityPanel` inside one shared `flex flex-col` overlay, so when
+ * this panel's dropdown opens/closes, the extra height pushes
+ * `VisibilityPanel` down (or lets it settle back up) via normal flex flow
+ * instead of a hardcoded pixel offset that would leave `VisibilityPanel`
+ * covered by this panel's open dropdown.
  */
 export function ColumnRelationsPanel() {
   const [isPanelOpen, setIsPanelOpen] = useState(false)
@@ -19,7 +25,7 @@ export function ColumnRelationsPanel() {
   const toggleEditMode = useColumnRelationStore((state) => state.toggleEditMode)
 
   return (
-    <div className="absolute right-3 top-3 z-30 flex flex-col items-end gap-2">
+    <div className="flex flex-col items-end gap-2">
       <button
         type="button"
         onClick={() => setIsPanelOpen((prev) => !prev)}
@@ -41,7 +47,7 @@ export function ColumnRelationsPanel() {
               type="button"
               onClick={() => setIsPanelOpen(false)}
               className="text-muted-foreground hover:text-foreground"
-              aria-label="Panel schließen"
+              aria-label="Close panel"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -56,12 +62,12 @@ export function ColumnRelationsPanel() {
                 : 'border-border bg-surface text-foreground hover:bg-surface-hover'
             }`}
           >
-            Relation ziehen{isEditMode ? ' (aktiv)' : ''}
+            Draw relation{isEditMode ? ' (active)' : ''}
           </button>
 
           {isEditMode && (
             <p className="mt-2 text-body">
-              {pendingColumn ? 'Zweite Spalte auswählen …' : 'Erste Spalte auswählen.'}
+              {pendingColumn ? 'Select the second column …' : 'Select the first column.'}
             </p>
           )}
         </div>

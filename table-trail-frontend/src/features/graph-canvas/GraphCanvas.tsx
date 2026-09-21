@@ -25,13 +25,16 @@ import { tablesToNodes } from '../../utils/tablesToNodes'
 import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
 import { constraintsToEdges } from '../../utils/constraintsToEdges'
 import { getSavedLayout, saveLayout } from '../../utils/layoutStorage'
+import { computeCollisionOffsets } from '../../utils/collisionOffset'
 import { TableNode } from './nodes/TableNode'
 import { RelationEdge } from './edges/RelationEdge'
 import { ColumnRelationEdge } from './edges/ColumnRelationEdge'
 import type { ColumnRelationEdgeType } from './edges/ColumnRelationEdge'
 import { ColumnRelationsPanel } from './column-relations/ColumnRelationsPanel'
+import { VisibilityPanel } from './visibility/VisibilityPanel'
 import { useUiStore } from '../../store/uiStore'
 import { useColumnRelationStore } from '../../store/columnRelationStore'
+import { useGraphVisibilityStore } from '../../store/graphVisibilityStore'
 import { notifyError } from '../../store/notificationStore'
 import { getErrorMessage } from '../../api/client'
 import {
@@ -173,6 +176,13 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const setActiveColumnRelationPopover = useColumnRelationStore((state) => state.setActivePopover)
   const resetColumnRelationSelection = useColumnRelationStore((state) => state.resetSelection)
 
+  // Purely visual layer toggles (Teil 1 of the UX update, via
+  // `VisibilityPanel`) — absence from `hiddenLayerIds` means visible, same
+  // convention as `hiddenNoteIds` above.
+  const hiddenLayerIds = useGraphVisibilityStore((state) => state.hiddenLayerIds)
+  const isCustomRelationsVisible = !hiddenLayerIds.has('customRelations')
+  const isForeignKeyRelationsVisible = !hiddenLayerIds.has('foreignKeyRelations')
+
   // Custom relations are server state (unlike FK edges, which are derived
   // straight from `tables`) — TanStack Query keys the cache per
   // `databaseId` on its own, so switching databases just refetches; only
@@ -214,17 +224,17 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         { column_id_1: action.columnId1, column_id_2: action.columnId2 },
         {
           onSuccess: (created) => setActiveColumnRelationPopover(String(created.id)),
-          onError: (error) => notifyError(`Relation konnte nicht erstellt werden: ${getErrorMessage(error)}`),
+          onError: (error) => notifyError(`Could not create relation: ${getErrorMessage(error)}`),
         }
       )
     } else if (action.type === 'update') {
       updateColumnRelation.mutate(
         { id: action.id, data: { relation_color: action.patch.color, description: action.patch.description } },
-        { onError: (error) => notifyError(`Änderung konnte nicht gespeichert werden: ${getErrorMessage(error)}`) }
+        { onError: (error) => notifyError(`Could not save changes: ${getErrorMessage(error)}`) }
       )
     } else {
       deleteColumnRelation.mutate(action.id, {
-        onError: (error) => notifyError(`Relation konnte nicht gelöscht werden: ${getErrorMessage(error)}`),
+        onError: (error) => notifyError(`Could not delete relation: ${getErrorMessage(error)}`),
       })
     }
   }, [
@@ -262,35 +272,110 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // (`updateConnectionLookup`). Without this, a fresh array here on every
   // render — e.g. on every node-drag frame — would re-trigger that full
   // rebuild for no reason.
-  const columnRelationEdges: ColumnRelationEdgeType[] = useMemo(
-    () =>
-      (columnRelationsQuery.data ?? []).flatMap((relation) => {
-        const tableId1 = columnToTableId.get(relation.column_id_1)
-        const tableId2 = columnToTableId.get(relation.column_id_2)
-        if (tableId1 === undefined || tableId2 === undefined) {
-          return []
-        }
-        return [
-          {
-            id: String(relation.id),
-            type: 'columnRelation' as const,
-            source: `table-${tableId1}`,
-            target: `table-${tableId2}`,
-            sourceHandle: `col-${relation.column_id_1}`,
-            targetHandle: `col-${relation.column_id_2}`,
-            data: { color: relation.relation_color, description: relation.description },
-          },
-        ]
-      }),
-    [columnRelationsQuery.data, columnToTableId]
-  )
+  const columnRelationEdges: ColumnRelationEdgeType[] = useMemo(() => {
+    if (!isCustomRelationsVisible) {
+      return []
+    }
+    return (columnRelationsQuery.data ?? []).flatMap((relation) => {
+      const tableId1 = columnToTableId.get(relation.column_id_1)
+      const tableId2 = columnToTableId.get(relation.column_id_2)
+      if (tableId1 === undefined || tableId2 === undefined) {
+        return []
+      }
+      return [
+        {
+          id: String(relation.id),
+          type: 'columnRelation' as const,
+          source: `table-${tableId1}`,
+          target: `table-${tableId2}`,
+          sourceHandle: `col-${relation.column_id_1}`,
+          targetHandle: `col-${relation.column_id_2}`,
+          data: { color: relation.relation_color, description: relation.description },
+        },
+      ]
+    })
+  }, [columnRelationsQuery.data, columnToTableId, isCustomRelationsVisible])
+
+  // Small nudge away from dead-center for any relation label whose true
+  // midpoint lands close enough to another currently-visible label's to
+  // otherwise overlap — run over FK relation labels (`edges`, the "ON
+  // DELETE"/"ON UPDATE" annotation from `RelationEdge`) and custom-relation
+  // notes (`columnRelationEdges`) *together*, in one pass, so a label never
+  // overlaps another label regardless of which kind either side is: FK vs
+  // FK, custom vs custom, or FK vs custom all get caught the same way.
+  //
+  // Uses each relation's source/target *table* center as a cheap stand-in
+  // for its true edge midpoint (exact handle-level positions aren't
+  // available here without duplicating React Flow's own internal layout
+  // math) — close enough to detect "these two are near each other", which
+  // is all collision avoidance needs. Only relations that actually render
+  // a visible label are considered (FK: `onDelete`/`onUpdate` present and
+  // the FK layer isn't hidden; custom: has a description, not hidden, and
+  // the custom-relations layer isn't hidden) — an edge with no visible
+  // label can't crowd out ones that do.
+  //
+  // Recomputed on every `nodes` change (e.g. every drag frame) since table
+  // positions move, but `computeCollisionOffsets` stays close to O(n) over
+  // just the currently-labeled relation count — not the full table count —
+  // so this stays proportional to how many labels actually exist,
+  // independent of database size.
+  const hiddenNoteIds = useColumnRelationStore((state) => state.hiddenNoteIds)
+  const labelCollisionOffsets = useMemo(() => {
+    const nodePositionById = new Map(nodes.map((node) => [node.id, node.position]))
+    const midpointOf = (source: string, target: string) => {
+      const sourcePos = nodePositionById.get(source)
+      const targetPos = nodePositionById.get(target)
+      if (!sourcePos || !targetPos) {
+        return null
+      }
+      return { x: (sourcePos.x + targetPos.x) / 2, y: (sourcePos.y + targetPos.y) / 2 }
+    }
+
+    const relationLabelPoints = isForeignKeyRelationsVisible
+      ? edges.flatMap((edge) => {
+          if (!edge.data?.onDelete && !edge.data?.onUpdate) {
+            return []
+          }
+          const point = midpointOf(edge.source, edge.target)
+          return point ? [{ id: edge.id, point }] : []
+        })
+      : []
+
+    const notePoints = columnRelationEdges.flatMap((edge) => {
+      if (!edge.data?.description || hiddenNoteIds.has(Number(edge.id))) {
+        return []
+      }
+      const point = midpointOf(edge.source, edge.target)
+      return point ? [{ id: edge.id, point }] : []
+    })
+
+    return computeCollisionOffsets([...relationLabelPoints, ...notePoints])
+  }, [edges, columnRelationEdges, nodes, hiddenNoteIds, isForeignKeyRelationsVisible])
 
   // Same reasoning as `columnRelationEdges` above — the array passed to
   // `<ReactFlow edges>` needs a stable reference across renders where
   // neither `edges` nor `columnRelationEdges` actually changed, otherwise
   // every render (including drag frames) forces React Flow to rebuild its
   // internal edge lookups from scratch.
-  const allEdges = useMemo(() => [...edges, ...columnRelationEdges], [edges, columnRelationEdges])
+  const allEdges = useMemo(() => {
+    const withNoteOffsets = columnRelationEdges.map((edge) => {
+      const offset = labelCollisionOffsets.get(edge.id)
+      if (!offset) {
+        return edge
+      }
+      return { ...edge, data: { ...edge.data!, offsetX: offset.x, offsetY: offset.y } }
+    })
+    const relationEdges = isForeignKeyRelationsVisible
+      ? edges.map((edge) => {
+          const offset = labelCollisionOffsets.get(edge.id)
+          if (!offset) {
+            return edge
+          }
+          return { ...edge, data: { ...edge.data, offsetX: offset.x, offsetY: offset.y } }
+        })
+      : []
+    return [...relationEdges, ...withNoteOffsets]
+  }, [edges, columnRelationEdges, labelCollisionOffsets, isForeignKeyRelationsVisible])
 
   // Re-derive nodes and edges when the underlying table data changes
   // (e.g. after a rescan) or when a different database is shown. Manual
@@ -435,11 +520,20 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
           <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
         )}
       </ReactFlow>
-      {/* Hidden while a table is selected — its trigger sits top-right
+      {/* Hidden while a table is selected — the top trigger sits top-right
           (`right-3 top-3`), directly over `TableInspectorPanel`'s header
           (`absolute right-0 top-0 w-72`), so an open table's name/columns
-          would otherwise be partly covered by this icon. */}
-      {interactive && selectedTableId === null && <ColumnRelationsPanel />}
+          would otherwise be partly covered by this icon. `ColumnRelationsPanel`
+          and `VisibilityPanel` are plain (non-absolute) flex children here —
+          this wrapper is the single absolutely-positioned overlay, so when
+          either panel's dropdown opens, normal flex flow pushes the other
+          trigger down instead of it getting covered by a hardcoded offset. */}
+      {interactive && selectedTableId === null && (
+        <div className="absolute right-3 top-3 z-30 flex flex-col items-end gap-2">
+          <ColumnRelationsPanel />
+          <VisibilityPanel />
+        </div>
+      )}
     </div>
   )
 }
