@@ -5,7 +5,6 @@ import type { SettingDefinition, SettingsCategoryDef, SettingsSectionDef } from 
 /**
  * Detail page shared by every settings category: header, then its sections
  * as bordered cards (or a coming-soon note when a category has none).
- * Everything below renders from the registry, so all categories look alike.
  */
 export function SettingsView({ category }: { category: SettingsCategoryDef }) {
   return (

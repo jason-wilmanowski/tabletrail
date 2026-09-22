@@ -15,8 +15,6 @@ export interface ToggleSetting extends SettingBase {
 
 /**
  * Union of every setting kind. Adding a new kind (select, text, number …)
- * means: add a member here, a value type in `SettingValue`, and one case in
- * `SettingControl` (`SettingsView.tsx`).
  */
 export type SettingDefinition = ToggleSetting
 
@@ -41,7 +39,7 @@ export interface SettingsCategoryDef {
 /**
  * Single source of truth for the settings UI. To add a setting, append it
  * to a section's `settings`; to add a section, append to `sections`; to add
- * a category, append here. Nothing else needs to change.
+ * a category, append here.
  */
 export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
   {
