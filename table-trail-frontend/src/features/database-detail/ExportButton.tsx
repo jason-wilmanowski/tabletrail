@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, Download, Loader2 } from 'lucide-react'
 import { ExportTypeIcon } from './ExportTypeIcon'
 import { useExportDatabase } from '../../hooks/useExport'
+import { useSettingValue } from '../../store/settingsStore'
 import type { ExportFormat } from '../../types/common'
 
 const EXPORT_OPTIONS: { value: ExportFormat; label: string }[] = [
@@ -17,7 +18,11 @@ interface ExportButtonProps {
 export function ExportButton({ databaseId }: ExportButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isFormatOpen, setIsFormatOpen] = useState(false)
-  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('pdf')
+  // The setting only preselects the format — switching it here stays local to this export.
+  const defaultFormat = useSettingValue('general.defaultExportFormat', 'pdf')
+  const [selectedFormat, setSelectedFormat] = useState<ExportFormat>(
+    () => EXPORT_OPTIONS.find((option) => option.value === defaultFormat)?.value ?? 'pdf'
+  )
   const containerRef = useRef<HTMLDivElement>(null)
 
   const exportMutation = useExportDatabase(databaseId)

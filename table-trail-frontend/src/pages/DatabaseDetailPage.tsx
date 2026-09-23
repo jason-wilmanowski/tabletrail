@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useDatabase, useDeleteDatabase, useRescanDatabase } from '../hooks/useDatabases'
+import { AlertTriangle } from 'lucide-react'
+import { useDatabase, useDatabases, useDeleteDatabase, useRescanDatabase } from '../hooks/useDatabases'
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 import { TableInspectorPanel } from '../features/table-inspector/TableInspectorPanel'
 import { SearchInput } from '../features/search-panel/SearchInput'
@@ -12,6 +13,8 @@ import { ExportButton } from '../features/database-detail/ExportButton'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
 import { useUiStore } from '../store/uiStore'
+import { useSettingValue } from '../store/settingsStore'
+import { formatDayCount, formatScanAge, getDaysSince, parseBackendTimestamp } from '../utils/scanAge'
 
 const INFO_ROWS = ['db_type', 'host', 'port', 'db_name'] as const
 const INFO_LABELS: Record<(typeof INFO_ROWS)[number], string> = {
@@ -34,6 +37,16 @@ export function DatabaseDetailPage() {
 
   const rescanDatabaseMutation = useRescanDatabase(databaseId)
   const deleteDatabaseMutation = useDeleteDatabase()
+
+  // `updated_at` only comes with the overview list (already loaded for the
+  // sidebar), not with this page's full-structure response.
+  const { data: databases } = useDatabases()
+  const lastScannedAt = databases?.find((database) => database.id === databaseId)?.updated_at
+  const lastScanDays = lastScannedAt ? getDaysSince(lastScannedAt) : null
+
+  const isScanAgeWarningEnabled = useSettingValue('general.scanAgeWarningEnabled', false)
+  const scanAgeWarningDays = Number(useSettingValue('general.scanAgeWarningDays', '7'))
+  const isScanOutdated = isScanAgeWarningEnabled && lastScanDays !== null && lastScanDays >= scanAgeWarningDays
 
   function handleRescanConfirm() {
     if (!data) return
@@ -93,7 +106,25 @@ export function DatabaseDetailPage() {
                 <span className="text-technical truncate text-right">{data[key]}</span>
               </div>
             ))}
+            {lastScannedAt && lastScanDays !== null && (
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-label shrink-0">Last scan</span>
+                <span
+                  title={parseBackendTimestamp(lastScannedAt).toLocaleString()}
+                  className={`text-technical truncate text-right ${isScanOutdated ? 'text-warning' : ''}`}
+                >
+                  {formatScanAge(lastScanDays)}
+                </span>
+              </div>
+            )}
           </div>
+
+          {isScanOutdated && (
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-warning">
+              <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" />
+              Older than {formatDayCount(scanAgeWarningDays)}. The schema may have changed, consider a rescan.
+            </p>
+          )}
 
           <button
             type="button"

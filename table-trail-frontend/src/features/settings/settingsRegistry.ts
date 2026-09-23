@@ -1,11 +1,19 @@
 import { Sparkles, Palette, SlidersHorizontal, Network } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import type { ComponentType } from 'react'
+import {
+  JsonExportIcon,
+  MarkdownExportIcon,
+  PdfExportIcon,
+} from '../database-detail/ExportTypeIcon'
 
 interface SettingBase {
   /** Globally unique key — also the persistence key in `settingsStore`. */
   key: string
   label: string
   description?: string
+  /** Key of a toggle setting; while that toggle is off, this row is shown disabled. */
+  enabledBy?: string
 }
 
 export interface ToggleSetting extends SettingBase {
@@ -13,13 +21,27 @@ export interface ToggleSetting extends SettingBase {
   defaultValue: boolean
 }
 
+export interface SelectOption {
+  value: string
+  label: string
+  /** Shown before the label, in the trigger and in the list. */
+  icon?: ComponentType<{ className?: string }>
+}
+
+export interface SelectSetting extends SettingBase {
+  type: 'select'
+  options: SelectOption[]
+  /** Must match one of `options[].value`. */
+  defaultValue: string
+}
+
 /**
  * Union of every setting kind. A new kind (select, text, number …) needs a
  * member here, a value type in `SettingValue` and a case in `SettingControl`.
  */
-export type SettingDefinition = ToggleSetting
+export type SettingDefinition = ToggleSetting | SelectSetting
 
-export type SettingValue = boolean
+export type SettingValue = boolean | string
 
 export interface SettingsSectionDef {
   id: string
@@ -54,20 +76,67 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
         title: 'Behavior',
         settings: [
           {
-            // Placeholder — persisted, but not consumed anywhere yet.
             key: 'general.confirmRelationDelete',
             type: 'toggle',
             label: 'Confirm before deleting relations',
             description: 'Ask for confirmation before a custom relation is removed.',
             defaultValue: true,
           },
+        ],
+      },
+      {
+        id: 'navigation',
+        title: 'Navigation',
+        settings: [
           {
-            // Placeholder — persisted, but not consumed anywhere yet.
-            key: 'general.reopenLastDatabase',
+            key: 'general.databaseHoverPreview',
             type: 'toggle',
-            label: 'Reopen last database on launch',
-            description: 'Jump straight back to the database you were viewing.',
+            label: 'Preview databases on hover',
+            description: 'On the overview page, hovering a database in the sidebar shows its schema graph.',
+            defaultValue: true,
+          },
+        ],
+      },
+      {
+        id: 'export',
+        title: 'Export',
+        settings: [
+          {
+            key: 'general.defaultExportFormat',
+            type: 'select',
+            label: 'Default export format',
+            description: 'Format preselected when exporting a database.',
+            options: [
+              { value: 'pdf', label: 'PDF', icon: PdfExportIcon },
+              { value: 'json', label: 'JSON', icon: JsonExportIcon },
+              { value: 'markdown', label: 'Markdown', icon: MarkdownExportIcon },
+            ],
+            defaultValue: 'pdf',
+          },
+        ],
+      },
+      {
+        id: 'scans',
+        title: 'Scans',
+        settings: [
+          {
+            key: 'general.scanAgeWarningEnabled',
+            type: 'toggle',
+            label: 'Warn about outdated scans',
+            description: 'Highlights the last scan date on a database page once it passes the threshold below.',
             defaultValue: false,
+          },
+          {
+            key: 'general.scanAgeWarningDays',
+            type: 'select',
+            label: 'Warn when a scan is older than',
+            enabledBy: 'general.scanAgeWarningEnabled',
+            options: [
+              { value: '1', label: '1 day' },
+              { value: '7', label: '7 days' },
+              { value: '30', label: '30 days' },
+            ],
+            defaultValue: '7',
           },
         ],
       },
@@ -97,3 +166,9 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
 ]
 
 export const DEFAULT_SETTINGS_CATEGORY_ID = SETTINGS_CATEGORIES[0].id
+
+export function findSettingDefinition(key: string): SettingDefinition | undefined {
+  return SETTINGS_CATEGORIES.flatMap((category) => category.sections)
+    .flatMap((section) => section.settings)
+    .find((setting) => setting.key === key)
+}

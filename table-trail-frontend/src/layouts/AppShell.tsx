@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Database, Plus, Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import { useDatabases } from '../hooks/useDatabases'
 import { useUiStore } from '../store/uiStore'
+import { useSettingValue } from '../store/settingsStore'
 import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
 import { NotificationViewport } from '../components/ui/NotificationViewport'
 
@@ -32,6 +33,7 @@ function Sidebar() {
   const { data } = useDatabases()
   const navigate = useNavigate()
   const setPreviewDatabaseId = useUiStore((state) => state.setPreviewDatabaseId)
+  const isHoverPreviewEnabled = useSettingValue('general.databaseHoverPreview', true)
   const collapsed = useUiStore((state) => state.sidebarCollapsed)
   const setSidebarCollapsed = useUiStore((state) => state.setSidebarCollapsed)
 
@@ -73,7 +75,7 @@ function Sidebar() {
               key={database.id}
               type="button"
               onClick={() => navigate(`/database/${database.id}`)}
-              onMouseEnter={() => setPreviewDatabaseId(database.id)}
+              onMouseEnter={isHoverPreviewEnabled ? () => setPreviewDatabaseId(database.id) : undefined}
               className={NAV_ITEM_CLASSES}
               title={database.name}
             >

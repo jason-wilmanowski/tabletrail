@@ -1,6 +1,7 @@
 import { MousePointer2 } from 'lucide-react'
 import { useDatabases, useDatabase } from '../hooks/useDatabases'
 import { useUiStore } from '../store/uiStore'
+import { useSettingValue } from '../store/settingsStore'
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 import { LandingView } from '../features/home/LandingView'
 import { DatabaseEmptyState } from '../features/database-detail/DatabaseEmptyState'
@@ -8,7 +9,10 @@ import { DatabaseLoadingState } from '../features/database-detail/DatabaseLoadin
 
 export function DatabaseOverviewPage() {
   const { data, isLoading, error } = useDatabases()
-  const previewDatabaseId = useUiStore((state) => state.previewDatabaseId)
+  const isHoverPreviewEnabled = useSettingValue('general.databaseHoverPreview', true)
+  // Ignored while the setting is off, so a hover id left over from before
+  // the toggle neither renders nor fetches (`useDatabase(0)` is disabled).
+  const previewDatabaseId = useUiStore((state) => (isHoverPreviewEnabled ? state.previewDatabaseId : null))
 
   const { data: previewData } = useDatabase(previewDatabaseId ?? 0)
 
@@ -48,7 +52,9 @@ export function DatabaseOverviewPage() {
     <div className="flex h-full items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <MousePointer2 className="h-6 w-6 text-muted-foreground" />
-        <p className="text-body">Hover over a database to preview it.</p>
+        <p className="text-body">
+          {isHoverPreviewEnabled ? 'Hover over a database to preview it.' : 'Select a database in the sidebar to open it.'}
+        </p>
       </div>
     </div>
   )

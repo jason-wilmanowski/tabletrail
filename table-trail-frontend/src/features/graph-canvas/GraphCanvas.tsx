@@ -35,7 +35,9 @@ import { VisibilityPanel } from './visibility/VisibilityPanel'
 import { useUiStore } from '../../store/uiStore'
 import { useColumnRelationStore } from '../../store/columnRelationStore'
 import { useGraphVisibilityStore } from '../../store/graphVisibilityStore'
+import { useSettingValue } from '../../store/settingsStore'
 import { notifyError } from '../../store/notificationStore'
+import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { getErrorMessage } from '../../api/client'
 import {
   useColumnRelations,
@@ -198,6 +200,11 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const updateColumnRelation = useUpdateColumnRelation(databaseId)
   const deleteColumnRelation = useDeleteColumnRelation(databaseId)
 
+  // With the setting on, a delete request only opens `ConfirmDialog`
+  // (holding the relation id here) — the DELETE itself fires on "Yes".
+  const isRelationDeleteConfirmEnabled = useSettingValue('general.confirmRelationDelete', true)
+  const [relationIdToDelete, setRelationIdToDelete] = useState<number | null>(null)
+
   // Surfaces a failed initial load — the graph would otherwise just
   // silently show zero custom relations with no indication anything
   // went wrong.
@@ -232,6 +239,10 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         { id: action.id, data: { relation_color: action.patch.color, description: action.patch.description } },
         { onError: (error) => notifyError(`Could not save changes: ${getErrorMessage(error)}`) }
       )
+    } else if (isRelationDeleteConfirmEnabled) {
+      // Clears a previous attempt's error so it doesn't show up in the fresh dialog.
+      deleteColumnRelation.reset()
+      setRelationIdToDelete(action.id)
     } else {
       deleteColumnRelation.mutate(action.id, {
         onError: (error) => notifyError(`Could not delete relation: ${getErrorMessage(error)}`),
@@ -244,7 +255,15 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
     updateColumnRelation,
     deleteColumnRelation,
     setActiveColumnRelationPopover,
+    isRelationDeleteConfirmEnabled,
   ])
+
+  function handleRelationDeleteConfirm() {
+    if (relationIdToDelete === null) {
+      return
+    }
+    deleteColumnRelation.mutate(relationIdToDelete, { onSuccess: () => setRelationIdToDelete(null) })
+  }
 
   // Real relations only carry column ids (matching the backend response),
   // so rendering them as edges needs each column's owning table id —
@@ -533,6 +552,19 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
           <ColumnRelationsPanel />
           <VisibilityPanel />
         </div>
+      )}
+
+      {relationIdToDelete !== null && (
+        <ConfirmDialog
+          title="Delete this relation?"
+          confirmLabel="Yes"
+          pendingLabel="Deleting..."
+          isPending={deleteColumnRelation.isPending}
+          errorMessage={deleteColumnRelation.error?.message}
+          variant="danger"
+          onConfirm={handleRelationDeleteConfirm}
+          onCancel={() => setRelationIdToDelete(null)}
+        />
       )}
     </div>
   )
