@@ -17,9 +17,21 @@ export interface ToggleSetting extends SettingBase {
  * Union of every setting kind. A new kind (select, text, number …) needs a
  * member here, a value type in `SettingValue` and a case in `SettingControl`.
  */
-export type SettingDefinition = ToggleSetting
+export interface SelectOption {
+  value: string
+  label: string
+}
 
-export type SettingValue = boolean
+export interface SelectSetting extends SettingBase {
+  type: 'select'
+  options: SelectOption[]
+  /** Must match one of `options[].value`. */
+  defaultValue: string
+}
+
+export type SettingDefinition = ToggleSetting | SelectSetting
+
+export type SettingValue = boolean | string
 
 export interface SettingsSectionDef {
   id: string
@@ -60,13 +72,23 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
             description: 'Ask for confirmation before a custom relation is removed.',
             defaultValue: true,
           },
+        ],
+      },
+      {
+        id: 'export',
+        title: 'Export',
+        settings: [
           {
-            // Placeholder — persisted, but not consumed anywhere yet.
-            key: 'general.reopenLastDatabase',
-            type: 'toggle',
-            label: 'Reopen last database on launch',
-            description: 'Jump straight back to the database you were viewing.',
-            defaultValue: false,
+            key: 'general.defaultExportFormat',
+            type: 'select',
+            label: 'Default export format',
+            description: 'Format preselected when exporting a database.',
+            options: [
+              { value: 'pdf', label: 'PDF' },
+              { value: 'json', label: 'JSON' },
+              { value: 'markdown', label: 'Markdown' },
+            ],
+            defaultValue: 'pdf',
           },
         ],
       },

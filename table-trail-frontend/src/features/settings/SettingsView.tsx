@@ -1,6 +1,15 @@
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { Check, ChevronDown } from 'lucide-react'
 import { useSettingsStore, useSettingValue } from '../../store/settingsStore'
-import type { SettingDefinition, SettingsCategoryDef, SettingsSectionDef } from './settingsRegistry'
+import type {
+  SelectOption,
+  SelectSetting,
+  SettingDefinition,
+  SettingsCategoryDef,
+  SettingsSectionDef,
+  ToggleSetting,
+} from './settingsRegistry'
 
 /**
  * Detail page shared by every settings category: header, then its sections
@@ -62,13 +71,132 @@ function SettingRow({ setting }: { setting: SettingDefinition }) {
 }
 
 function SettingControl({ setting, labelId }: { setting: SettingDefinition; labelId: string }) {
+  switch (setting.type) {
+    case 'toggle':
+      return <ToggleSettingControl setting={setting} labelId={labelId} />
+    case 'select':
+      return <SelectSettingControl setting={setting} labelId={labelId} />
+  }
+}
+
+function ToggleSettingControl({ setting, labelId }: { setting: ToggleSetting; labelId: string }) {
   const setValue = useSettingsStore((state) => state.setValue)
   const value = useSettingValue(setting.key, setting.defaultValue)
 
-  switch (setting.type) {
-    case 'toggle':
-      return <Switch checked={value} onChange={(next) => setValue(setting.key, next)} labelledBy={labelId} />
-  }
+  return <Switch checked={value} onChange={(next) => setValue(setting.key, next)} labelledBy={labelId} />
+}
+
+function SelectSettingControl({ setting, labelId }: { setting: SelectSetting; labelId: string }) {
+  const setValue = useSettingsStore((state) => state.setValue)
+  const value = useSettingValue(setting.key, setting.defaultValue)
+
+  return (
+    <Select
+      options={setting.options}
+      // A stored value whose option was since removed falls back to the default.
+      value={setting.options.some((option) => option.value === value) ? value : setting.defaultValue}
+      onChange={(next) => setValue(setting.key, next)}
+      labelledBy={labelId}
+    />
+  )
+}
+
+/**
+ * Same trigger/list styling as the app's other dropdowns (`DatabaseTypeSelect`,
+ * `ExportButton`); the list is right-aligned since it always sits at a row's
+ * right edge, and the active option carries a check mark.
+ */
+function Select({
+  options,
+  value,
+  onChange,
+  labelledBy,
+}: {
+  options: SelectOption[]
+  value: string
+  onChange: (value: string) => void
+  labelledBy: string
+}): ReactNode {
+  const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  const selected = options.find((option) => option.value === value)
+
+  useEffect(() => {
+    if (!isOpen) {
+      return
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen])
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-labelledby={labelledBy}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`flex w-40 items-center justify-between gap-2 rounded-md border border-border px-2.5 py-1 text-left text-sm text-foreground transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+          isOpen ? 'bg-surface-hover' : 'bg-surface'
+        }`}
+      >
+        <span className="truncate">{selected?.label}</span>
+        <ChevronDown
+          className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {isOpen && (
+        <ul
+          role="listbox"
+          aria-labelledby={labelledBy}
+          className="absolute right-0 z-10 mt-1 min-w-full rounded-md border border-border bg-surface py-1 shadow-none"
+        >
+          {options.map((option) => {
+            const isActive = option.value === value
+            return (
+              <li key={option.value} role="option" aria-selected={isActive}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(option.value)
+                    setIsOpen(false)
+                  }}
+                  className={`flex w-full items-center justify-between gap-3 whitespace-nowrap px-2.5 py-1.5 text-left text-sm transition-colors hover:bg-surface-hover focus:outline-none focus-visible:bg-surface-hover ${
+                    isActive ? 'text-foreground' : 'text-muted-foreground'
+                  }`}
+                >
+                  {option.label}
+                  <Check className={`h-3.5 w-3.5 shrink-0 text-accent ${isActive ? '' : 'invisible'}`} />
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
 }
 
 /**
