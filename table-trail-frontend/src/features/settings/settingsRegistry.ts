@@ -85,6 +85,19 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
         ],
       },
       {
+        id: 'navigation',
+        title: 'Navigation',
+        settings: [
+          {
+            key: 'general.databaseHoverPreview',
+            type: 'toggle',
+            label: 'Preview databases on hover',
+            description: 'On the overview page, hovering a database in the sidebar shows its schema graph.',
+            defaultValue: true,
+          },
+        ],
+      },
+      {
         id: 'export',
         title: 'Export',
         settings: [
