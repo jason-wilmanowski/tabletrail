@@ -159,7 +159,10 @@ function Select({
           isOpen ? 'bg-surface-hover' : 'bg-surface'
         }`}
       >
-        <span className="truncate">{selected?.label}</span>
+        <span className="flex min-w-0 items-center gap-1.5">
+          {selected?.icon && <selected.icon className="h-3.5 w-3.5 shrink-0" />}
+          <span className="truncate">{selected?.label}</span>
+        </span>
         <ChevronDown
           className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
@@ -187,7 +190,10 @@ function Select({
                     isActive ? 'text-foreground' : 'text-muted-foreground'
                   }`}
                 >
-                  {option.label}
+                  <span className="flex items-center gap-2">
+                    {option.icon && <option.icon className="h-3.5 w-3.5 shrink-0" />}
+                    {option.label}
+                  </span>
                   <Check className={`h-3.5 w-3.5 shrink-0 text-accent ${isActive ? '' : 'invisible'}`} />
                 </button>
               </li>

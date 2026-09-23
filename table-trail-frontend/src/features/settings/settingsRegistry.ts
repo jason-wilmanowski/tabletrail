@@ -1,5 +1,11 @@
 import { Sparkles, Palette, SlidersHorizontal, Network } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import type { ComponentType } from 'react'
+import {
+  JsonExportIcon,
+  MarkdownExportIcon,
+  PdfExportIcon,
+} from '../database-detail/ExportTypeIcon'
 
 interface SettingBase {
   /** Globally unique key — also the persistence key in `settingsStore`. */
@@ -13,13 +19,11 @@ export interface ToggleSetting extends SettingBase {
   defaultValue: boolean
 }
 
-/**
- * Union of every setting kind. A new kind (select, text, number …) needs a
- * member here, a value type in `SettingValue` and a case in `SettingControl`.
- */
 export interface SelectOption {
   value: string
   label: string
+  /** Shown before the label, in the trigger and in the list. */
+  icon?: ComponentType<{ className?: string }>
 }
 
 export interface SelectSetting extends SettingBase {
@@ -29,6 +33,10 @@ export interface SelectSetting extends SettingBase {
   defaultValue: string
 }
 
+/**
+ * Union of every setting kind. A new kind (select, text, number …) needs a
+ * member here, a value type in `SettingValue` and a case in `SettingControl`.
+ */
 export type SettingDefinition = ToggleSetting | SelectSetting
 
 export type SettingValue = boolean | string
@@ -84,11 +92,29 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
             label: 'Default export format',
             description: 'Format preselected when exporting a database.',
             options: [
-              { value: 'pdf', label: 'PDF' },
-              { value: 'json', label: 'JSON' },
-              { value: 'markdown', label: 'Markdown' },
+              { value: 'pdf', label: 'PDF', icon: PdfExportIcon },
+              { value: 'json', label: 'JSON', icon: JsonExportIcon },
+              { value: 'markdown', label: 'Markdown', icon: MarkdownExportIcon },
             ],
             defaultValue: 'pdf',
+          },
+        ],
+      },
+      {
+        id: 'scans',
+        title: 'Scans',
+        settings: [
+          {
+            key: 'general.scanAgeWarningDays',
+            type: 'select',
+            label: 'Warn when a scan is older than',
+            description: 'Shows a notification when you open a database whose last scan is older than this.',
+            options: [
+              { value: '1', label: '1 day' },
+              { value: '7', label: '7 days' },
+              { value: '30', label: '30 days' },
+            ],
+            defaultValue: '7',
           },
         ],
       },
