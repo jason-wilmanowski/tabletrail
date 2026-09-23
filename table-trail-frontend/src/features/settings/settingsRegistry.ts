@@ -54,7 +54,6 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
         title: 'Behavior',
         settings: [
           {
-            // Placeholder — persisted, but not consumed anywhere yet.
             key: 'general.confirmRelationDelete',
             type: 'toggle',
             label: 'Confirm before deleting relations',
