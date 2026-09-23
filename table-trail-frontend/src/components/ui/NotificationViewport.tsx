@@ -1,9 +1,10 @@
-import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react'
+import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from 'lucide-react'
 import { useNotificationStore } from '../../store/notificationStore'
 import type { NotificationVariant } from '../../store/notificationStore'
 
 const VARIANT_STYLES: Record<NotificationVariant, { icon: typeof AlertCircle; border: string; iconColor: string }> = {
   error: { icon: AlertCircle, border: 'border-danger/40', iconColor: 'text-danger' },
+  warning: { icon: AlertTriangle, border: 'border-warning/40', iconColor: 'text-warning' },
   success: { icon: CheckCircle2, border: 'border-success/40', iconColor: 'text-success' },
   info: { icon: Info, border: 'border-border', iconColor: 'text-muted-foreground' },
 }
