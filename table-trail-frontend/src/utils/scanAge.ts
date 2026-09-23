@@ -20,3 +20,13 @@ export function getDaysSince(timestamp: string, now: Date = new Date()): number 
   const elapsed = now.getTime() - parseBackendTimestamp(timestamp).getTime()
   return Math.max(0, Math.floor(elapsed / MS_PER_DAY))
 }
+
+/** "1 day" / "7 days". */
+export function formatDayCount(days: number): string {
+  return `${days} ${days === 1 ? 'day' : 'days'}`
+}
+
+/** "Today" / "1 day ago" / "12 days ago". */
+export function formatScanAge(days: number): string {
+  return days === 0 ? 'Today' : `${formatDayCount(days)} ago`
+}

@@ -20,6 +20,9 @@ export interface DatabaseOverviewResponse {
   host: string
   port: string
   db_name: string
+  created_at: string
+  /** Also bumped by a successful scan, so it doubles as "last scanned" (see `utils/scanAge.ts`). */
+  updated_at: string
 }
 
 /**

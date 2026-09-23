@@ -12,6 +12,8 @@ interface SettingBase {
   key: string
   label: string
   description?: string
+  /** Key of a toggle setting; while that toggle is off, this row is shown disabled. */
+  enabledBy?: string
 }
 
 export interface ToggleSetting extends SettingBase {
@@ -105,10 +107,17 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
         title: 'Scans',
         settings: [
           {
+            key: 'general.scanAgeWarningEnabled',
+            type: 'toggle',
+            label: 'Warn about outdated scans',
+            description: 'Highlights the last scan date on a database page once it passes the threshold below.',
+            defaultValue: false,
+          },
+          {
             key: 'general.scanAgeWarningDays',
             type: 'select',
             label: 'Warn when a scan is older than',
-            description: 'Shows a notification when you open a database whose last scan is older than this.',
+            enabledBy: 'general.scanAgeWarningEnabled',
             options: [
               { value: '1', label: '1 day' },
               { value: '7', label: '7 days' },
@@ -144,3 +153,9 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
 ]
 
 export const DEFAULT_SETTINGS_CATEGORY_ID = SETTINGS_CATEGORIES[0].id
+
+export function findSettingDefinition(key: string): SettingDefinition | undefined {
+  return SETTINGS_CATEGORIES.flatMap((category) => category.sections)
+    .flatMap((section) => section.settings)
+    .find((setting) => setting.key === key)
+}

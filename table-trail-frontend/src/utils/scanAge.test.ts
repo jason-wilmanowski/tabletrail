@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getDaysSince, parseBackendTimestamp } from './scanAge'
+import { formatDayCount, formatScanAge, getDaysSince, parseBackendTimestamp } from './scanAge'
 
 describe('parseBackendTimestamp', () => {
   it('reads a timestamp without offset as UTC', () => {
@@ -27,5 +27,23 @@ describe('getDaysSince', () => {
 
   it('never returns a negative age for timestamps in the future', () => {
     expect(getDaysSince('2026-09-24T12:00:00', now)).toBe(0)
+  })
+})
+
+describe('formatDayCount', () => {
+  it('uses the singular only for one day', () => {
+    expect(formatDayCount(1)).toBe('1 day')
+    expect(formatDayCount(7)).toBe('7 days')
+  })
+})
+
+describe('formatScanAge', () => {
+  it('shows "Today" for a scan from the last 24 hours', () => {
+    expect(formatScanAge(0)).toBe('Today')
+  })
+
+  it('shows the age in days otherwise', () => {
+    expect(formatScanAge(1)).toBe('1 day ago')
+    expect(formatScanAge(12)).toBe('12 days ago')
   })
 })

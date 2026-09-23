@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import { useSettingsStore, useSettingValue } from '../../store/settingsStore'
+import { findSettingDefinition } from './settingsRegistry'
 import type {
   SelectOption,
   SelectSetting,
@@ -54,9 +55,20 @@ function SettingsSection({ section }: { section: SettingsSectionDef }) {
 /** Label + description on the left, the control for the setting's type on the right. */
 function SettingRow({ setting }: { setting: SettingDefinition }) {
   const labelId = `setting-${setting.key}`
+  const isDisabled = useSettingsStore((state) => {
+    if (!setting.enabledBy) {
+      return false
+    }
+    const parentValue = state.values[setting.enabledBy] ?? findSettingDefinition(setting.enabledBy)?.defaultValue
+    return parentValue !== true
+  })
 
   return (
-    <div className="flex items-center justify-between gap-6 px-4 py-3">
+    <div
+      className={`flex items-center justify-between gap-6 px-4 py-3 transition-opacity duration-200 ${
+        isDisabled ? 'opacity-50' : ''
+      }`}
+    >
       <div className="min-w-0">
         <p id={labelId} className="text-sm font-medium text-foreground">
           {setting.label}
@@ -64,34 +76,48 @@ function SettingRow({ setting }: { setting: SettingDefinition }) {
         {setting.description && <p className="text-body mt-0.5">{setting.description}</p>}
       </div>
       <div className="shrink-0">
-        <SettingControl setting={setting} labelId={labelId} />
+        <SettingControl setting={setting} labelId={labelId} disabled={isDisabled} />
       </div>
     </div>
   )
 }
 
-function SettingControl({ setting, labelId }: { setting: SettingDefinition; labelId: string }) {
+interface SettingControlProps<T extends SettingDefinition> {
+  setting: T
+  labelId: string
+  disabled: boolean
+}
+
+function SettingControl({ setting, labelId, disabled }: SettingControlProps<SettingDefinition>) {
   switch (setting.type) {
     case 'toggle':
-      return <ToggleSettingControl setting={setting} labelId={labelId} />
+      return <ToggleSettingControl setting={setting} labelId={labelId} disabled={disabled} />
     case 'select':
-      return <SelectSettingControl setting={setting} labelId={labelId} />
+      return <SelectSettingControl setting={setting} labelId={labelId} disabled={disabled} />
   }
 }
 
-function ToggleSettingControl({ setting, labelId }: { setting: ToggleSetting; labelId: string }) {
+function ToggleSettingControl({ setting, labelId, disabled }: SettingControlProps<ToggleSetting>) {
   const setValue = useSettingsStore((state) => state.setValue)
   const value = useSettingValue(setting.key, setting.defaultValue)
 
-  return <Switch checked={value} onChange={(next) => setValue(setting.key, next)} labelledBy={labelId} />
+  return (
+    <Switch
+      checked={value}
+      onChange={(next) => setValue(setting.key, next)}
+      labelledBy={labelId}
+      disabled={disabled}
+    />
+  )
 }
 
-function SelectSettingControl({ setting, labelId }: { setting: SelectSetting; labelId: string }) {
+function SelectSettingControl({ setting, labelId, disabled }: SettingControlProps<SelectSetting>) {
   const setValue = useSettingsStore((state) => state.setValue)
   const value = useSettingValue(setting.key, setting.defaultValue)
 
   return (
     <Select
+      disabled={disabled}
       options={setting.options}
       // A stored value whose option was since removed falls back to the default.
       value={setting.options.some((option) => option.value === value) ? value : setting.defaultValue}
@@ -111,11 +137,13 @@ function Select({
   value,
   onChange,
   labelledBy,
+  disabled = false,
 }: {
   options: SelectOption[]
   value: string
   onChange: (value: string) => void
   labelledBy: string
+  disabled?: boolean
 }): ReactNode {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -154,8 +182,9 @@ function Select({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-labelledby={labelledBy}
+        disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`flex w-40 items-center justify-between gap-2 rounded-md border border-border px-2.5 py-1 text-left text-sm text-foreground transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+        className={`flex w-40 items-center justify-between gap-2 rounded-md border border-border px-2.5 py-1 text-left text-sm text-foreground transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:hover:bg-surface ${
           isOpen ? 'bg-surface-hover' : 'bg-surface'
         }`}
       >
@@ -213,10 +242,12 @@ function Switch({
   checked,
   onChange,
   labelledBy,
+  disabled = false,
 }: {
   checked: boolean
   onChange: (checked: boolean) => void
   labelledBy: string
+  disabled?: boolean
 }): ReactNode {
   return (
     <button
@@ -224,8 +255,9 @@ function Switch({
       role="switch"
       aria-checked={checked}
       aria-labelledby={labelledBy}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative h-4 w-7 shrink-0 rounded-full border transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+      className={`relative h-4 w-7 shrink-0 rounded-full border transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed ${
         checked ? 'border-accent bg-accent' : 'border-border bg-surface'
       }`}
     >
