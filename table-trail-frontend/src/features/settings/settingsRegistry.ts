@@ -14,7 +14,8 @@ export interface ToggleSetting extends SettingBase {
 }
 
 /**
- * Union of every setting kind. Adding a new kind (select, text, number …)
+ * Union of every setting kind. A new kind (select, text, number …) needs a
+ * member here, a value type in `SettingValue` and a case in `SettingControl`.
  */
 export type SettingDefinition = ToggleSetting
 
