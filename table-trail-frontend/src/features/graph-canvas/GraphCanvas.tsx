@@ -545,6 +545,8 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         zoomOnPinch={interactive}
         zoomOnDoubleClick={interactive}
         preventScrolling={interactive}
+        // React Flow is MIT-licensed; removing the attribution is allowed without a Pro subscription.
+        proOptions={{ hideAttribution: true }}
       >
         {backgroundVariant && <Background variant={backgroundVariant} color="hsl(var(--border))" gap={24} />}
         {interactive && isZoomControlsEnabled && <Controls showInteractive={false} />}
