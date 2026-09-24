@@ -205,6 +205,9 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const isRelationDeleteConfirmEnabled = useSettingValue('general.confirmRelationDelete', true)
   const [relationIdToDelete, setRelationIdToDelete] = useState<number | null>(null)
 
+  const isMinimapEnabled = useSettingValue('graph.showMinimap', true)
+  const isZoomControlsEnabled = useSettingValue('graph.showZoomControls', true)
+
   // Surfaces a failed initial load — the graph would otherwise just
   // silently show zero custom relations with no indication anything
   // went wrong.
@@ -534,8 +537,8 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         preventScrolling={interactive}
       >
         <Background color="hsl(var(--border))" gap={24} />
-        {interactive && <Controls showInteractive={false} />}
-        {interactive && (
+        {interactive && isZoomControlsEnabled && <Controls showInteractive={false} />}
+        {interactive && isMinimapEnabled && (
           <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
         )}
       </ReactFlow>
