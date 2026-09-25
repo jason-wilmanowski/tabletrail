@@ -1,8 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from table_trail_backend.core.encrypt import decrypt, encrypt
 from table_trail_backend.core.enums import DBStatus, DBType
 from table_trail_backend.core.exceptions import (
+    EncryptionSystemError,
     ScannerConnectionError,
+    ScannerDatabaseNotFoundError,
     ScannerDataError,
     ScannerUnsupportedDBError,
     ScanningSystemError,
@@ -34,38 +37,73 @@ class ScanService:
         self.column_repo = ColumnRepository(db)
         self.constraint_repo = ConstraintsRepository(db)
 
-    # Public Entry Point
+    # Public Entry Points
 
     async def execute_scan(self, database_details: CreateDatabase) -> DatabaseResponse:
         prepared_url = self._prepare_url(database_details)
 
-        # Initialize — sets status to SCANNING, commits immediately
-        database = await self._initialize_scan(database_details)
+        try:
+            # Initialize — sets status to SCANNING, commits immediately
+            database = await self._initialize_scan(database_details)
+        except EncryptionSystemError as error:
+            raise ScanningSystemError(message=error.message, status_code=error.status_code) from error
+
+        return await self._run_scan(database.id, database_details.db_type, prepared_url)
+
+    async def execute_rescan(self, db_id: int) -> DatabaseResponse:
+        database = await self.db_repo.get_one_database(db_id)
+        if database is None:
+            raise ScannerDatabaseNotFoundError(message=f"Database with id {db_id} not found", status_code=404)
 
         try:
+            password = decrypt(database.password)
+        except EncryptionSystemError as error:
+            raise ScanningSystemError(message=error.message, status_code=error.status_code) from error
+
+        prepared_url = self._prepare_url(
+            CreateDatabase(
+                name=database.name,
+                db_type=database.db_type,
+                host=database.host,
+                port=database.port,
+                db_name=database.db_name,
+                username=database.username,
+                password=password,
+            )
+        )
+
+        # Initialize — sets status to SCANNING, commits immediately
+        await self._update_status(database.id, DBStatus.SCANNING)
+
+        return await self._run_scan(database.id, database.db_type, prepared_url)
+
+    # Shared Scan Workflow
+
+    async def _run_scan(self, db_id: int, db_type: DBType, prepared_url: str) -> DatabaseResponse:
+        try:
             # 1. Run scanner first — if this fails, existing data is untouched
-            scan_result = await self._run_scanner(database_details.db_type, prepared_url)
+            scan_result = await self._run_scanner(db_type, prepared_url)
 
             # 2. Clear existing data for this database (flush only)
-            await self._clear_existing_data(database.id)
+            await self._clear_existing_data(db_id)
 
             # 3. Persist new scan results (flush only)
-            await self._persist_results(database.id, scan_result)
+            await self._persist_results(db_id, scan_result)
 
             # 4. Single commit — all or nothing
             await self.db.commit()
 
             # 5. Mark as READY
-            await self._update_status(database.id, DBStatus.READY)
+            await self._update_status(db_id, DBStatus.READY)
 
             # 6. Get Database Object
-            scanned_database = await self.db_repo.get_one_database(database.id)
+            scanned_database = await self.db_repo.get_one_database(db_id)
 
             return scanned_database
 
         except ScanningSystemError:
             await self.db.rollback()
-            await self._update_status(database.id, DBStatus.ERROR)
+            await self._update_status(db_id, DBStatus.ERROR)
             raise
 
     # Private Workflow Steps
@@ -74,6 +112,9 @@ class ScanService:
         existing_database = await self.db_repo.get_database_by_connection(
             database_details.host, int(database_details.port), database_details.db_name
         )
+
+        encrypted_password = encrypt(database_details.password)
+
         if existing_database:
             database = await self.db_repo.update(
                 existing_database.id,
@@ -84,7 +125,7 @@ class ScanService:
                     port=int(database_details.port),
                     db_name=database_details.db_name,
                     username=database_details.username,
-                    password=database_details.password,
+                    password=encrypted_password,
                     status=DBStatus.SCANNING,
                 ),
             )
@@ -98,7 +139,7 @@ class ScanService:
                     port=int(database_details.port),
                     db_name=database_details.db_name,
                     username=database_details.username,
-                    password=database_details.password,
+                    password=encrypted_password,
                     status=DBStatus.SCANNING,
                 )
             )

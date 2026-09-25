@@ -4,9 +4,13 @@ import pytest
 
 from table_trail_backend.core.enums import DBStatus, DBType
 from table_trail_backend.core.exceptions import (
+    EncryptionError,
+    EncryptionKeyError,
     ScannerConnectionError,
+    ScannerDatabaseNotFoundError,
     ScannerDataError,
     ScannerUnsupportedDBError,
+    ScanningSystemError,
 )
 from table_trail_backend.db_scanner.base_scanner import ScannedDatabase
 from table_trail_backend.schemas.database_schema import (
@@ -172,7 +176,9 @@ async def test_run_scanner_unexpected_error(service):
 
 
 @pytest.mark.asyncio
+@patch("table_trail_backend.services.scanner_service.encrypt", return_value="encrypted-secret")
 async def test_initialize_scan_creates_new_database(
+    encrypt_mock,
     service,
     database_details,
 ):
@@ -201,7 +207,8 @@ async def test_initialize_scan_creates_new_database(
     assert create_data.port == int(database_details.port)
     assert create_data.db_name == database_details.db_name
     assert create_data.username == database_details.username
-    assert create_data.password == database_details.password
+    encrypt_mock.assert_called_once_with(database_details.password)
+    assert create_data.password == "encrypted-secret"
     assert create_data.status == DBStatus.SCANNING
 
     service.db.commit.assert_awaited_once()
@@ -210,7 +217,9 @@ async def test_initialize_scan_creates_new_database(
 
 
 @pytest.mark.asyncio
+@patch("table_trail_backend.services.scanner_service.encrypt", return_value="encrypted-secret")
 async def test_initialize_scan_updates_existing_database(
+    encrypt_mock,
     service,
     database_details,
 ):
@@ -236,7 +245,8 @@ async def test_initialize_scan_updates_existing_database(
     assert update_data.port == int(database_details.port)
     assert update_data.db_name == database_details.db_name
     assert update_data.username == database_details.username
-    assert update_data.password == database_details.password
+    encrypt_mock.assert_called_once_with(database_details.password)
+    assert update_data.password == "encrypted-secret"
     assert update_data.status == DBStatus.SCANNING
 
     service.db.commit.assert_awaited_once()
@@ -648,3 +658,101 @@ async def test_execute_scan_does_not_persist_when_clear_fails(
         await service.execute_scan(database_details)
 
     service._persist_results.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_execute_scan_wraps_encryption_error(
+    service,
+    database_details,
+):
+    service._prepare_url = MagicMock(return_value="prepared-url")
+    service._initialize_scan = AsyncMock(
+        side_effect=EncryptionKeyError(message="ENCRYPTION_KEY is not set", status_code=500)
+    )
+    service._run_scan = AsyncMock()
+
+    with pytest.raises(ScanningSystemError) as error:
+        await service.execute_scan(database_details)
+
+    assert error.value.status_code == 500
+    service._run_scan.assert_not_awaited()
+
+
+# execute_rescan
+
+
+@pytest.fixture
+def stored_database():
+    database = MagicMock()
+    database.id = 42
+    database.name = "Test Database"
+    database.db_type = DBType.POSTGRESQL
+    database.host = "localhost"
+    database.port = 5432
+    database.db_name = "test_db"
+    database.username = "postgres"
+    database.password = "encrypted-secret"
+    return database
+
+
+@pytest.mark.asyncio
+@patch("table_trail_backend.services.scanner_service.decrypt", return_value="secret")
+async def test_execute_rescan_success(
+    decrypt_mock,
+    service,
+    stored_database,
+):
+    fake_response = MagicMock(spec=DatabaseResponse)
+
+    service.db_repo.get_one_database = AsyncMock(return_value=stored_database)
+    service._update_status = AsyncMock()
+    service._run_scan = AsyncMock(return_value=fake_response)
+
+    result = await service.execute_rescan(42)
+
+    service.db_repo.get_one_database.assert_awaited_once_with(42)
+    decrypt_mock.assert_called_once_with("encrypted-secret")
+    service._update_status.assert_awaited_once_with(42, DBStatus.SCANNING)
+    service._run_scan.assert_awaited_once_with(
+        42,
+        DBType.POSTGRESQL,
+        "postgresql+psycopg2://postgres:secret@host.docker.internal:5432/test_db",
+    )
+
+    assert result == fake_response
+
+
+@pytest.mark.asyncio
+async def test_execute_rescan_database_not_found(service):
+    service.db_repo.get_one_database = AsyncMock(return_value=None)
+    service._update_status = AsyncMock()
+    service._run_scan = AsyncMock()
+
+    with pytest.raises(ScannerDatabaseNotFoundError) as error:
+        await service.execute_rescan(42)
+
+    assert error.value.status_code == 404
+    service._update_status.assert_not_awaited()
+    service._run_scan.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+@patch(
+    "table_trail_backend.services.scanner_service.decrypt",
+    side_effect=EncryptionError(message="Stored value could not be decrypted", status_code=500),
+)
+async def test_execute_rescan_wraps_decryption_error(
+    decrypt_mock,
+    service,
+    stored_database,
+):
+    service.db_repo.get_one_database = AsyncMock(return_value=stored_database)
+    service._update_status = AsyncMock()
+    service._run_scan = AsyncMock()
+
+    with pytest.raises(ScanningSystemError) as error:
+        await service.execute_rescan(42)
+
+    assert error.value.status_code == 500
+    service._update_status.assert_not_awaited()
+    service._run_scan.assert_not_awaited()
