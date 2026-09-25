@@ -3,7 +3,6 @@ import { getAllDatabases, getDatabase, updateDatabase, deleteDatabase } from '..
 import { rescanDatabase } from '../api/scanner'
 import type { UpdateDatabaseRequest } from '../api/databases'
 import type { DatabaseOverviewResponse, DatabaseStructureResponse } from '../types/database'
-import type { ConnectionFields } from '../types/common'
 
 /**
  * Wraps `getAllDatabases()` from the Step 3 API layer in a TanStack Query
@@ -72,7 +71,7 @@ export function useDeleteDatabase() {
 }
 
 /**
- * Wraps `rescanDatabase(payload)`. The endpoint returns the full
+ * Wraps `rescanDatabase(id)`. The endpoint returns the full
  * `DatabaseStructureResponse` (including refreshed `tables`), which is
  * written directly into the `['database', id]` cache entry so the graph
  * and sidebar re-render with the new structure without a refetch.
@@ -82,7 +81,7 @@ export function useRescanDatabase(id: number) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (payload: ConnectionFields) => rescanDatabase(payload),
+    mutationFn: () => rescanDatabase(id),
     onSuccess: (updated) => {
       queryClient.setQueryData<DatabaseStructureResponse>(['database', id], updated)
       queryClient.invalidateQueries({ queryKey: ['databases'] })

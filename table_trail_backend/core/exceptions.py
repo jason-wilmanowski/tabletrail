@@ -60,6 +60,10 @@ class ScannerDataError(ScanningSystemError):
     pass
 
 
+class ScannerDatabaseNotFoundError(ScanningSystemError):
+    pass
+
+
 # Base Export Exception
 class ExportSystemError(Exception):
     def __init__(self, message: str, status_code: int):
