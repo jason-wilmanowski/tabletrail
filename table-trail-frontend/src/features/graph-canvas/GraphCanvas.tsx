@@ -216,6 +216,9 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const isMinimapEnabled = useSettingValue('graph.showMinimap', true)
   const isZoomControlsEnabled = useSettingValue('graph.showZoomControls', true)
   const backgroundPattern = useSettingValue<string>('graph.backgroundPattern', 'dots')
+  const menuScale = Number(useSettingValue<string>('graph.menuScale', '100')) / 100
+  const zoomControlsScale = Number(useSettingValue<string>('graph.zoomControlsScale', '100')) / 100
+  const minimapScale = Number(useSettingValue<string>('graph.minimapScale', '100')) / 100
   const backgroundVariant = BACKGROUND_VARIANTS[backgroundPattern]
 
   // Surfaces a failed initial load — the graph would otherwise just
@@ -223,7 +226,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // went wrong.
   useEffect(() => {
     if (columnRelationsQuery.error) {
-      notifyError(`Custom-Relationen konnten nicht geladen werden: ${getErrorMessage(columnRelationsQuery.error)}`)
+      notifyError(`Could not load custom relations: ${getErrorMessage(columnRelationsQuery.error)}`)
     }
   }, [columnRelationsQuery.error])
 
@@ -549,9 +552,25 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         proOptions={{ hideAttribution: true }}
       >
         {backgroundVariant && <Background variant={backgroundVariant} color="hsl(var(--border))" gap={24} />}
-        {interactive && isZoomControlsEnabled && <Controls showInteractive={false} />}
+        {interactive && isZoomControlsEnabled && (
+          // `zoom` also scales React Flow's own 15px panel margin, so it's
+          // divided back out to keep the controls' corner offset fixed at every size.
+          <Controls
+            showInteractive={false}
+            style={{ zoom: zoomControlsScale, margin: 15 / zoomControlsScale }}
+          />
+        )}
         {interactive && isMinimapEnabled && (
-          <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
+          // Sized via React Flow's own width/height (default 200x150) instead of
+          // CSS `zoom` — the minimap is pannable/zoomable and maps pointer
+          // positions itself, which `zoom` would throw off.
+          <MiniMap
+            pannable
+            zoomable
+            nodeStrokeWidth={1}
+            className="!border !border-border"
+            style={{ width: 200 * minimapScale, height: 150 * minimapScale }}
+          />
         )}
       </ReactFlow>
       {/* Hidden while a table is selected — the top trigger sits top-right
@@ -561,11 +580,16 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
           and `VisibilityPanel` are plain (non-absolute) flex children here —
           this wrapper is the single absolutely-positioned overlay, so when
           either panel's dropdown opens, normal flex flow pushes the other
-          trigger down instead of it getting covered by a hardcoded offset. */}
+          trigger down instead of it getting covered by a hardcoded offset.
+          `zoom` sits on the inner wrapper so the `graph.menuScale` setting
+          scales every menu (trigger + open panel) as one unit, while the
+          outer `right-3 top-3` offset stays the same at every size. */}
       {interactive && selectedTableId === null && (
-        <div className="absolute right-3 top-3 z-30 flex flex-col items-end gap-2">
-          <ColumnRelationsPanel />
-          <VisibilityPanel />
+        <div className="absolute right-3 top-3 z-30">
+          <div className="flex flex-col items-end gap-2" style={{ zoom: menuScale }}>
+            <ColumnRelationsPanel />
+            <VisibilityPanel />
+          </div>
         </div>
       )}
 

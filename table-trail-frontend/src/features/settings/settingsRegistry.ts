@@ -195,6 +195,71 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
           },
         ],
       },
+      {
+        id: 'sidebar',
+        title: 'Sidebar',
+        settings: [
+          {
+            key: 'graph.showSchemaStats',
+            type: 'toggle',
+            label: 'Show table and column count',
+            description: 'Shows the total number of tables and columns below the search field.',
+            defaultValue: true,
+          },
+          {
+            key: 'graph.showSearchMatchCount',
+            type: 'toggle',
+            label: 'Show search match count',
+            description: 'While searching, shows how many of those tables and columns match, e.g. "5 of 24 tables".',
+            enabledBy: 'graph.showSchemaStats',
+            defaultValue: true,
+          },
+        ],
+      },
+      {
+        id: 'size',
+        title: 'Size',
+        settings: [
+          {
+            key: 'graph.menuScale',
+            type: 'select',
+            label: 'Menu size',
+            description: 'Size of the graph menus in the top-right corner, including their open panels.',
+            options: [
+              { value: '75', label: '75%' },
+              { value: '100', label: '100%' },
+              { value: '125', label: '125%' },
+            ],
+            defaultValue: '100',
+          },
+          {
+            key: 'graph.zoomControlsScale',
+            type: 'select',
+            label: 'Zoom controls size',
+            description: 'Size of the zoom in, zoom out and fit view buttons in the bottom-left corner.',
+            enabledBy: 'graph.showZoomControls',
+            options: [
+              { value: '75', label: '75%' },
+              { value: '100', label: '100%' },
+              { value: '125', label: '125%' },
+            ],
+            defaultValue: '100',
+          },
+          {
+            key: 'graph.minimapScale',
+            type: 'select',
+            label: 'Minimap size',
+            description: 'Size of the graph overview in the bottom-right corner.',
+            enabledBy: 'graph.showMinimap',
+            options: [
+              { value: '75', label: '75%' },
+              { value: '100', label: '100%' },
+              { value: '125', label: '125%' },
+            ],
+            defaultValue: '100',
+          },
+        ],
+      },
     ],
   },
 ]

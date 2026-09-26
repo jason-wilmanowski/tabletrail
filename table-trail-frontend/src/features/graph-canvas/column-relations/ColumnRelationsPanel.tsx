@@ -34,7 +34,7 @@ export function ColumnRelationsPanel() {
             ? 'border-accent bg-accent text-accent-foreground'
             : 'border-border bg-panel text-muted-foreground hover:text-foreground'
         }`}
-        aria-label="Custom-Relationen"
+        aria-label="Custom relations"
       >
         <Route className="h-4 w-4" />
       </button>
@@ -42,7 +42,7 @@ export function ColumnRelationsPanel() {
       {isPanelOpen && (
         <div className="w-56 rounded-md border border-border bg-panel p-2.5 shadow-lg">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-label">Custom-Relationen</span>
+            <span className="text-label">Custom relations</span>
             <button
               type="button"
               onClick={() => setIsPanelOpen(false)}
