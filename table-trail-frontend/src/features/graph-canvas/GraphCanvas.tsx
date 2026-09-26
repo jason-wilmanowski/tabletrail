@@ -218,6 +218,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const backgroundPattern = useSettingValue<string>('graph.backgroundPattern', 'dots')
   const menuScale = Number(useSettingValue<string>('graph.menuScale', '100')) / 100
   const zoomControlsScale = Number(useSettingValue<string>('graph.zoomControlsScale', '100')) / 100
+  const minimapScale = Number(useSettingValue<string>('graph.minimapScale', '100')) / 100
   const backgroundVariant = BACKGROUND_VARIANTS[backgroundPattern]
 
   // Surfaces a failed initial load — the graph would otherwise just
@@ -560,7 +561,16 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
           />
         )}
         {interactive && isMinimapEnabled && (
-          <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
+          // Sized via React Flow's own width/height (default 200x150) instead of
+          // CSS `zoom` — the minimap is pannable/zoomable and maps pointer
+          // positions itself, which `zoom` would throw off.
+          <MiniMap
+            pannable
+            zoomable
+            nodeStrokeWidth={1}
+            className="!border !border-border"
+            style={{ width: 200 * minimapScale, height: 150 * minimapScale }}
+          />
         )}
       </ReactFlow>
       {/* Hidden while a table is selected — the top trigger sits top-right
