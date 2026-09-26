@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -61,7 +61,8 @@ async def test_get_all_databases():
 
 
 @pytest.mark.asyncio
-async def test_update_database_success():
+@patch("table_trail_backend.services.database_service.encrypt", return_value="encrypted-password")
+async def test_update_database_success(encrypt_mock):
     fake_db = AsyncMock()
     service = DatabaseService(fake_db)
 
@@ -83,7 +84,9 @@ async def test_update_database_success():
     result = await service.update_database(42, update_data)
 
     service.db_repo.get_one_database.assert_awaited_once_with(42)
+    encrypt_mock.assert_called_once_with("Test-Password")
     service.db_repo.update.assert_awaited_once_with(42, update_data)
+    assert update_data.password == "encrypted-password"
     fake_db.commit.assert_awaited_once()
     assert result == update_data
 
