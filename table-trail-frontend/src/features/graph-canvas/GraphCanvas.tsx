@@ -216,6 +216,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const isMinimapEnabled = useSettingValue('graph.showMinimap', true)
   const isZoomControlsEnabled = useSettingValue('graph.showZoomControls', true)
   const backgroundPattern = useSettingValue<string>('graph.backgroundPattern', 'dots')
+  const menuScale = Number(useSettingValue<string>('graph.menuScale', '100')) / 100
   const backgroundVariant = BACKGROUND_VARIANTS[backgroundPattern]
 
   // Surfaces a failed initial load — the graph would otherwise just
@@ -561,11 +562,16 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
           and `VisibilityPanel` are plain (non-absolute) flex children here —
           this wrapper is the single absolutely-positioned overlay, so when
           either panel's dropdown opens, normal flex flow pushes the other
-          trigger down instead of it getting covered by a hardcoded offset. */}
+          trigger down instead of it getting covered by a hardcoded offset.
+          `zoom` sits on the inner wrapper so the `graph.menuScale` setting
+          scales every menu (trigger + open panel) as one unit, while the
+          outer `right-3 top-3` offset stays the same at every size. */}
       {interactive && selectedTableId === null && (
-        <div className="absolute right-3 top-3 z-30 flex flex-col items-end gap-2">
-          <ColumnRelationsPanel />
-          <VisibilityPanel />
+        <div className="absolute right-3 top-3 z-30">
+          <div className="flex flex-col items-end gap-2" style={{ zoom: menuScale }}>
+            <ColumnRelationsPanel />
+            <VisibilityPanel />
+          </div>
         </div>
       )}
 

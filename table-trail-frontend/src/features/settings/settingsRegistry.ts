@@ -195,6 +195,24 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
           },
         ],
       },
+      {
+        id: 'size',
+        title: 'Size',
+        settings: [
+          {
+            key: 'graph.menuScale',
+            type: 'select',
+            label: 'Menu size',
+            description: 'Size of the graph menus in the top-right corner, including their open panels.',
+            options: [
+              { value: '75', label: '75%' },
+              { value: '100', label: '100%' },
+              { value: '125', label: '125%' },
+            ],
+            defaultValue: '100',
+          },
+        ],
+      },
     ],
   },
 ]
