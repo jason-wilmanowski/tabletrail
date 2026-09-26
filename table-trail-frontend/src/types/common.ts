@@ -20,9 +20,8 @@ export type DBStatus = 'scanning' | 'ready' | 'error'
 
 /**
  * Shared connection fields, mirrors backend `CreateDatabase` schema.
- * Note: backend currently returns `password` on read responses too
- * (DatabaseStructureResponse / DatabaseResponse both extend CreateDatabase).
- * Flagged as a backend concern, not something the frontend should silently drop.
+ * Only used for requests — read responses never include `password`
+ * (see `DatabaseConnectionInfo`).
  */
 export interface ConnectionFields {
   name: string
@@ -33,3 +32,9 @@ export interface ConnectionFields {
   username: string
   password: string
 }
+
+/**
+ * Connection fields as returned by the backend (`DatabaseBaseResponse`).
+ * The stored password is encrypted server-side and never sent back.
+ */
+export type DatabaseConnectionInfo = Omit<ConnectionFields, 'password'>

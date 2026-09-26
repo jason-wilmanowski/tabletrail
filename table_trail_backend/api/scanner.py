@@ -35,16 +35,14 @@ async def create_database(
     return database_structure
 
 
-@router.patch("", response_model=DatabaseStructureResponse)
-async def rescan_database(
-    database_details: CreateDatabase, db: AsyncSession = Depends(get_db)
-) -> DatabaseStructureResponse:
+@router.patch("/{db_id}", response_model=DatabaseStructureResponse)
+async def rescan_database(db_id: int, db: AsyncSession = Depends(get_db)) -> DatabaseStructureResponse:
     scanner_service = ScanService(db)
     database_service = DatabaseService(db)
 
     try:
-        # call service to update and scan db via database details
-        database = await scanner_service.execute_scan(database_details)
+        # call service to rescan db via stored connection details
+        database = await scanner_service.execute_rescan(db_id)
     except ScanningSystemError as error:
         raise HTTPException(status_code=error.status_code, detail=error.message) from error
 

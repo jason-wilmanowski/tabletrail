@@ -161,7 +161,41 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
     label: 'Graph',
     icon: Network,
     description: 'Configure default graph layout and visualization behavior.',
-    sections: [],
+    sections: [
+      {
+        id: 'canvas',
+        title: 'Canvas',
+        settings: [
+          {
+            key: 'graph.showMinimap',
+            type: 'toggle',
+            label: 'Show minimap',
+            description: 'Shows an overview of the whole graph in the bottom-right corner.',
+            defaultValue: true,
+          },
+          {
+            key: 'graph.showZoomControls',
+            type: 'toggle',
+            label: 'Show zoom controls',
+            description: 'Shows the zoom in, zoom out and fit view buttons in the bottom-left corner.',
+            defaultValue: true,
+          },
+          {
+            key: 'graph.backgroundPattern',
+            type: 'select',
+            label: 'Background pattern',
+            description: 'Pattern drawn behind the graph.',
+            options: [
+              { value: 'dots', label: 'Dots' },
+              { value: 'lines', label: 'Lines' },
+              { value: 'cross', label: 'Cross' },
+              { value: 'none', label: 'None' },
+            ],
+            defaultValue: 'dots',
+          },
+        ],
+      },
+    ],
   },
 ]
 

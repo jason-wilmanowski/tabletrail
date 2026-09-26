@@ -6,6 +6,7 @@ import {
   useReactFlow,
   Controls,
   Background,
+  BackgroundVariant,
   MiniMap,
   applyNodeChanges,
   applyEdgeChanges,
@@ -73,6 +74,13 @@ const nodeTypes: NodeTypes = {
 const edgeTypes: EdgeTypes = {
   relation: RelationEdge,
   columnRelation: ColumnRelationEdge,
+}
+
+/** Values of the `graph.backgroundPattern` setting; `none` has no entry, so no background renders. */
+const BACKGROUND_VARIANTS: Record<string, BackgroundVariant> = {
+  dots: BackgroundVariant.Dots,
+  lines: BackgroundVariant.Lines,
+  cross: BackgroundVariant.Cross,
 }
 
 /**
@@ -204,6 +212,11 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // (holding the relation id here) — the DELETE itself fires on "Yes".
   const isRelationDeleteConfirmEnabled = useSettingValue('general.confirmRelationDelete', true)
   const [relationIdToDelete, setRelationIdToDelete] = useState<number | null>(null)
+
+  const isMinimapEnabled = useSettingValue('graph.showMinimap', true)
+  const isZoomControlsEnabled = useSettingValue('graph.showZoomControls', true)
+  const backgroundPattern = useSettingValue<string>('graph.backgroundPattern', 'dots')
+  const backgroundVariant = BACKGROUND_VARIANTS[backgroundPattern]
 
   // Surfaces a failed initial load — the graph would otherwise just
   // silently show zero custom relations with no indication anything
@@ -532,10 +545,12 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         zoomOnPinch={interactive}
         zoomOnDoubleClick={interactive}
         preventScrolling={interactive}
+        // React Flow is MIT-licensed; removing the attribution is allowed without a Pro subscription.
+        proOptions={{ hideAttribution: true }}
       >
-        <Background color="hsl(var(--border))" gap={24} />
-        {interactive && <Controls showInteractive={false} />}
-        {interactive && (
+        {backgroundVariant && <Background variant={backgroundVariant} color="hsl(var(--border))" gap={24} />}
+        {interactive && isZoomControlsEnabled && <Controls showInteractive={false} />}
+        {interactive && isMinimapEnabled && (
           <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
         )}
       </ReactFlow>

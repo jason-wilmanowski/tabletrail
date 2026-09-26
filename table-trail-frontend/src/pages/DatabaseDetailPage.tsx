@@ -50,18 +50,7 @@ export function DatabaseDetailPage() {
 
   function handleRescanConfirm() {
     if (!data) return
-    rescanDatabaseMutation.mutate(
-      {
-        name: data.name,
-        db_type: data.db_type,
-        host: data.host,
-        port: data.port,
-        db_name: data.db_name,
-        username: data.username,
-        password: data.password,
-      },
-      { onSuccess: () => setIsRescanConfirmOpen(false) }
-    )
+    rescanDatabaseMutation.mutate(undefined, { onSuccess: () => setIsRescanConfirmOpen(false) })
   }
 
   function handleDeleteConfirm() {

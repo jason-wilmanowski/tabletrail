@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from table_trail_backend.core.exceptions import DatabaseError
+from table_trail_backend.core.encrypt import encrypt
+from table_trail_backend.core.exceptions import DatabaseError, DatabaseSystemError, EncryptionSystemError
 from table_trail_backend.repositories.column_repository import ColumnRepository
 from table_trail_backend.repositories.database_repository import DatabasesRepository
 from table_trail_backend.repositories.table_repository import TableRepository
@@ -29,6 +30,12 @@ class DatabaseService:
         database = await self.db_repo.get_one_database(db_id)
         if database is None:
             raise DatabaseError(message=f"Database with id {db_id} not found", status_code=404)
+
+        if update_data.password:
+            try:
+                update_data.password = encrypt(update_data.password)
+            except EncryptionSystemError as error:
+                raise DatabaseSystemError(message=error.message, status_code=error.status_code) from error
 
         updated_database = await self.db_repo.update(db_id, update_data)
         await self.db.commit()
