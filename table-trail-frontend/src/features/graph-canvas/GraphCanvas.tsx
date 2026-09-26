@@ -217,6 +217,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const isZoomControlsEnabled = useSettingValue('graph.showZoomControls', true)
   const backgroundPattern = useSettingValue<string>('graph.backgroundPattern', 'dots')
   const menuScale = Number(useSettingValue<string>('graph.menuScale', '100')) / 100
+  const zoomControlsScale = Number(useSettingValue<string>('graph.zoomControlsScale', '100')) / 100
   const backgroundVariant = BACKGROUND_VARIANTS[backgroundPattern]
 
   // Surfaces a failed initial load — the graph would otherwise just
@@ -550,7 +551,14 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         proOptions={{ hideAttribution: true }}
       >
         {backgroundVariant && <Background variant={backgroundVariant} color="hsl(var(--border))" gap={24} />}
-        {interactive && isZoomControlsEnabled && <Controls showInteractive={false} />}
+        {interactive && isZoomControlsEnabled && (
+          // `zoom` also scales React Flow's own 15px panel margin, so it's
+          // divided back out to keep the controls' corner offset fixed at every size.
+          <Controls
+            showInteractive={false}
+            style={{ zoom: zoomControlsScale, margin: 15 / zoomControlsScale }}
+          />
+        )}
         {interactive && isMinimapEnabled && (
           <MiniMap pannable zoomable nodeStrokeWidth={1} className="!border !border-border" />
         )}
