@@ -226,7 +226,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // went wrong.
   useEffect(() => {
     if (columnRelationsQuery.error) {
-      notifyError(`Custom-Relationen konnten nicht geladen werden: ${getErrorMessage(columnRelationsQuery.error)}`)
+      notifyError(`Could not load custom relations: ${getErrorMessage(columnRelationsQuery.error)}`)
     }
   }, [columnRelationsQuery.error])
 

@@ -30,7 +30,7 @@ export function VisibilityPanel() {
             ? 'border-accent bg-accent text-accent-foreground'
             : 'border-border bg-panel text-muted-foreground hover:text-foreground'
         }`}
-        aria-label="Sichtbarkeits-Einstellungen"
+        aria-label="Visibility settings"
       >
         <SlidersHorizontal className="h-4 w-4" />
       </button>
@@ -38,7 +38,7 @@ export function VisibilityPanel() {
       {isPanelOpen && (
         <div className="w-56 rounded-md border border-border bg-panel p-2.5 shadow-lg">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-label">Sichtbarkeit</span>
+            <span className="text-label">Visibility</span>
             <button
               type="button"
               onClick={() => setIsPanelOpen(false)}
