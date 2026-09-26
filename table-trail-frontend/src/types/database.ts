@@ -1,4 +1,4 @@
-import type { ConnectionFields, DBStatus } from './common'
+import type { ConnectionFields, DatabaseConnectionInfo, DBStatus } from './common'
 import type { TableResponse } from './table'
 import type { ColumnResponse } from './column'
 
@@ -27,10 +27,9 @@ export interface DatabaseOverviewResponse {
 
 /**
  * Mirrors backend `DatabaseStructureResponse` schema, confirmed from actual
- * scan output. Extends the same connection fields as `CreateDatabase` on
- * the backend (see note in common.ts regarding `password` exposure).
+ * scan output. Connection fields without `password` (backend `DatabaseBaseResponse`).
  */
-export interface DatabaseStructureResponse extends ConnectionFields {
+export interface DatabaseStructureResponse extends DatabaseConnectionInfo {
   id: number
   tables: TableResponse[]
 }
@@ -43,7 +42,7 @@ export interface DatabaseStructureResponse extends ConnectionFields {
  * and should have been added in Step 2; added here instead of misusing the
  * wrong type for the update endpoint's return value.
  */
-export interface DatabaseResponse extends ConnectionFields {
+export interface DatabaseResponse extends DatabaseConnectionInfo {
   id: number
 }
 

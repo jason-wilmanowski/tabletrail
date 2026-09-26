@@ -23,14 +23,23 @@ export function EditDatabaseModal({ database, onClose }: EditDatabaseModalProps)
   const [port, setPort] = useState(database.port)
   const [dbName, setDbName] = useState(database.db_name)
   const [username, setUsername] = useState(database.username)
-  const [password, setPassword] = useState(database.password)
+  // Stored password is never sent back — empty means "keep current password"
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
   const updateDatabaseMutation = useUpdateDatabase(database.id)
 
   function handleSave() {
     updateDatabaseMutation.mutate(
-      { name, db_type: dbType, host, port, db_name: dbName, username, password },
+      {
+        name,
+        db_type: dbType,
+        host,
+        port,
+        db_name: dbName,
+        username,
+        ...(password ? { password } : {}),
+      },
       { onSuccess: onClose }
     )
   }
@@ -102,6 +111,8 @@ export function EditDatabaseModal({ database, onClose }: EditDatabaseModalProps)
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Leave empty to keep current password"
+              autoComplete="new-password"
               className={`${FIELD_CLASSES} pr-9`}
             />
             <button

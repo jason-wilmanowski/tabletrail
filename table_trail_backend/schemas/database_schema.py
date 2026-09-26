@@ -49,13 +49,22 @@ class ConnectionDetails(BaseModel):
 # Response Section
 
 
-class DatabaseStructureResponse(CreateDatabase):
+class DatabaseBaseResponse(BaseModel):
+    name: str
+    db_type: DBType
+    host: str
+    port: int
+    db_name: str
+    username: str
+
+
+class DatabaseStructureResponse(DatabaseBaseResponse):
     id: int
     tables: list[TableResponse]
     model_config = ConfigDict(from_attributes=True)
 
 
-class DatabaseResponse(CreateDatabase):
+class DatabaseResponse(DatabaseBaseResponse):
     id: int
 
 
