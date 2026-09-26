@@ -196,6 +196,27 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
         ],
       },
       {
+        id: 'sidebar',
+        title: 'Sidebar',
+        settings: [
+          {
+            key: 'graph.showSchemaStats',
+            type: 'toggle',
+            label: 'Show table and column count',
+            description: 'Shows the total number of tables and columns below the search field.',
+            defaultValue: true,
+          },
+          {
+            key: 'graph.showSearchMatchCount',
+            type: 'toggle',
+            label: 'Show search match count',
+            description: 'While searching, shows how many of those tables and columns match, e.g. "5 of 24 tables".',
+            enabledBy: 'graph.showSchemaStats',
+            defaultValue: true,
+          },
+        ],
+      },
+      {
         id: 'size',
         title: 'Size',
         settings: [

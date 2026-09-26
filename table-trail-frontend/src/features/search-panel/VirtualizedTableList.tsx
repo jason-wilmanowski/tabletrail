@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useFilterStore } from '../../store/filterStore'
 import { useUiStore } from '../../store/uiStore'
 import type { TableResponse } from '../../types/table'
+import { filterTablesByName } from '../../utils/filterTables'
 
 interface VirtualizedTableListProps {
   tables: TableResponse[]
@@ -108,13 +109,7 @@ export function VirtualizedTableList({ tables, onSelectTable }: VirtualizedTable
   const searchQuery = useFilterStore((state) => state.searchQuery)
   const selectedTableId = useUiStore((state) => state.selectedTableId)
 
-  const filteredTables = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase()
-    if (query === '') {
-      return tables
-    }
-    return tables.filter((table) => table.name.toLowerCase().includes(query))
-  }, [tables, searchQuery])
+  const filteredTables = useMemo(() => filterTablesByName(tables, searchQuery), [tables, searchQuery])
 
   const rows = useMemo(() => groupTablesBySchema(filteredTables), [filteredTables])
 

@@ -5,6 +5,7 @@ import { useDatabase, useDatabases, useDeleteDatabase, useRescanDatabase } from 
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 import { TableInspectorPanel } from '../features/table-inspector/TableInspectorPanel'
 import { SearchInput } from '../features/search-panel/SearchInput'
+import { SchemaStats } from '../features/search-panel/SchemaStats'
 import { VirtualizedTableList } from '../features/search-panel/VirtualizedTableList'
 import { EditDatabaseModal } from '../features/database-detail/EditDatabaseModal'
 import { DatabaseEmptyState } from '../features/database-detail/DatabaseEmptyState'
@@ -47,6 +48,9 @@ export function DatabaseDetailPage() {
   const isScanAgeWarningEnabled = useSettingValue('general.scanAgeWarningEnabled', false)
   const scanAgeWarningDays = Number(useSettingValue('general.scanAgeWarningDays', '7'))
   const isScanOutdated = isScanAgeWarningEnabled && lastScanDays !== null && lastScanDays >= scanAgeWarningDays
+
+  const isSchemaStatsEnabled = useSettingValue('graph.showSchemaStats', true)
+  const isSearchMatchCountEnabled = useSettingValue('graph.showSearchMatchCount', true)
 
   function handleRescanConfirm() {
     if (!data) return
@@ -136,6 +140,7 @@ export function DatabaseDetailPage() {
         </div>
 
         <SearchInput />
+        {isSchemaStatsEnabled && <SchemaStats tables={data.tables} showMatchCount={isSearchMatchCountEnabled} />}
 
         <div className="flex-1 overflow-hidden">
           <VirtualizedTableList
