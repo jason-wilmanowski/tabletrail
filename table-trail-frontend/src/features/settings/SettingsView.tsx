@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ReactNode } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
 import { Check, ChevronDown } from 'lucide-react'
 import { useSettingsStore, useSettingValue } from '../../store/settingsStore'
 import { findSettingDefinition } from './settingsRegistry'
 import type {
+  PaletteOption,
+  PaletteSetting,
   SelectOption,
   SelectSetting,
   SettingDefinition,
@@ -94,6 +96,8 @@ function SettingControl({ setting, labelId, disabled }: SettingControlProps<Sett
       return <ToggleSettingControl setting={setting} labelId={labelId} disabled={disabled} />
     case 'select':
       return <SelectSettingControl setting={setting} labelId={labelId} disabled={disabled} />
+    case 'palette':
+      return <PaletteSettingControl setting={setting} labelId={labelId} disabled={disabled} />
   }
 }
 
@@ -119,6 +123,23 @@ function SelectSettingControl({ setting, labelId, disabled }: SettingControlProp
     <Select
       disabled={disabled}
       options={setting.options}
+      // A stored value whose option was since removed falls back to the default.
+      value={setting.options.some((option) => option.value === value) ? value : setting.defaultValue}
+      onChange={(next) => setValue(setting.key, next)}
+      labelledBy={labelId}
+    />
+  )
+}
+
+function PaletteSettingControl({ setting, labelId, disabled }: SettingControlProps<PaletteSetting>) {
+  const setValue = useSettingsStore((state) => state.setValue)
+  const value = useSettingValue(setting.key, setting.defaultValue)
+
+  return (
+    <Palette
+      disabled={disabled}
+      options={setting.options}
+      columns={setting.columns}
       // A stored value whose option was since removed falls back to the default.
       value={setting.options.some((option) => option.value === value) ? value : setting.defaultValue}
       onChange={(next) => setValue(setting.key, next)}
@@ -230,6 +251,81 @@ function Select({
           })}
         </ul>
       )}
+    </div>
+  )
+}
+
+/**
+ * Swatch grid with `columns` swatches per row. Behaves like a radio group:
+ * only the selected swatch is in the tab order, arrow keys move the
+ * selection (left/right by one, up/down by a row). The selected swatch is
+ * ringed and its label is shown below the grid, so the current choice is
+ * readable without hovering.
+ */
+function Palette({
+  options,
+  columns,
+  value,
+  onChange,
+  labelledBy,
+  disabled = false,
+}: {
+  options: PaletteOption[]
+  columns: number
+  value: string
+  onChange: (value: string) => void
+  labelledBy: string
+  disabled?: boolean
+}): ReactNode {
+  const swatchRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const selectedIndex = options.findIndex((option) => option.value === value)
+
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const steps: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: columns, ArrowUp: -columns }
+    const step = steps[event.key]
+    if (step === undefined) {
+      return
+    }
+    event.preventDefault()
+    const nextIndex = Math.min(Math.max(selectedIndex + step, 0), options.length - 1)
+    onChange(options[nextIndex].value)
+    swatchRefs.current[nextIndex]?.focus()
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1.5">
+      <div
+        role="radiogroup"
+        aria-labelledby={labelledBy}
+        onKeyDown={disabled ? undefined : handleKeyDown}
+        className="grid gap-2"
+        style={{ gridTemplateColumns: `repeat(${columns}, 1.25rem)` }}
+      >
+        {options.map((option, index) => {
+          const isActive = index === selectedIndex
+          return (
+            <button
+              key={option.value}
+              ref={(element) => {
+                swatchRefs.current[index] = element
+              }}
+              type="button"
+              role="radio"
+              aria-checked={isActive}
+              aria-label={option.label}
+              title={option.label}
+              tabIndex={isActive ? 0 : -1}
+              disabled={disabled}
+              onClick={() => onChange(option.value)}
+              style={{ backgroundColor: option.color }}
+              className={`h-5 w-5 rounded-full border border-foreground/15 transition-transform duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:cursor-not-allowed ${
+                isActive ? 'ring-2 ring-foreground ring-offset-2 ring-offset-panel' : 'enabled:hover:scale-110'
+              }`}
+            />
+          )
+        })}
+      </div>
+      <span className="text-technical-muted">{options[selectedIndex]?.label}</span>
     </div>
   )
 }

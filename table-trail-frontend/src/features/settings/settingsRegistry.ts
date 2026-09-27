@@ -35,11 +35,31 @@ export interface SelectSetting extends SettingBase {
   defaultValue: string
 }
 
+export interface PaletteOption {
+  value: string
+  label: string
+  /** Any CSS color, e.g. `hsl(217 33% 58%)` or `hsl(var(--accent))`. */
+  color: string
+}
+
+/**
+ * A grid of color swatches; the selected one is ringed and its label shown
+ * below. `columns` sets the swatches per row — the number of rows follows
+ * from the option count, so any amount of options lays out as a grid.
+ */
+export interface PaletteSetting extends SettingBase {
+  type: 'palette'
+  options: PaletteOption[]
+  columns: number
+  /** Must match one of `options[].value`. */
+  defaultValue: string
+}
+
 /**
  * Union of every setting kind. A new kind (select, text, number …) needs a
  * member here, a value type in `SettingValue` and a case in `SettingControl`.
  */
-export type SettingDefinition = ToggleSetting | SelectSetting
+export type SettingDefinition = ToggleSetting | SelectSetting | PaletteSetting
 
 export type SettingValue = boolean | string
 
@@ -170,6 +190,29 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
               { value: 'light', label: 'Light' },
             ],
             defaultValue: 'dark',
+          },
+          // TEMPORARY palette preview — remove before committing.
+          {
+            key: 'design.palettePreview',
+            type: 'palette',
+            label: 'Palette preview',
+            description: 'Temporary entry to review the palette control.',
+            columns: 6,
+            options: [
+              { value: 'slate', label: 'Slate', color: 'hsl(217 33% 58%)' },
+              { value: 'blue', label: 'Blue', color: 'hsl(217 91% 60%)' },
+              { value: 'teal', label: 'Teal', color: 'hsl(173 58% 39%)' },
+              { value: 'green', label: 'Green', color: 'hsl(142 50% 45%)' },
+              { value: 'lime', label: 'Lime', color: 'hsl(84 60% 45%)' },
+              { value: 'amber', label: 'Amber', color: 'hsl(38 85% 55%)' },
+              { value: 'orange', label: 'Orange', color: 'hsl(24 85% 55%)' },
+              { value: 'red', label: 'Red', color: 'hsl(0 65% 55%)' },
+              { value: 'rose', label: 'Rose', color: 'hsl(345 70% 60%)' },
+              { value: 'violet', label: 'Violet', color: 'hsl(262 55% 62%)' },
+              { value: 'indigo', label: 'Indigo', color: 'hsl(239 50% 60%)' },
+              { value: 'graphite', label: 'Graphite', color: 'hsl(240 5% 45%)' },
+            ],
+            defaultValue: 'slate',
           },
         ],
       },
