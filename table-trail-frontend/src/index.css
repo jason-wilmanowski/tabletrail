@@ -14,10 +14,10 @@
  * so Tailwind can apply opacity modifiers (e.g. bg-accent/10) via the
  * `hsl(var(--x) / <alpha-value>)` pattern in the Tailwind config.
  *
- * Dark theme only for now (see Design Hinweis: no light/dark toggle in
- * this step) — kept under :root rather than a `.dark` class so a future
- * light theme can be added as a `.light` override without restructuring
- * anything that already consumes these tokens.
+ * Dark is the base theme under :root. `[data-theme='light']` on <html>
+ * overrides the same tokens — set by `useApplyTheme` from the
+ * `design.theme` setting (and before first paint by the inline script in
+ * index.html). Components never branch on the theme themselves.
  */
 :root {
   /* Layered surfaces — background is the app root, panel sits one level
@@ -51,6 +51,59 @@
   --success-foreground: 0 0% 100%;
 
   --ring: 217 33% 58%;
+
+  /* Custom column-relation colors (`relationColors.ts`) — bright pastels
+     that read clearly on dark surfaces. */
+  --relation-green: 142 69% 58%;
+  --relation-red: 0 91% 71%;
+  --relation-yellow: 48 96% 53%;
+  --relation-blue: 213 94% 68%;
+  --relation-magenta: 292 91% 73%;
+  --relation-white: 0 0% 96%;
+
+  color-scheme: dark;
+}
+
+/* Warm, paper-like light theme: beige layers instead of neutral grays and
+   white, with warm near-black text. Same layering as dark, inverted —
+   panel (sidebar, inspector) sits just above the background, surface
+   (table nodes, dropdowns, info strips) is the brightest, ivory layer.
+   Accent and status colors are darker than in dark mode so text in those
+   colors stays readable on bright surfaces. */
+:root[data-theme='light'] {
+  --background: 40 22% 89%;
+  --panel: 40 28% 93%;
+  --surface: 42 38% 96%;
+  --surface-hover: 40 20% 87%;
+
+  --border: 38 16% 79%;
+
+  --foreground: 30 14% 14%;
+  --muted-foreground: 32 9% 39%;
+
+  --accent: 217 40% 45%;
+  --accent-foreground: 0 0% 100%;
+
+  --danger: 0 65% 48%;
+  --danger-foreground: 0 0% 100%;
+  --warning: 32 90% 38%;
+  --warning-foreground: 0 0% 100%;
+  --success: 142 50% 32%;
+  --success-foreground: 0 0% 100%;
+
+  --ring: 217 40% 45%;
+
+  /* The dark-mode pastels (especially yellow) vanish on bright surfaces.
+     "white" becomes near-black: it's the neutral option, and white on a
+     light canvas would be invisible. */
+  --relation-green: 142 72% 29%;
+  --relation-red: 0 72% 45%;
+  --relation-yellow: 40 96% 38%;
+  --relation-blue: 217 91% 50%;
+  --relation-magenta: 292 84% 40%;
+  --relation-white: 240 6% 20%;
+
+  color-scheme: light;
 }
 
 @layer base {

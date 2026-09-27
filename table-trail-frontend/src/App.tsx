@@ -5,8 +5,11 @@ import { NewConnectionPage } from './pages/NewConnectionPage'
 import { DatabaseDetailPage } from './pages/DatabaseDetailPage'
 import { SettingsPage } from './pages/SettingsPage'
 import { WelcomePage } from './pages/WelcomePage'
+import { useApplyTheme } from './features/settings/useApplyTheme'
 
 export function App() {
+  useApplyTheme()
+
   return (
     <AppShell>
       <Routes>

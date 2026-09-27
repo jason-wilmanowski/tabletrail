@@ -5,6 +5,19 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>tabletrail-frontend</title>
+    <!-- Applies the saved theme before first paint, so light-mode users don't
+         see a dark flash while React loads. Mirrors `resolveTheme` in
+         src/utils/theme.ts; 'dark' must match the `design.theme` default. -->
+    <script>
+      try {
+        const values = JSON.parse(localStorage.getItem('tabletrail-settings') || '{}').state?.values ?? {}
+        const preference = values['design.theme'] ?? 'dark'
+        const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches
+        document.documentElement.dataset.theme = preference === 'system' ? (prefersLight ? 'light' : 'dark') : preference
+      } catch {
+        // Unreadable storage: keep the dark base theme from index.css.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

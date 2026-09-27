@@ -154,7 +154,26 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
     label: 'Design',
     icon: Palette,
     description: 'Customize theme and appearance preferences.',
-    sections: [],
+    sections: [
+      {
+        id: 'appearance',
+        title: 'Appearance',
+        settings: [
+          {
+            key: 'design.theme',
+            type: 'select',
+            label: 'Theme',
+            description: 'System follows your operating system and switches automatically when it changes.',
+            options: [
+              { value: 'system', label: 'System' },
+              { value: 'dark', label: 'Dark' },
+              { value: 'light', label: 'Light' },
+            ],
+            defaultValue: 'dark',
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'graph',
