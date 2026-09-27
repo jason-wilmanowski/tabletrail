@@ -8,6 +8,9 @@ export type ResolvedTheme = 'dark' | 'light'
  */
 export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'dark'
 
+/** Must match the `design.accentColor` default in `settingsRegistry` and the fallback in `index.html`. */
+export const DEFAULT_ACCENT_COLOR = 'slate'
+
 /**
  * Turns the user's preference into the theme actually applied; `system`
  * follows the OS setting and only ever picks `light` or `dark`.

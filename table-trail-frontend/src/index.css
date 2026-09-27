@@ -37,9 +37,19 @@
   --muted-foreground: 240 5% 58%;
 
   /* Single restrained accent — selection states, focus rings, primary
-     actions. Deliberately a desaturated slate-blue rather than a
-     saturated SaaS blue, per the "few accents, muted" constraint. */
-  --accent: 217 33% 58%;
+     actions. The user picks one of these muted, desaturated options via
+     the `design.accentColor` setting (`data-accent` on <html>, see the
+     selectors below); slate-blue is the default. All six sit in the same
+     contrast band against white text and the panels, so any choice works
+     with `--accent-foreground`. */
+  --accent-slate: 217 33% 58%;
+  --accent-sage: 150 20% 48%;
+  --accent-petrol: 190 32% 46%;
+  --accent-clay: 16 40% 55%;
+  --accent-mauve: 330 22% 57%;
+  --accent-lavender: 256 30% 62%;
+
+  --accent: var(--accent-slate);
   --accent-foreground: 0 0% 100%;
 
   /* Status colors — muted, not neon */
@@ -50,7 +60,7 @@
   --success: 142 40% 45%;
   --success-foreground: 0 0% 100%;
 
-  --ring: 217 33% 58%;
+  --ring: var(--accent);
 
   /* Custom column-relation colors (`relationColors.ts`) — bright pastels
      that read clearly on dark surfaces. */
@@ -81,8 +91,14 @@
   --foreground: 30 14% 14%;
   --muted-foreground: 32 9% 39%;
 
-  --accent: 217 40% 45%;
-  --accent-foreground: 0 0% 100%;
+  /* Darker accent variants so white text on them and accent-colored text
+     on the light panels stay readable. */
+  --accent-slate: 217 40% 45%;
+  --accent-sage: 152 24% 34%;
+  --accent-petrol: 192 40% 32%;
+  --accent-clay: 16 46% 42%;
+  --accent-mauve: 330 26% 42%;
+  --accent-lavender: 256 28% 48%;
 
   --danger: 0 65% 48%;
   --danger-foreground: 0 0% 100%;
@@ -90,8 +106,6 @@
   --warning-foreground: 0 0% 100%;
   --success: 142 50% 32%;
   --success-foreground: 0 0% 100%;
-
-  --ring: 217 40% 45%;
 
   /* The dark-mode pastels (especially yellow) vanish on bright surfaces.
      "white" becomes near-black: it's the neutral option, and white on a
@@ -104,6 +118,24 @@
   --relation-white: 240 6% 20%;
 
   color-scheme: light;
+}
+
+/* Selected accent color — resolves against the current theme's variants,
+   so switching theme or accent never needs more than these attributes. */
+:root[data-accent='sage'] {
+  --accent: var(--accent-sage);
+}
+:root[data-accent='petrol'] {
+  --accent: var(--accent-petrol);
+}
+:root[data-accent='clay'] {
+  --accent: var(--accent-clay);
+}
+:root[data-accent='mauve'] {
+  --accent: var(--accent-mauve);
+}
+:root[data-accent='lavender'] {
+  --accent: var(--accent-lavender);
 }
 
 @layer base {
