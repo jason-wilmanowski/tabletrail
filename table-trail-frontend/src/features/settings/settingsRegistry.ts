@@ -207,6 +207,18 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
             ],
             defaultValue: 'slate',
           },
+          {
+            key: 'design.nodeCornerStyle',
+            type: 'select',
+            label: 'Table node corners',
+            description: 'Corner rounding of table nodes in the graph.',
+            options: [
+              { value: 'sharp', label: 'Sharp' },
+              { value: 'rounded', label: 'Rounded' },
+              { value: 'soft', label: 'Soft' },
+            ],
+            defaultValue: 'rounded',
+          },
         ],
       },
     ],

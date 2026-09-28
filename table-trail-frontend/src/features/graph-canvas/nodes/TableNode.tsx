@@ -6,6 +6,7 @@ import type { TableNodeType } from '../../../utils/tablesToNodes'
 import { buildColumnConstraintMap } from '../../../utils/constraintGrouping'
 import { useUiStore } from '../../../store/uiStore'
 import { useColumnRelationStore } from '../../../store/columnRelationStore'
+import { useSettingValue } from '../../../store/settingsStore'
 
 /**
  * Invisible, non-connectable — these exist purely as DOM anchors so a
@@ -26,6 +27,13 @@ const columnHandleStyle = { opacity: 0, width: 1, height: 1, pointerEvents: 'non
  * neighbors.
  */
 const COLLAPSE_THRESHOLD = 15
+
+/** Maps the `design.nodeCornerStyle` setting to its Tailwind corner class. */
+const NODE_CORNER_CLASSES: Record<string, string> = {
+  sharp: 'rounded-none',
+  rounded: 'rounded-md',
+  soft: 'rounded-xl',
+}
 
 /**
  * Custom React Flow node representing a single database table.
@@ -69,6 +77,8 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
       : null
   )
   const selectColumnForRelation = useColumnRelationStore((state) => state.selectColumn)
+  const cornerStyle = useSettingValue<string>('design.nodeCornerStyle', 'rounded')
+  const cornerClass = NODE_CORNER_CLASSES[cornerStyle] ?? NODE_CORNER_CLASSES.rounded
 
   const sortedColumns = [...table.columns].sort(
     (a, b) => a.ordinal_position - b.ordinal_position
@@ -84,7 +94,7 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
   return (
     <div
       onClick={() => setSelectedTableId(String(table.id))}
-      className={`relative min-w-[220px] rounded-md border bg-surface text-foreground outline-none transition-colors ${
+      className={`relative min-w-[220px] ${cornerClass} border bg-surface text-foreground outline-none transition-colors ${
         isSelected ? 'border-accent ring-1 ring-accent' : 'border-border hover:border-muted-foreground'
       }`}
     >
