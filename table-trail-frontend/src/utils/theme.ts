@@ -11,6 +11,9 @@ export const DEFAULT_THEME_PREFERENCE: ThemePreference = 'dark'
 /** Must match the `design.accentColor` default in `settingsRegistry` and the fallback in `index.html`. */
 export const DEFAULT_ACCENT_COLOR = 'slate'
 
+/** Must match the `design.monoFont` default in `settingsRegistry` and the fallback in `index.html`. */
+export const DEFAULT_MONO_FONT = 'jetbrains-mono'
+
 /**
  * Turns the user's preference into the theme actually applied; `system`
  * follows the OS setting and only ever picks `light` or `dark`.

@@ -62,6 +62,13 @@
 
   --ring: var(--accent);
 
+  /* Font for `.text-technical*` and other `font-mono` usage — table,
+     column and type names. The user picks one of five popular monospace
+     fonts via `design.monoFont` (`data-mono-font` on <html>, see the
+     selectors below); JetBrains Mono is the default. System stack is the
+     fallback while the webfont loads. */
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
   /* Custom column-relation colors (`relationColors.ts`) — bright pastels
      that read clearly on dark surfaces. */
   --relation-green: 142 69% 58%;
@@ -136,6 +143,34 @@
 }
 :root[data-accent='lavender'] {
   --accent: var(--accent-lavender);
+}
+
+/* Selected monospace font — resolves against the loaded Google Fonts
+   families (see index.html). */
+:root[data-mono-font='fira-code'] {
+  --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+:root[data-mono-font='ibm-plex-mono'] {
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+:root[data-mono-font='source-code-pro'] {
+  --font-mono: 'Source Code Pro', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+:root[data-mono-font='roboto-mono'] {
+  --font-mono: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Fonts differ in x-height even at the same font-size, so swapping
+   `--font-mono` would otherwise make the whole UI look visibly smaller or
+   larger depending on the choice. `font-size-adjust` normalizes every
+   font's rendered x-height to the same target ratio (matching this app's
+   default, JetBrains Mono, ~0.55) regardless of which one is active, so
+   `design.monoFont` only changes letterforms, never perceived size. */
+.font-mono,
+.text-technical,
+.text-technical-muted,
+.text-technical-muted-lg {
+  font-size-adjust: 0.55;
 }
 
 @layer base {
