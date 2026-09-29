@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from sqlalchemy.engine import make_url
+from sqlalchemy.exc import InterfaceError, OperationalError
 
 from table_trail_backend.core.enums import DBStatus, DBType
 from table_trail_backend.core.exceptions import (
@@ -185,6 +186,25 @@ async def test_run_scanner_connection_error(service):
     service._get_scanner = MagicMock(return_value=fake_scanner)
 
     fake_scanner.scan.side_effect = ConnectionError("Connection failed")
+
+    with pytest.raises(ScannerConnectionError) as error:
+        await service._run_scanner(DBType.POSTGRESQL, "postgresql+psycopg2://test")
+
+    assert error.value.status_code == 503
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "driver_error",
+    [
+        OperationalError("SELECT 1", {}, Exception("could not connect to server")),
+        InterfaceError("SELECT 1", {}, Exception("connection already closed")),
+    ],
+)
+async def test_run_scanner_sqlalchemy_connection_error(service, driver_error):
+    fake_scanner = MagicMock()
+    service._get_scanner = MagicMock(return_value=fake_scanner)
+    fake_scanner.scan.side_effect = driver_error
 
     with pytest.raises(ScannerConnectionError) as error:
         await service._run_scanner(DBType.POSTGRESQL, "postgresql+psycopg2://test")
