@@ -145,8 +145,8 @@
   --accent: var(--accent-lavender);
 }
 
-/* Selected monospace font — resolves against the loaded Google Fonts
-   families (see index.html). */
+/* Selected monospace font — resolves against the self-hosted Fontsource
+   families (see src/fonts.ts). */
 :root[data-mono-font='fira-code'] {
   --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
