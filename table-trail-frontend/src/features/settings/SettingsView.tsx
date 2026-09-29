@@ -211,7 +211,7 @@ function Select({
       >
         <span className="flex min-w-0 items-center gap-1.5">
           {selected?.icon && <selected.icon className="h-3.5 w-3.5 shrink-0" />}
-          <span className="truncate">{selected?.label}</span>
+          <OptionLabel option={selected} className="truncate" />
         </span>
         <ChevronDown
           className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${
@@ -242,7 +242,7 @@ function Select({
                 >
                   <span className="flex items-center gap-2">
                     {option.icon && <option.icon className="h-3.5 w-3.5 shrink-0" />}
-                    {option.label}
+                    <OptionLabel option={option} />
                   </span>
                   <Check className={`h-3.5 w-3.5 shrink-0 text-accent ${isActive ? '' : 'invisible'}`} />
                 </button>
@@ -252,6 +252,24 @@ function Select({
         </ul>
       )}
     </div>
+  )
+}
+
+/**
+ * An option's label, rendered in the option's own `fontFamily` when it has
+ * one — so a font choice previews exactly as it will look. `font-mono`
+ * brings the same `font-size-adjust` the app applies to monospace text and
+ * 13px matches `.text-technical`, so the preview matches the final size too
+ * (and keeps "Source Code Pro" from truncating in the `w-40` trigger).
+ */
+function OptionLabel({ option, className = '' }: { option?: SelectOption; className?: string }) {
+  if (!option?.fontFamily) {
+    return <span className={className}>{option?.label}</span>
+  }
+  return (
+    <span className={`font-mono text-[13px] ${className}`} style={{ fontFamily: option.fontFamily }}>
+      {option.label}
+    </span>
   )
 }
 

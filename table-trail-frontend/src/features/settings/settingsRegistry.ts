@@ -26,6 +26,8 @@ export interface SelectOption {
   label: string
   /** Shown before the label, in the trigger and in the list. */
   icon?: ComponentType<{ className?: string }>
+  /** Renders the label in this CSS font family, e.g. to preview a font choice. */
+  fontFamily?: string
 }
 
 export interface SelectSetting extends SettingBase {
@@ -225,11 +227,11 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
             label: 'Monospace font',
             description: 'Used for table, column and type names. All options render at the same visual size.',
             options: [
-              { value: 'jetbrains-mono', label: 'JetBrains Mono' },
-              { value: 'fira-code', label: 'Fira Code' },
-              { value: 'ibm-plex-mono', label: 'IBM Plex Mono' },
-              { value: 'source-code-pro', label: 'Source Code Pro' },
-              { value: 'roboto-mono', label: 'Roboto Mono' },
+              { value: 'jetbrains-mono', label: 'JetBrains Mono', fontFamily: "'JetBrains Mono', monospace" },
+              { value: 'fira-code', label: 'Fira Code', fontFamily: "'Fira Code', monospace" },
+              { value: 'ibm-plex-mono', label: 'IBM Plex Mono', fontFamily: "'IBM Plex Mono', monospace" },
+              { value: 'source-code-pro', label: 'Source Code Pro', fontFamily: "'Source Code Pro', monospace" },
+              { value: 'roboto-mono', label: 'Roboto Mono', fontFamily: "'Roboto Mono', monospace" },
             ],
             defaultValue: 'jetbrains-mono',
           },
