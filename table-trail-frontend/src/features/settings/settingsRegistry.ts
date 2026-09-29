@@ -26,6 +26,8 @@ export interface SelectOption {
   label: string
   /** Shown before the label, in the trigger and in the list. */
   icon?: ComponentType<{ className?: string }>
+  /** Renders the label in this CSS font family, e.g. to preview a font choice. */
+  fontFamily?: string
 }
 
 export interface SelectSetting extends SettingBase {
@@ -35,11 +37,31 @@ export interface SelectSetting extends SettingBase {
   defaultValue: string
 }
 
+export interface PaletteOption {
+  value: string
+  label: string
+  /** Any CSS color, e.g. `hsl(217 33% 58%)` or `hsl(var(--accent))`. */
+  color: string
+}
+
+/**
+ * A grid of color swatches; the selected one is ringed and its label shown
+ * below. `columns` sets the swatches per row — the number of rows follows
+ * from the option count, so any amount of options lays out as a grid.
+ */
+export interface PaletteSetting extends SettingBase {
+  type: 'palette'
+  options: PaletteOption[]
+  columns: number
+  /** Must match one of `options[].value`. */
+  defaultValue: string
+}
+
 /**
  * Union of every setting kind. A new kind (select, text, number …) needs a
  * member here, a value type in `SettingValue` and a case in `SettingControl`.
  */
-export type SettingDefinition = ToggleSetting | SelectSetting
+export type SettingDefinition = ToggleSetting | SelectSetting | PaletteSetting
 
 export type SettingValue = boolean | string
 
@@ -154,7 +176,68 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
     label: 'Design',
     icon: Palette,
     description: 'Customize theme and appearance preferences.',
-    sections: [],
+    sections: [
+      {
+        id: 'appearance',
+        title: 'Appearance',
+        settings: [
+          {
+            key: 'design.theme',
+            type: 'select',
+            label: 'Theme',
+            description: 'System follows your operating system and switches automatically when it changes.',
+            options: [
+              { value: 'system', label: 'System' },
+              { value: 'dark', label: 'Dark' },
+              { value: 'light', label: 'Light' },
+            ],
+            defaultValue: 'dark',
+          },
+          {
+            key: 'design.accentColor',
+            type: 'palette',
+            label: 'Accent color',
+            description: 'Used for selections, focus rings, active toggles and primary actions.',
+            columns: 6,
+            options: [
+              { value: 'slate', label: 'Slate', color: 'hsl(var(--accent-slate))' },
+              { value: 'sage', label: 'Sage', color: 'hsl(var(--accent-sage))' },
+              { value: 'petrol', label: 'Petrol', color: 'hsl(var(--accent-petrol))' },
+              { value: 'clay', label: 'Clay', color: 'hsl(var(--accent-clay))' },
+              { value: 'mauve', label: 'Mauve', color: 'hsl(var(--accent-mauve))' },
+              { value: 'lavender', label: 'Lavender', color: 'hsl(var(--accent-lavender))' },
+            ],
+            defaultValue: 'slate',
+          },
+          {
+            key: 'design.nodeCornerStyle',
+            type: 'select',
+            label: 'Table node corners',
+            description: 'Corner rounding of table nodes in the graph.',
+            options: [
+              { value: 'sharp', label: 'Sharp' },
+              { value: 'rounded', label: 'Rounded' },
+              { value: 'soft', label: 'Soft' },
+            ],
+            defaultValue: 'rounded',
+          },
+          {
+            key: 'design.monoFont',
+            type: 'select',
+            label: 'Monospace font',
+            description: 'Used for table, column and type names. All options render at the same visual size.',
+            options: [
+              { value: 'jetbrains-mono', label: 'JetBrains Mono', fontFamily: "'JetBrains Mono', monospace" },
+              { value: 'fira-code', label: 'Fira Code', fontFamily: "'Fira Code', monospace" },
+              { value: 'ibm-plex-mono', label: 'IBM Plex Mono', fontFamily: "'IBM Plex Mono', monospace" },
+              { value: 'source-code-pro', label: 'Source Code Pro', fontFamily: "'Source Code Pro', monospace" },
+              { value: 'roboto-mono', label: 'Roboto Mono', fontFamily: "'Roboto Mono', monospace" },
+            ],
+            defaultValue: 'jetbrains-mono',
+          },
+        ],
+      },
+    ],
   },
   {
     id: 'graph',

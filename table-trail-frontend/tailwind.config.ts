@@ -39,6 +39,12 @@ export default {
 
         ring: 'hsl(var(--ring) / <alpha-value>)',
       },
+      fontFamily: {
+        // `--font-mono` switches with the `design.monoFont` setting (see
+        // index.css); the system stack stays as a fallback while a webfont
+        // loads or if it fails to.
+        mono: ['var(--font-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+      },
     },
   },
   plugins: [],
