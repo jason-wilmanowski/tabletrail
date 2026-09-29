@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Connection
+from sqlalchemy.engine import URL, Connection
 
 from .base_scanner import (
     BaseScanner,
@@ -11,7 +11,7 @@ from .base_scanner import (
 
 
 class MariaDBScanner(BaseScanner):
-    def scan(self, connection_url: str) -> ScannedDatabase:
+    def scan(self, connection_url: str | URL) -> ScannedDatabase:
         engine = create_engine(connection_url)
         try:
             with engine.connect() as conn:

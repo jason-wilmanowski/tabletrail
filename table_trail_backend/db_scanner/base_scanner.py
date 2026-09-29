@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
+from sqlalchemy.engine import URL
+
 
 @dataclass
 class ScannedColumn:
@@ -37,5 +39,5 @@ class ScannedDatabase:
 
 class BaseScanner(ABC):
     @abstractmethod
-    def scan(self, connection_url: str) -> ScannedDatabase:
+    def scan(self, connection_url: str | URL) -> ScannedDatabase:
         pass

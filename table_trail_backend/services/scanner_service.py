@@ -1,3 +1,4 @@
+from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from table_trail_backend.core.encrypt import decrypt, encrypt
@@ -79,7 +80,7 @@ class ScanService:
 
     # Shared Scan Workflow
 
-    async def _run_scan(self, db_id: int, db_type: DBType, prepared_url: str) -> DatabaseResponse:
+    async def _run_scan(self, db_id: int, db_type: DBType, prepared_url: URL) -> DatabaseResponse:
         try:
             # 1. Run scanner first — if this fails, existing data is untouched
             scan_result = await self._run_scanner(db_type, prepared_url)
@@ -146,7 +147,7 @@ class ScanService:
         await self.db.commit()
         return database
 
-    async def _run_scanner(self, db_type: DBType, prepared_url: str) -> ScannedDatabase:
+    async def _run_scanner(self, db_type: DBType, prepared_url: URL) -> ScannedDatabase:
         scanner = self._get_scanner(db_type)
         try:
             return scanner.scan(prepared_url)
@@ -222,7 +223,7 @@ class ScanService:
 
     # Helper Methods
 
-    def _prepare_url(self, database_details: CreateDatabase) -> str:
+    def _prepare_url(self, database_details: CreateDatabase) -> URL:
         host = database_details.host
         if host in ("localhost", "127.0.0.1"):
             host = "host.docker.internal"
@@ -235,7 +236,16 @@ class ScanService:
 
         driver = driver_map[database_details.db_type]
 
-        return f"{driver}://{database_details.username}:{database_details.password}@{host}:{database_details.port}/{database_details.db_name}"
+        # URL.create escapes credentials — characters like @ : / # ? in a
+        # password or username would otherwise break a hand-built URL string.
+        return URL.create(
+            drivername=driver,
+            username=database_details.username,
+            password=database_details.password,
+            host=host,
+            port=int(database_details.port),
+            database=database_details.db_name,
+        )
 
     def _get_scanner(self, db_type: DBType):
         scanner_map = {

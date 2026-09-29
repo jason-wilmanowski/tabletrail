@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from sqlalchemy.engine import make_url
 
 from table_trail_backend.core.enums import DBStatus, DBType
 from table_trail_backend.core.exceptions import (
@@ -60,7 +61,9 @@ def test_prepare_url_postgresql_localhost(service, database_details):
 
     result = service._prepare_url(database_details)
 
-    assert result == ("postgresql+psycopg2://postgres:secret@host.docker.internal:5432/test_db")
+    assert result.render_as_string(hide_password=False) == (
+        "postgresql+psycopg2://postgres:secret@host.docker.internal:5432/test_db"
+    )
 
 
 def test_prepare_url_mysql(service, database_details):
@@ -69,7 +72,7 @@ def test_prepare_url_mysql(service, database_details):
 
     result = service._prepare_url(database_details)
 
-    assert result == ("mysql+pymysql://postgres:secret@192.168.1.10:5432/test_db")
+    assert result.render_as_string(hide_password=False) == ("mysql+pymysql://postgres:secret@192.168.1.10:5432/test_db")
 
 
 def test_prepare_url_mariadb(service, database_details):
@@ -78,7 +81,9 @@ def test_prepare_url_mariadb(service, database_details):
 
     result = service._prepare_url(database_details)
 
-    assert result == ("mariadb+pymysql://postgres:secret@192.168.1.20:5432/test_db")
+    assert result.render_as_string(hide_password=False) == (
+        "mariadb+pymysql://postgres:secret@192.168.1.20:5432/test_db"
+    )
 
 
 def test_prepare_url_127_0_0_1_is_replaced(service, database_details):
@@ -86,8 +91,22 @@ def test_prepare_url_127_0_0_1_is_replaced(service, database_details):
 
     result = service._prepare_url(database_details)
 
-    assert "host.docker.internal" in result
-    assert "127.0.0.1" not in result
+    assert result.host == "host.docker.internal"
+
+
+def test_prepare_url_escapes_special_characters_in_credentials(service, database_details):
+    database_details.username = "admin@corp"
+    database_details.password = "p@ss:w/rd#1?"
+
+    result = service._prepare_url(database_details)
+
+    # Round-trip through the rendered string, which is what the driver parses.
+    parsed = make_url(result.render_as_string(hide_password=False))
+    assert parsed.username == "admin@corp"
+    assert parsed.password == "p@ss:w/rd#1?"
+    assert parsed.host == "host.docker.internal"
+    assert parsed.port == 5432
+    assert parsed.database == "test_db"
 
 
 # _get_scanner
@@ -713,10 +732,10 @@ async def test_execute_rescan_success(
     service.db_repo.get_one_database.assert_awaited_once_with(42)
     decrypt_mock.assert_called_once_with("encrypted-secret")
     service._update_status.assert_awaited_once_with(42, DBStatus.SCANNING)
-    service._run_scan.assert_awaited_once_with(
-        42,
-        DBType.POSTGRESQL,
-        "postgresql+psycopg2://postgres:secret@host.docker.internal:5432/test_db",
+    db_id, db_type, prepared_url = service._run_scan.await_args.args
+    assert (db_id, db_type) == (42, DBType.POSTGRESQL)
+    assert prepared_url.render_as_string(hide_password=False) == (
+        "postgresql+psycopg2://postgres:secret@host.docker.internal:5432/test_db"
     )
 
     assert result == fake_response
