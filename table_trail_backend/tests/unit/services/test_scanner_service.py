@@ -1,3 +1,4 @@
+import threading
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -160,6 +161,21 @@ async def test_run_scanner_success(service):
     fake_scanner.scan.assert_called_once_with("postgresql+psycopg2://test")
 
     assert result is fake_result
+
+
+@pytest.mark.asyncio
+async def test_run_scanner_runs_scan_off_the_event_loop_thread(service):
+    event_loop_thread = threading.get_ident()
+    scan_threads = []
+
+    fake_scanner = MagicMock()
+    fake_scanner.scan.side_effect = lambda url: scan_threads.append(threading.get_ident())
+    service._get_scanner = MagicMock(return_value=fake_scanner)
+
+    await service._run_scanner(DBType.POSTGRESQL, "postgresql+psycopg2://test")
+
+    assert len(scan_threads) == 1
+    assert scan_threads[0] != event_loop_thread
 
 
 @pytest.mark.asyncio

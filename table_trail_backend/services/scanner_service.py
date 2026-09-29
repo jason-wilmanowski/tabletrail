@@ -1,3 +1,5 @@
+import asyncio
+
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -150,7 +152,8 @@ class ScanService:
     async def _run_scanner(self, db_type: DBType, prepared_url: URL) -> ScannedDatabase:
         scanner = self._get_scanner(db_type)
         try:
-            return scanner.scan(prepared_url)
+            # run synchronous SQLAlchemy code in an asyncronous worker thread
+            return await asyncio.to_thread(scanner.scan, prepared_url)
         except ConnectionError as error:
             raise ScannerConnectionError(message="Could not connect to database", status_code=503) from error
         except Exception as error:
