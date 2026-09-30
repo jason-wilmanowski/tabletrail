@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Connection
+from sqlalchemy.engine import URL, Connection
 
 from .base_scanner import (
     BaseScanner,
@@ -11,7 +11,7 @@ from .base_scanner import (
 
 
 class MariaDBScanner(BaseScanner):
-    def scan(self, connection_url: str) -> ScannedDatabase:
+    def scan(self, connection_url: str | URL) -> ScannedDatabase:
         engine = create_engine(connection_url)
         try:
             with engine.connect() as conn:
@@ -83,7 +83,8 @@ class MariaDBScanner(BaseScanner):
                 kcu.referenced_table_name   AS references_table,
                 rc.delete_rule              AS on_delete,
                 rc.update_rule              AS on_update,
-                NULL                        AS check_expression
+                NULL                        AS check_expression,
+                kcu.referenced_table_schema AS references_schema
             FROM information_schema.table_constraints tc
             LEFT JOIN information_schema.key_column_usage kcu
                 ON tc.constraint_name = kcu.constraint_name
@@ -105,7 +106,8 @@ class MariaDBScanner(BaseScanner):
                 NULL            AS references_table,
                 NULL            AS on_delete,
                 NULL            AS on_update,
-                cc.check_clause AS check_expression
+                cc.check_clause AS check_expression,
+                NULL            AS references_schema
             FROM information_schema.check_constraints cc
             WHERE cc.constraint_schema = :schema
             AND   cc.table_name        = :table
@@ -124,6 +126,7 @@ class MariaDBScanner(BaseScanner):
             on_delete = row[4]
             on_update = row[5]
             check_expression = row[6]
+            references_schema = row[7]
 
             if constraint_name not in constraints_map:
                 constraints_map[constraint_name] = ScannedConstraint(
@@ -131,6 +134,7 @@ class MariaDBScanner(BaseScanner):
                     constraint_type=constraint_type,
                     column_names=[],
                     references_table=references_table,
+                    references_schema=references_schema,
                     on_delete=on_delete,
                     on_update=on_update,
                     check_expression=check_expression,

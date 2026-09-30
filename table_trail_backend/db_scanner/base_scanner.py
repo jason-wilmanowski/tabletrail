@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
+from sqlalchemy.engine import URL
+
 
 @dataclass
 class ScannedColumn:
@@ -17,6 +19,7 @@ class ScannedConstraint:
     constraint_type: str
     column_names: list[str] = field(default_factory=list)
     references_table: str | None = None
+    references_schema: str | None = None
     on_delete: str | None = None
     on_update: str | None = None
     check_expression: str | None = None
@@ -37,5 +40,5 @@ class ScannedDatabase:
 
 class BaseScanner(ABC):
     @abstractmethod
-    def scan(self, connection_url: str) -> ScannedDatabase:
+    def scan(self, connection_url: str | URL) -> ScannedDatabase:
         pass
