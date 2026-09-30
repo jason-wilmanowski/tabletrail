@@ -433,6 +433,7 @@ async def test_persist_results_resolves_foreign_key_reference(
     scanned_constraint.constraint_name = "fk_user"
     scanned_constraint.constraint_type = "FOREIGN KEY"
     scanned_constraint.references_table = "users"
+    scanned_constraint.references_schema = "public"
     scanned_constraint.on_delete = "CASCADE"
     scanned_constraint.on_update = "CASCADE"
     scanned_constraint.check_expression = None
@@ -492,6 +493,7 @@ async def test_persist_results_resolves_foreign_key_to_table_later_in_scan_order
     scanned_constraint.constraint_name = "fk_accounts_user"
     scanned_constraint.constraint_type = "FOREIGN KEY"
     scanned_constraint.references_table = "users"
+    scanned_constraint.references_schema = "public"
     scanned_constraint.on_delete = None
     scanned_constraint.on_update = None
     scanned_constraint.check_expression = None
@@ -536,6 +538,117 @@ async def test_persist_results_resolves_foreign_key_to_table_later_in_scan_order
 
 
 @pytest.mark.asyncio
+async def test_persist_results_resolves_foreign_key_by_schema_and_table_name(
+    service,
+):
+    # Two tables named "users" in different schemas — the FK must resolve
+    # to the one in the schema it references, not just any "users".
+    scanned_billing_users = MagicMock()
+    scanned_billing_users.name = "users"
+    scanned_billing_users.schema_name = "billing"
+    scanned_billing_users.columns = []
+    scanned_billing_users.constraints = []
+
+    scanned_constraint = MagicMock()
+    scanned_constraint.constraint_name = "fk_orders_user"
+    scanned_constraint.constraint_type = "FOREIGN KEY"
+    scanned_constraint.references_table = "users"
+    scanned_constraint.references_schema = "billing"
+    scanned_constraint.on_delete = None
+    scanned_constraint.on_update = None
+    scanned_constraint.check_expression = None
+    scanned_constraint.column_names = []
+
+    scanned_orders = MagicMock()
+    scanned_orders.name = "orders"
+    scanned_orders.schema_name = "public"
+    scanned_orders.columns = []
+    scanned_orders.constraints = [scanned_constraint]
+
+    scanned_public_users = MagicMock()
+    scanned_public_users.name = "users"
+    scanned_public_users.schema_name = "public"
+    scanned_public_users.columns = []
+    scanned_public_users.constraints = []
+
+    scan_result = MagicMock(spec=ScannedDatabase)
+    scan_result.tables = [scanned_billing_users, scanned_orders, scanned_public_users]
+
+    fake_billing_users_table = MagicMock()
+    fake_billing_users_table.id = 10
+
+    fake_orders_table = MagicMock()
+    fake_orders_table.id = 11
+
+    fake_public_users_table = MagicMock()
+    fake_public_users_table.id = 12
+
+    fake_constraint = MagicMock()
+    fake_constraint.id = 30
+
+    service.table_repo.create_table = AsyncMock(
+        side_effect=[fake_billing_users_table, fake_orders_table, fake_public_users_table]
+    )
+
+    service.constraint_repo.create_constraint = AsyncMock(return_value=fake_constraint)
+
+    await service._persist_results(42, scan_result)
+
+    constraint_data = service.constraint_repo.create_constraint.call_args.kwargs["data"]
+
+    assert constraint_data.references_table_id == 10
+
+
+@pytest.mark.asyncio
+async def test_persist_results_foreign_key_without_schema_uses_own_schema(
+    service,
+):
+    scanned_constraint = MagicMock()
+    scanned_constraint.constraint_name = "fk_orders_user"
+    scanned_constraint.constraint_type = "FOREIGN KEY"
+    scanned_constraint.references_table = "users"
+    scanned_constraint.references_schema = None
+    scanned_constraint.on_delete = None
+    scanned_constraint.on_update = None
+    scanned_constraint.check_expression = None
+    scanned_constraint.column_names = []
+
+    scanned_orders = MagicMock()
+    scanned_orders.name = "orders"
+    scanned_orders.schema_name = "shop"
+    scanned_orders.columns = []
+    scanned_orders.constraints = [scanned_constraint]
+
+    scanned_users = MagicMock()
+    scanned_users.name = "users"
+    scanned_users.schema_name = "shop"
+    scanned_users.columns = []
+    scanned_users.constraints = []
+
+    scan_result = MagicMock(spec=ScannedDatabase)
+    scan_result.tables = [scanned_orders, scanned_users]
+
+    fake_orders_table = MagicMock()
+    fake_orders_table.id = 10
+
+    fake_users_table = MagicMock()
+    fake_users_table.id = 11
+
+    fake_constraint = MagicMock()
+    fake_constraint.id = 30
+
+    service.table_repo.create_table = AsyncMock(side_effect=[fake_orders_table, fake_users_table])
+
+    service.constraint_repo.create_constraint = AsyncMock(return_value=fake_constraint)
+
+    await service._persist_results(42, scan_result)
+
+    constraint_data = service.constraint_repo.create_constraint.call_args.kwargs["data"]
+
+    assert constraint_data.references_table_id == 11
+
+
+@pytest.mark.asyncio
 async def test_persist_results_handles_missing_referenced_table(
     service,
 ):
@@ -543,6 +656,7 @@ async def test_persist_results_handles_missing_referenced_table(
     scanned_constraint.constraint_name = "fk_user"
     scanned_constraint.constraint_type = "FOREIGN KEY"
     scanned_constraint.references_table = "users"
+    scanned_constraint.references_schema = "public"
     scanned_constraint.on_delete = None
     scanned_constraint.on_update = None
     scanned_constraint.check_expression = None

@@ -19,6 +19,7 @@ class ScannedConstraint:
     constraint_type: str
     column_names: list[str] = field(default_factory=list)
     references_table: str | None = None
+    references_schema: str | None = None
     on_delete: str | None = None
     on_update: str | None = None
     check_expression: str | None = None

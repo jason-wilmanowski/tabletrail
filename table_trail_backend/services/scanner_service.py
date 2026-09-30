@@ -174,16 +174,17 @@ class ScanService:
         # persist every table before assign constraints
 
         # 1. tables + columns — keep the ids for constraint mapping
-        table_name_to_id: dict[str, int] = {}
+        # keyed by (schema, table name): the same table name can exist in several schemas
+        table_key_to_id: dict[tuple[str, str], int] = {}
         persisted_tables: list[tuple[ScannedTable, int, dict[str, int]]] = []
         for scanned_table in scan_result.tables:
             table_id, column_name_to_id = await self._persist_table(db_id, scanned_table)
-            table_name_to_id[scanned_table.name] = table_id
+            table_key_to_id[(scanned_table.schema_name, scanned_table.name)] = table_id
             persisted_tables.append((scanned_table, table_id, column_name_to_id))
 
         # 2. constraints + constraint_columns
         for scanned_table, table_id, column_name_to_id in persisted_tables:
-            await self._persist_constraints(scanned_table, table_id, column_name_to_id, table_name_to_id)
+            await self._persist_constraints(scanned_table, table_id, column_name_to_id, table_key_to_id)
 
     async def _persist_table(self, db_id: int, scanned_table: ScannedTable) -> tuple[int, dict[str, int]]:
         table = await self.table_repo.create_table(
@@ -212,14 +213,16 @@ class ScanService:
         scanned_table: ScannedTable,
         table_id: int,
         column_name_to_id: dict[str, int],
-        table_name_to_id: dict[str, int],
+        table_key_to_id: dict[tuple[str, str], int],
     ) -> None:
         for scanned_constraint in scanned_table.constraints:
             # resolve references_table_id if FK
             # None when the referenced table is not part of this scan
             references_table_id = None
             if scanned_constraint.references_table:
-                references_table_id = table_name_to_id.get(scanned_constraint.references_table)
+                # no schema reported → the referenced table is in the same schema
+                references_schema = scanned_constraint.references_schema or scanned_table.schema_name
+                references_table_id = table_key_to_id.get((references_schema, scanned_constraint.references_table))
 
             constraint = await self.constraint_repo.create_constraint(
                 table_id=table_id,

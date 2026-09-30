@@ -71,6 +71,7 @@ def test_scan_constraints():
             None,
             None,
             None,
+            None,
         ),
         (
             "fk_user_company",
@@ -80,6 +81,7 @@ def test_scan_constraints():
             "CASCADE",
             "CASCADE",
             None,
+            "public",
         ),
     ]
 
@@ -99,6 +101,7 @@ def test_scan_constraints():
     assert foreign_key.constraint_type == "FOREIGN KEY"
     assert foreign_key.column_names == ["company_id"]
     assert foreign_key.references_table == "companies"
+    assert foreign_key.references_schema == "public"
     assert foreign_key.on_delete == "CASCADE"
     assert foreign_key.on_update == "CASCADE"
 
@@ -117,11 +120,13 @@ def test_scan_constraints_combines_columns_of_same_constraint():
             None,
             None,
             None,
+            None,
         ),
         (
             "example_pkey",
             "PRIMARY KEY",
             "tenant_id",
+            None,
             None,
             None,
             None,
@@ -157,6 +162,7 @@ def test_scan_constraints_check_constraint():
             None,
             None,
             "age >= 18",
+            None,
         ),
     ]
 
