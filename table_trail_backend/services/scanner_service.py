@@ -15,7 +15,7 @@ from table_trail_backend.core.exceptions import (
     ScanningSystemError,
 )
 from table_trail_backend.db.models.databases import Databases
-from table_trail_backend.db_scanner.base_scanner import ScannedDatabase
+from table_trail_backend.db_scanner.base_scanner import ScannedDatabase, ScannedTable
 from table_trail_backend.db_scanner.mariadb_scanner import MariaDBScanner
 from table_trail_backend.db_scanner.mysql_scanner import MySQLScanner
 from table_trail_backend.db_scanner.postgres_scanner import PostgresScanner
@@ -170,57 +170,74 @@ class ScanService:
         await self.db.flush()
 
     async def _persist_results(self, db_id: int, scan_result: ScannedDatabase) -> None:
+
+        # persist every table before assign constraints
+
+        # 1. tables + columns — keep the ids for constraint mapping
+        table_name_to_id: dict[str, int] = {}
+        persisted_tables: list[tuple[ScannedTable, int, dict[str, int]]] = []
         for scanned_table in scan_result.tables:
-            # Create table
-            table = await self.table_repo.create_table(
-                db_id=db_id, name=scanned_table.name, schema_name=scanned_table.schema_name
+            table_id, column_name_to_id = await self._persist_table(db_id, scanned_table)
+            table_name_to_id[scanned_table.name] = table_id
+            persisted_tables.append((scanned_table, table_id, column_name_to_id))
+
+        # 2. constraints + constraint_columns
+        for scanned_table, table_id, column_name_to_id in persisted_tables:
+            await self._persist_constraints(scanned_table, table_id, column_name_to_id, table_name_to_id)
+
+    async def _persist_table(self, db_id: int, scanned_table: ScannedTable) -> tuple[int, dict[str, int]]:
+        table = await self.table_repo.create_table(
+            db_id=db_id, name=scanned_table.name, schema_name=scanned_table.schema_name
+        )
+
+        # Create columns keep reference by name for constraint mapping
+        column_name_to_id: dict[str, int] = {}
+        for scanned_column in scanned_table.columns:
+            column = await self.column_repo.create_column(
+                table_id=table.id,
+                data=CreateColumn(
+                    name=scanned_column.name,
+                    data_type=scanned_column.data_type,
+                    is_nullable=scanned_column.is_nullable,
+                    default_value=scanned_column.default_value,
+                    ordinal_position=scanned_column.ordinal_position,
+                ),
+            )
+            column_name_to_id[scanned_column.name] = column.id
+
+        return table.id, column_name_to_id
+
+    async def _persist_constraints(
+        self,
+        scanned_table: ScannedTable,
+        table_id: int,
+        column_name_to_id: dict[str, int],
+        table_name_to_id: dict[str, int],
+    ) -> None:
+        for scanned_constraint in scanned_table.constraints:
+            # resolve references_table_id if FK
+            # None when the referenced table is not part of this scan
+            references_table_id = None
+            if scanned_constraint.references_table:
+                references_table_id = table_name_to_id.get(scanned_constraint.references_table)
+
+            constraint = await self.constraint_repo.create_constraint(
+                table_id=table_id,
+                data=CreateConstraint(
+                    constraint_name=scanned_constraint.constraint_name,
+                    constraint_type=scanned_constraint.constraint_type,
+                    references_table_id=references_table_id,
+                    on_delete=scanned_constraint.on_delete,
+                    on_update=scanned_constraint.on_update,
+                    check_expression=scanned_constraint.check_expression,
+                ),
             )
 
-            # Create columns keep reference by name for constraint mapping
-            column_name_to_id: dict[str, int] = {}
-            for scanned_column in scanned_table.columns:
-                column = await self.column_repo.create_column(
-                    table_id=table.id,
-                    data=CreateColumn(
-                        name=scanned_column.name,
-                        data_type=scanned_column.data_type,
-                        is_nullable=scanned_column.is_nullable,
-                        default_value=scanned_column.default_value,
-                        ordinal_position=scanned_column.ordinal_position,
-                    ),
-                )
-                column_name_to_id[scanned_column.name] = column.id
-
-            # Create constraints + constraint_columns
-            for scanned_constraint in scanned_table.constraints:
-                # Resolve references_table_id if FK
-                references_table_id = None
-                if scanned_constraint.references_table:
-                    referenced_table = await self.table_repo.get_table_by_name(
-                        db_id=db_id, table_name=scanned_constraint.references_table
-                    )
-                    if referenced_table:
-                        references_table_id = referenced_table.id
-
-                constraint = await self.constraint_repo.create_constraint(
-                    table_id=table.id,
-                    data=CreateConstraint(
-                        constraint_name=scanned_constraint.constraint_name,
-                        constraint_type=scanned_constraint.constraint_type,
-                        references_table_id=references_table_id,
-                        on_delete=scanned_constraint.on_delete,
-                        on_update=scanned_constraint.on_update,
-                        check_expression=scanned_constraint.check_expression,
-                    ),
-                )
-
-                # Create junction entries for each column in this constraint
-                for col_name in scanned_constraint.column_names:
-                    col_id = column_name_to_id.get(col_name)
-                    if col_id:
-                        await self.constraint_repo.create_column_constraint(
-                            column_id=col_id, constraint_id=constraint.id
-                        )
+            # Create junction entries for each column in this constraint
+            for col_name in scanned_constraint.column_names:
+                col_id = column_name_to_id.get(col_name)
+                if col_id:
+                    await self.constraint_repo.create_column_constraint(column_id=col_id, constraint_id=constraint.id)
 
     async def _update_status(self, db_id: int, status: DBStatus) -> None:
         await self.db_repo.update(db_id, UpdateDatabaseInternal(status=status))
