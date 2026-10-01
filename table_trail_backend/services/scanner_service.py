@@ -19,6 +19,7 @@ from table_trail_backend.db_scanner.base_scanner import ScannedDatabase, Scanned
 from table_trail_backend.db_scanner.mariadb_scanner import MariaDBScanner
 from table_trail_backend.db_scanner.mysql_scanner import MySQLScanner
 from table_trail_backend.db_scanner.postgres_scanner import PostgresScanner
+from table_trail_backend.repositories.column_relation_repository import ColumnRelationRepository
 from table_trail_backend.repositories.column_repository import ColumnRepository
 from table_trail_backend.repositories.constraint_repository import ConstraintsRepository
 from table_trail_backend.repositories.database_repository import DatabasesRepository
@@ -40,6 +41,7 @@ class ScanService:
         self.table_repo = TableRepository(db)
         self.column_repo = ColumnRepository(db)
         self.constraint_repo = ConstraintsRepository(db)
+        self.column_relation_repo = ColumnRelationRepository(db)
 
     # Public Entry Points
 
@@ -94,13 +96,16 @@ class ScanService:
             # 3. Persist new scan results (flush only)
             await self._persist_results(db_id, scan_result)
 
-            # 4. Single commit — all or nothing
+            # 4. Remove custom relations whose columns no longer exist (flush only)
+            await self._remove_orphaned_relations(db_id, scan_result)
+
+            # 5. Single commit — all or nothing
             await self.db.commit()
 
-            # 5. Mark as READY
+            # 6. Mark as READY
             await self._update_status(db_id, DBStatus.READY)
 
-            # 6. Get Database Object
+            # 7. Get Database Object
             scanned_database = await self.db_repo.get_one_database(db_id)
 
             return scanned_database
@@ -241,6 +246,26 @@ class ScanService:
                 col_id = column_name_to_id.get(col_name)
                 if col_id:
                     await self.constraint_repo.create_column_constraint(column_id=col_id, constraint_id=constraint.id)
+
+    async def _remove_orphaned_relations(self, db_id: int, scan_result: ScannedDatabase) -> None:
+        # Relations reference columns by name after rescan drop the ones
+        # pointing at a column that no longer exists
+        existing_columns = {
+            (scanned_table.schema_name, scanned_table.name, scanned_column.name)
+            for scanned_table in scan_result.tables
+            for scanned_column in scanned_table.columns
+        }
+
+        relations = await self.column_relation_repo.get_database_column_relations(db_id)
+        orphaned_relation_ids = [
+            relation.id
+            for relation in relations
+            if (relation.schema_name, relation.table_name_1, relation.column_name_1) not in existing_columns
+            or (relation.schema_name, relation.table_name_2, relation.column_name_2) not in existing_columns
+        ]
+
+        if orphaned_relation_ids:
+            await self.column_relation_repo.delete_column_relations(db_id, orphaned_relation_ids)
 
     async def _update_status(self, db_id: int, status: DBStatus) -> None:
         await self.db_repo.update(db_id, UpdateDatabaseInternal(status=status))

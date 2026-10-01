@@ -727,6 +727,92 @@ async def test_persist_results_ignores_unknown_constraint_column(
     service.constraint_repo.create_column_constraint.assert_not_awaited()
 
 
+# _remove_orphaned_relations
+
+
+def _scanned_table(schema_name: str, name: str, column_names: list[str]) -> MagicMock:
+    table = MagicMock()
+    table.schema_name = schema_name
+    table.name = name
+    table.columns = []
+    for column_name in column_names:
+        column = MagicMock()
+        column.name = column_name
+        table.columns.append(column)
+    return table
+
+
+def _stored_relation(relation_id: int, table_name_1: str, column_name_1: str, table_name_2: str, column_name_2: str):
+    relation = MagicMock()
+    relation.id = relation_id
+    relation.schema_name = "public"
+    relation.table_name_1 = table_name_1
+    relation.column_name_1 = column_name_1
+    relation.table_name_2 = table_name_2
+    relation.column_name_2 = column_name_2
+    return relation
+
+
+@pytest.mark.asyncio
+async def test_remove_orphaned_relations_deletes_relations_with_missing_columns(service):
+    scan_result = MagicMock(spec=ScannedDatabase)
+    scan_result.tables = [
+        _scanned_table("public", "users", ["id", "email"]),
+        _scanned_table("public", "orders", ["id", "user_id"]),
+    ]
+
+    valid = _stored_relation(1, "users", "id", "orders", "user_id")
+    missing_column = _stored_relation(2, "users", "id", "orders", "buyer_id")
+    missing_table = _stored_relation(3, "invoices", "user_id", "users", "id")
+
+    service.column_relation_repo.get_database_column_relations = AsyncMock(
+        return_value=[valid, missing_column, missing_table]
+    )
+    service.column_relation_repo.delete_column_relations = AsyncMock()
+
+    await service._remove_orphaned_relations(42, scan_result)
+
+    service.column_relation_repo.get_database_column_relations.assert_awaited_once_with(42)
+    service.column_relation_repo.delete_column_relations.assert_awaited_once_with(42, [2, 3])
+
+
+@pytest.mark.asyncio
+async def test_remove_orphaned_relations_matches_schema(service):
+    # the relation's columns exist, but only in another schema
+    scan_result = MagicMock(spec=ScannedDatabase)
+    scan_result.tables = [
+        _scanned_table("billing", "users", ["id"]),
+        _scanned_table("billing", "orders", ["user_id"]),
+    ]
+
+    relation = _stored_relation(1, "users", "id", "orders", "user_id")
+
+    service.column_relation_repo.get_database_column_relations = AsyncMock(return_value=[relation])
+    service.column_relation_repo.delete_column_relations = AsyncMock()
+
+    await service._remove_orphaned_relations(42, scan_result)
+
+    service.column_relation_repo.delete_column_relations.assert_awaited_once_with(42, [1])
+
+
+@pytest.mark.asyncio
+async def test_remove_orphaned_relations_skips_delete_when_nothing_is_orphaned(service):
+    scan_result = MagicMock(spec=ScannedDatabase)
+    scan_result.tables = [
+        _scanned_table("public", "users", ["id"]),
+        _scanned_table("public", "orders", ["user_id"]),
+    ]
+
+    service.column_relation_repo.get_database_column_relations = AsyncMock(
+        return_value=[_stored_relation(1, "users", "id", "orders", "user_id")]
+    )
+    service.column_relation_repo.delete_column_relations = AsyncMock()
+
+    await service._remove_orphaned_relations(42, scan_result)
+
+    service.column_relation_repo.delete_column_relations.assert_not_awaited()
+
+
 # _update_status
 
 
@@ -771,6 +857,11 @@ async def test_execute_scan_success(
     service._clear_existing_data = AsyncMock()
     service._persist_results = AsyncMock()
 
+    # record the order of the flush-only steps relative to the commit
+    call_order = []
+    service._remove_orphaned_relations = AsyncMock(side_effect=lambda *args: call_order.append("cleanup"))
+    service.db.commit = AsyncMock(side_effect=lambda: call_order.append("commit"))
+
     service._update_status = AsyncMock()
 
     service.db_repo.get_one_database = AsyncMock(return_value=fake_response)
@@ -793,7 +884,12 @@ async def test_execute_scan_success(
         fake_scan_result,
     )
 
+    service._remove_orphaned_relations.assert_awaited_once_with(42, fake_scan_result)
+
     service.db.commit.assert_awaited_once()
+
+    # cleanup is part of the scan transaction, not a separate commit
+    assert call_order == ["cleanup", "commit"]
 
     service._update_status.assert_awaited_once_with(
         42,
@@ -856,6 +952,7 @@ async def test_execute_scan_does_not_clear_existing_data_if_scanner_fails(
 
     service._clear_existing_data = AsyncMock()
     service._persist_results = AsyncMock()
+    service._remove_orphaned_relations = AsyncMock()
     service._update_status = AsyncMock()
 
     with pytest.raises(ScannerConnectionError):
@@ -863,6 +960,7 @@ async def test_execute_scan_does_not_clear_existing_data_if_scanner_fails(
 
     service._clear_existing_data.assert_not_awaited()
     service._persist_results.assert_not_awaited()
+    service._remove_orphaned_relations.assert_not_awaited()
 
 
 @pytest.mark.asyncio
