@@ -34,6 +34,22 @@ class ColumnRepository:
         columns = await self.db.execute(select(Columns).where(Columns.table_id == table_id))
         return columns.scalars().all()
 
+    async def column_exists(self, db_id: int, schema_name: str, table_name: str, column_name: str) -> bool:
+        column = await self.db.execute(
+            select(Columns.id)
+            .join(Tables)
+            .where(
+                and_(
+                    Tables.database_id == db_id,
+                    Tables.schema_name == schema_name,
+                    Tables.name == table_name,
+                    Columns.name == column_name,
+                )
+            )
+            .limit(1)
+        )
+        return column.scalar_one_or_none() is not None
+
     async def search_by_name(self, db_id: int, query: str) -> list[Columns]:
         result = await self.db.execute(
             select(Columns).join(Tables).where(and_(Tables.database_id == db_id, Columns.name.ilike(f"%{query}%")))

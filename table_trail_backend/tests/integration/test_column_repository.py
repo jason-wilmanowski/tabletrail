@@ -115,6 +115,56 @@ async def test_search_by_name_scoped_to_database_case_insensitive(db_session, ma
     assert [row.id for row in result] == [column.id]
 
 
+# -- Column Exists --
+
+
+@pytest.mark.asyncio
+async def test_column_exists_true_for_existing_column(db_session, make_database, make_table):
+    database = await make_database()
+    table = await make_table(database.id, name="users", schema_name="public")
+    repo = ColumnRepository(db_session)
+    await repo.create_column(
+        table.id, CreateColumn(name="id", data_type="integer", is_nullable=False, ordinal_position=1)
+    )
+
+    assert await repo.column_exists(database.id, "public", "users", "id") is True
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("schema_name", "table_name", "column_name"),
+    [
+        ("billing", "users", "id"),
+        ("public", "orders", "id"),
+        ("public", "users", "email"),
+    ],
+)
+async def test_column_exists_false_when_any_part_differs(
+    db_session, make_database, make_table, schema_name, table_name, column_name
+):
+    database = await make_database()
+    table = await make_table(database.id, name="users", schema_name="public")
+    repo = ColumnRepository(db_session)
+    await repo.create_column(
+        table.id, CreateColumn(name="id", data_type="integer", is_nullable=False, ordinal_position=1)
+    )
+
+    assert await repo.column_exists(database.id, schema_name, table_name, column_name) is False
+
+
+@pytest.mark.asyncio
+async def test_column_exists_scoped_to_database(db_session, make_database, make_table):
+    database = await make_database()
+    other_database = await make_database(name="Other", db_name="other_db")
+    other_table = await make_table(other_database.id, name="users", schema_name="public")
+    repo = ColumnRepository(db_session)
+    await repo.create_column(
+        other_table.id, CreateColumn(name="id", data_type="integer", is_nullable=False, ordinal_position=1)
+    )
+
+    assert await repo.column_exists(database.id, "public", "users", "id") is False
+
+
 # -- Update --
 
 
