@@ -27,6 +27,7 @@ import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
 import { constraintsToEdges } from '../../utils/constraintsToEdges'
 import { getSavedLayout, saveLayout } from '../../utils/layoutStorage'
 import { computeCollisionOffsets } from '../../utils/collisionOffset'
+import { buildColumnIndex, resolveRelationEndpoints } from '../../utils/columnRelationEndpoints'
 import { TableNode } from './nodes/TableNode'
 import { RelationEdge } from './edges/RelationEdge'
 import { ColumnRelationEdge } from './edges/ColumnRelationEdge'
@@ -204,6 +205,11 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   }, [databaseId, resetColumnRelationSelection])
 
   const columnRelationsQuery = useColumnRelations(databaseId)
+
+  // Relations store columns by name, the graph's handles and the relation
+  // selection by column id — this index translates between the two, built
+  // once per `tables` change rather than scanning on every relation.
+  const columnIndex = useMemo(() => buildColumnIndex(tables), [tables])
   const createColumnRelation = useCreateColumnRelation(databaseId)
   const updateColumnRelation = useUpdateColumnRelation(databaseId)
   const deleteColumnRelation = useDeleteColumnRelation(databaseId)
@@ -243,8 +249,23 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
     clearPendingColumnRelationAction()
 
     if (action.type === 'create') {
+      // The selection holds column ids of the loaded structure; relations
+      // are stored by name, so translate both sides before sending.
+      const column1 = columnIndex.byId.get(action.columnId1)
+      const column2 = columnIndex.byId.get(action.columnId2)
+      if (column1 === undefined || column2 === undefined) {
+        notifyError('Could not create relation: column not found')
+        return
+      }
       createColumnRelation.mutate(
-        { column_id_1: action.columnId1, column_id_2: action.columnId2 },
+        {
+          schema_name_1: column1.schemaName,
+          table_name_1: column1.tableName,
+          column_name_1: column1.columnName,
+          schema_name_2: column2.schemaName,
+          table_name_2: column2.tableName,
+          column_name_2: column2.columnName,
+        },
         {
           onSuccess: (created) => setActiveColumnRelationPopover(String(created.id)),
           onError: (error) => notifyError(`Could not create relation: ${getErrorMessage(error)}`),
@@ -267,6 +288,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   }, [
     pendingColumnRelationAction,
     clearPendingColumnRelationAction,
+    columnIndex,
     createColumnRelation,
     updateColumnRelation,
     deleteColumnRelation,
@@ -280,19 +302,6 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
     }
     deleteColumnRelation.mutate(relationIdToDelete, { onSuccess: () => setRelationIdToDelete(null) })
   }
-
-  // Real relations only carry column ids (matching the backend response),
-  // so rendering them as edges needs each column's owning table id —
-  // built once per `tables` change rather than scanning on every relation.
-  const columnToTableId = useMemo(() => {
-    const map = new Map<number, number>()
-    for (const table of tables) {
-      for (const column of table.columns) {
-        map.set(column.id, table.id)
-      }
-    }
-    return map
-  }, [tables])
 
   // Manually-drawn relations are derived straight from the query cache
   // rather than folded into the `edges` state above — they don't
@@ -312,24 +321,24 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
       return []
     }
     return (columnRelationsQuery.data ?? []).flatMap((relation) => {
-      const tableId1 = columnToTableId.get(relation.column_id_1)
-      const tableId2 = columnToTableId.get(relation.column_id_2)
-      if (tableId1 === undefined || tableId2 === undefined) {
+      const endpoints = resolveRelationEndpoints(relation, columnIndex)
+      if (endpoints === null) {
         return []
       }
+      const [column1, column2] = endpoints
       return [
         {
           id: String(relation.id),
           type: 'columnRelation' as const,
-          source: `table-${tableId1}`,
-          target: `table-${tableId2}`,
-          sourceHandle: `col-${relation.column_id_1}`,
-          targetHandle: `col-${relation.column_id_2}`,
+          source: `table-${column1.tableId}`,
+          target: `table-${column2.tableId}`,
+          sourceHandle: `col-${column1.columnId}`,
+          targetHandle: `col-${column2.columnId}`,
           data: { color: relation.relation_color, description: relation.description },
         },
       ]
     })
-  }, [columnRelationsQuery.data, columnToTableId, isCustomRelationsVisible])
+  }, [columnRelationsQuery.data, columnIndex, isCustomRelationsVisible])
 
   // Small nudge away from dead-center for any relation label whose true
   // midpoint lands close enough to another currently-visible label's to
