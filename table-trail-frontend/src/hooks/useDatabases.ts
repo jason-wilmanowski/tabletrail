@@ -75,7 +75,9 @@ export function useDeleteDatabase() {
  * `DatabaseStructureResponse` (including refreshed `tables`), which is
  * written directly into the `['database', id]` cache entry so the graph
  * and sidebar re-render with the new structure without a refetch.
- * `['databases']` is invalidated too since scan status/timestamps change.
+ * `['databases']` is invalidated too since scan status/timestamps change,
+ * and `['columnRelations', id]` because the rescan removes relations whose
+ * columns no longer exist.
  */
 export function useRescanDatabase(id: number) {
   const queryClient = useQueryClient()
@@ -85,6 +87,7 @@ export function useRescanDatabase(id: number) {
     onSuccess: (updated) => {
       queryClient.setQueryData<DatabaseStructureResponse>(['database', id], updated)
       queryClient.invalidateQueries({ queryKey: ['databases'] })
+      queryClient.invalidateQueries({ queryKey: ['columnRelations', id] })
     },
   })
 }
