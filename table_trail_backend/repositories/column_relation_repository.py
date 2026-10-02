@@ -1,4 +1,4 @@
-from sqlalchemy import and_, select
+from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from table_trail_backend.db.models.column_relations import ColumnRelations
@@ -15,8 +15,12 @@ class ColumnRelationRepository:
     async def create_column_relation(self, database_id: int, data: CreateColumnRelation):
         new_column_relation = ColumnRelations(
             database_id=database_id,
-            column_id_1=data.column_id_1,
-            column_id_2=data.column_id_2,
+            schema_name_1=data.schema_name_1,
+            schema_name_2=data.schema_name_2,
+            table_name_1=data.table_name_1,
+            table_name_2=data.table_name_2,
+            column_name_1=data.column_name_1,
+            column_name_2=data.column_name_2,
             relation_color=data.relation_color,
             description=data.description,
         )
@@ -39,13 +43,42 @@ class ColumnRelationRepository:
         )
         return column_relations.scalars().all()
 
-    async def get_column_relation_by_columns(self, column_id_1: int, column_id_2: int):
+    async def get_column_relation_by_endpoints(
+        self,
+        database_id: int,
+        schema_name_1: str,
+        table_name_1: str,
+        column_name_1: str,
+        schema_name_2: str,
+        table_name_2: str,
+        column_name_2: str,
+    ):
+        # A relation is undirected: 1 <-> 2 and 2 <-> 1 are the same relation
+        forward = and_(
+            ColumnRelations.schema_name_1 == schema_name_1,
+            ColumnRelations.table_name_1 == table_name_1,
+            ColumnRelations.column_name_1 == column_name_1,
+            ColumnRelations.schema_name_2 == schema_name_2,
+            ColumnRelations.table_name_2 == table_name_2,
+            ColumnRelations.column_name_2 == column_name_2,
+        )
+        backward = and_(
+            ColumnRelations.schema_name_1 == schema_name_2,
+            ColumnRelations.table_name_1 == table_name_2,
+            ColumnRelations.column_name_1 == column_name_2,
+            ColumnRelations.schema_name_2 == schema_name_1,
+            ColumnRelations.table_name_2 == table_name_1,
+            ColumnRelations.column_name_2 == column_name_1,
+        )
         column_relations = await self.db.execute(
             select(ColumnRelations).where(
-                and_(ColumnRelations.column_id_1 == column_id_1, ColumnRelations.column_id_2 == column_id_2)
+                and_(
+                    ColumnRelations.database_id == database_id,
+                    or_(forward, backward),
+                )
             )
         )
-        return column_relations.scalars().one_or_none()
+        return column_relations.scalars().first()
 
     async def update_column_relation(self, database_id: int, column_relation_id: int, data: UpdateColumnRelation):
         column_relation = await self.get_column_relation_by_id(database_id, column_relation_id)
@@ -59,4 +92,12 @@ class ColumnRelationRepository:
     async def delete_column_relation(self, database_id: int, column_relation_id: int):
         column_relation = await self.get_column_relation_by_id(database_id, column_relation_id)
         await self.db.delete(column_relation)
+        await self.db.flush()
+
+    async def delete_column_relations(self, database_id: int, column_relation_ids: list[int]):
+        await self.db.execute(
+            delete(ColumnRelations).where(
+                and_(ColumnRelations.database_id == database_id, ColumnRelations.id.in_(column_relation_ids))
+            )
+        )
         await self.db.flush()

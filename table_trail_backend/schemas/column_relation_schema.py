@@ -5,15 +5,23 @@ from table_trail_backend.core.enums import ColumnRelationColor
 
 # Insert Section
 class CreateColumnRelation(BaseModel):
-    column_id_1: int
-    column_id_2: int
+    schema_name_1: str
+    schema_name_2: str
+    table_name_1: str
+    table_name_2: str
+    column_name_1: str
+    column_name_2: str
     relation_color: ColumnRelationColor = ColumnRelationColor.GREEN
     description: str | None = None
 
 
 class UpdateColumnRelation(BaseModel):
-    column_id_1: int | None = None
-    column_id_2: int | None = None
+    schema_name_1: str | None = None
+    schema_name_2: str | None = None
+    table_name_1: str | None = None
+    table_name_2: str | None = None
+    column_name_1: str | None = None
+    column_name_2: str | None = None
     relation_color: ColumnRelationColor | None = None
     description: str | None = None
 
@@ -24,8 +32,12 @@ class UpdateColumnRelation(BaseModel):
 class ColumnRelationResponse(BaseModel):
     id: int
     database_id: int
-    column_id_1: int
-    column_id_2: int
+    schema_name_1: str
+    schema_name_2: str
+    table_name_1: str
+    table_name_2: str
+    column_name_1: str
+    column_name_2: str
     relation_color: ColumnRelationColor
     description: str | None = None
     model_config = ConfigDict(from_attributes=True)

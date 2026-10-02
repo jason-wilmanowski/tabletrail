@@ -9,9 +9,13 @@ class ColumnRelations(Base):
     __tablename__ = "column_relations"
 
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
-    database_id: Mapped[int] = mapped_column(ForeignKey("databases.id", ondelete="CASCADE", onupdate="CASCADE"))
-    column_id_1: Mapped[int] = mapped_column(ForeignKey("columns.id", ondelete="CASCADE"))
-    column_id_2: Mapped[int] = mapped_column(ForeignKey("columns.id", ondelete="CASCADE"))
+    database_id: Mapped[int] = mapped_column(ForeignKey("databases.id", ondelete="CASCADE"))
+    schema_name_1: Mapped[str] = mapped_column()
+    schema_name_2: Mapped[str] = mapped_column()
+    table_name_1: Mapped[str] = mapped_column()
+    table_name_2: Mapped[str] = mapped_column()
+    column_name_1: Mapped[str] = mapped_column()
+    column_name_2: Mapped[str] = mapped_column()
     relation_color: Mapped[ColumnRelationColor] = mapped_column(
         Enum(ColumnRelationColor), default=ColumnRelationColor.GREEN
     )

@@ -3,16 +3,24 @@ import type { ColumnRelationResponse, ColumnRelationColor } from '../types/colum
 
 /** Mirrors backend `CreateColumnRelation` schema — `relation_color` is optional, backend defaults to green. */
 export interface CreateColumnRelationRequest {
-  column_id_1: number
-  column_id_2: number
+  schema_name_1: string
+  schema_name_2: string
+  table_name_1: string
+  table_name_2: string
+  column_name_1: string
+  column_name_2: string
   relation_color?: ColumnRelationColor
   description?: string | null
 }
 
 /** Mirrors backend `UpdateColumnRelation` schema — all fields optional. */
 export interface UpdateColumnRelationRequest {
-  column_id_1?: number
-  column_id_2?: number
+  schema_name_1?: string
+  schema_name_2?: string
+  table_name_1?: string
+  table_name_2?: string
+  column_name_1?: string
+  column_name_2?: string
   relation_color?: ColumnRelationColor
   description?: string | null
 }
