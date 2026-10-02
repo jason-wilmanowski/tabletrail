@@ -7,7 +7,8 @@ from table_trail_backend.schemas.column_relation_schema import CreateColumnRelat
 
 def _relation_data(**overrides) -> CreateColumnRelation:
     defaults = {
-        "schema_name": "public",
+        "schema_name_1": "public",
+        "schema_name_2": "public",
         "table_name_1": "users",
         "column_name_1": "id",
         "table_name_2": "orders",
@@ -29,7 +30,8 @@ async def test_create_column_relation_persists(db_session, make_database):
 
     assert relation.id is not None
     assert relation.database_id == database.id
-    assert relation.schema_name == "public"
+    assert relation.schema_name_1 == "public"
+    assert relation.schema_name_2 == "public"
     assert relation.table_name_1 == "users"
     assert relation.column_name_1 == "id"
     assert relation.table_name_2 == "orders"
@@ -89,7 +91,9 @@ async def test_get_column_relation_by_endpoints_found(db_session, make_database)
     repo = ColumnRelationRepository(db_session)
     relation = await repo.create_column_relation(database.id, _relation_data())
 
-    result = await repo.get_column_relation_by_endpoints(database.id, "public", "users", "id", "orders", "user_id")
+    result = await repo.get_column_relation_by_endpoints(
+        database.id, "public", "users", "id", "public", "orders", "user_id"
+    )
 
     assert result is not None
     assert result.id == relation.id
@@ -101,7 +105,9 @@ async def test_get_column_relation_by_endpoints_matches_reversed_direction(db_se
     repo = ColumnRelationRepository(db_session)
     relation = await repo.create_column_relation(database.id, _relation_data())
 
-    result = await repo.get_column_relation_by_endpoints(database.id, "public", "orders", "user_id", "users", "id")
+    result = await repo.get_column_relation_by_endpoints(
+        database.id, "public", "orders", "user_id", "public", "users", "id"
+    )
 
     assert result is not None
     assert result.id == relation.id
@@ -115,7 +121,7 @@ async def test_get_column_relation_by_endpoints_scoped_to_database(db_session, m
     await repo.create_column_relation(database.id, _relation_data())
 
     result = await repo.get_column_relation_by_endpoints(
-        other_database.id, "public", "users", "id", "orders", "user_id"
+        other_database.id, "public", "users", "id", "public", "orders", "user_id"
     )
 
     assert result is None
@@ -127,9 +133,29 @@ async def test_get_column_relation_by_endpoints_scoped_to_schema(db_session, mak
     repo = ColumnRelationRepository(db_session)
     await repo.create_column_relation(database.id, _relation_data())
 
-    result = await repo.get_column_relation_by_endpoints(database.id, "billing", "users", "id", "orders", "user_id")
+    result = await repo.get_column_relation_by_endpoints(
+        database.id, "billing", "users", "id", "public", "orders", "user_id"
+    )
 
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_get_column_relation_by_endpoints_matches_cross_schema_relation(db_session, make_database):
+    database = await make_database()
+    repo = ColumnRelationRepository(db_session)
+    relation = await repo.create_column_relation(database.id, _relation_data(schema_name_2="billing"))
+
+    found = await repo.get_column_relation_by_endpoints(
+        database.id, "billing", "orders", "user_id", "public", "users", "id"
+    )
+    other_schema = await repo.get_column_relation_by_endpoints(
+        database.id, "public", "users", "id", "public", "orders", "user_id"
+    )
+
+    assert found is not None
+    assert found.id == relation.id
+    assert other_schema is None
 
 
 @pytest.mark.asyncio
@@ -138,7 +164,7 @@ async def test_get_column_relation_by_endpoints_not_found(db_session, make_datab
     repo = ColumnRelationRepository(db_session)
     await repo.create_column_relation(database.id, _relation_data())
 
-    result = await repo.get_column_relation_by_endpoints(database.id, "public", "users", "id", "orders", "id")
+    result = await repo.get_column_relation_by_endpoints(database.id, "public", "users", "id", "public", "orders", "id")
 
     assert result is None
 

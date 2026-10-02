@@ -28,7 +28,8 @@ def service(fake_db):
 
 def _create_data(**overrides) -> CreateColumnRelation:
     defaults = {
-        "schema_name": "public",
+        "schema_name_1": "public",
+        "schema_name_2": "public",
         "table_name_1": "users",
         "column_name_1": "id",
         "table_name_2": "orders",
@@ -41,7 +42,8 @@ def _create_data(**overrides) -> CreateColumnRelation:
 def _stored_relation(relation_id: int = 7) -> MagicMock:
     relation = MagicMock()
     relation.id = relation_id
-    relation.schema_name = "public"
+    relation.schema_name_1 = "public"
+    relation.schema_name_2 = "public"
     relation.table_name_1 = "users"
     relation.column_name_1 = "id"
     relation.table_name_2 = "orders"
@@ -65,7 +67,7 @@ async def test_create_column_relation_success(service, fake_db):
         [call(42, "public", "users", "id"), call(42, "public", "orders", "user_id")]
     )
     service.column_rel_repo.get_column_relation_by_endpoints.assert_awaited_once_with(
-        42, "public", "users", "id", "orders", "user_id"
+        42, "public", "users", "id", "public", "orders", "user_id"
     )
     service.column_rel_repo.create_column_relation.assert_awaited_once_with(42, data)
     fake_db.commit.assert_awaited_once()
@@ -106,6 +108,18 @@ async def test_create_column_relation_same_column_name_in_different_tables_is_al
 
     await service.create_column_relation(42, data)
 
+    service.column_rel_repo.create_column_relation.assert_awaited_once_with(42, data)
+
+
+@pytest.mark.asyncio
+async def test_create_column_relation_same_column_in_different_schemas_is_allowed(service, fake_db):
+    data = _create_data(schema_name_2="billing", table_name_2="users", column_name_2="id")
+
+    await service.create_column_relation(42, data)
+
+    service.column_repo.column_exists.assert_has_awaits(
+        [call(42, "public", "users", "id"), call(42, "billing", "users", "id")]
+    )
     service.column_rel_repo.create_column_relation.assert_awaited_once_with(42, data)
 
 
@@ -224,7 +238,7 @@ async def test_update_column_relation_validates_merged_endpoints(service, fake_d
         [call(42, "public", "users", "id"), call(42, "public", "orders", "buyer_id")]
     )
     service.column_rel_repo.get_column_relation_by_endpoints.assert_awaited_once_with(
-        42, "public", "users", "id", "orders", "buyer_id"
+        42, "public", "users", "id", "public", "orders", "buyer_id"
     )
     service.column_rel_repo.update_column_relation.assert_awaited_once_with(42, 7, data)
 

@@ -745,7 +745,8 @@ def _scanned_table(schema_name: str, name: str, column_names: list[str]) -> Magi
 def _stored_relation(relation_id: int, table_name_1: str, column_name_1: str, table_name_2: str, column_name_2: str):
     relation = MagicMock()
     relation.id = relation_id
-    relation.schema_name = "public"
+    relation.schema_name_1 = "public"
+    relation.schema_name_2 = "public"
     relation.table_name_1 = table_name_1
     relation.column_name_1 = column_name_1
     relation.table_name_2 = table_name_2

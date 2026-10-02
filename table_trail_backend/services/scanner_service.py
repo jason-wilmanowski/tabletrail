@@ -260,8 +260,8 @@ class ScanService:
         orphaned_relation_ids = [
             relation.id
             for relation in relations
-            if (relation.schema_name, relation.table_name_1, relation.column_name_1) not in existing_columns
-            or (relation.schema_name, relation.table_name_2, relation.column_name_2) not in existing_columns
+            if (relation.schema_name_1, relation.table_name_1, relation.column_name_1) not in existing_columns
+            or (relation.schema_name_2, relation.table_name_2, relation.column_name_2) not in existing_columns
         ]
 
         if orphaned_relation_ids:

@@ -10,7 +10,8 @@ class ColumnRelations(Base):
 
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
     database_id: Mapped[int] = mapped_column(ForeignKey("databases.id", ondelete="CASCADE"))
-    schema_name: Mapped[str] = mapped_column()
+    schema_name_1: Mapped[str] = mapped_column()
+    schema_name_2: Mapped[str] = mapped_column()
     table_name_1: Mapped[str] = mapped_column()
     table_name_2: Mapped[str] = mapped_column()
     column_name_1: Mapped[str] = mapped_column()

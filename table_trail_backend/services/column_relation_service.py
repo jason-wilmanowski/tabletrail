@@ -10,7 +10,14 @@ from table_trail_backend.schemas.column_relation_schema import (
     UpdateColumnRelation,
 )
 
-ENDPOINT_FIELDS = {"schema_name", "table_name_1", "column_name_1", "table_name_2", "column_name_2"}
+ENDPOINT_FIELDS = {
+    "schema_name_1",
+    "table_name_1",
+    "column_name_1",
+    "schema_name_2",
+    "table_name_2",
+    "column_name_2",
+}
 
 
 class ColumnRelationService:
@@ -27,9 +34,10 @@ class ColumnRelationService:
 
         await self._validate_endpoints(
             database_id,
-            data.schema_name,
+            data.schema_name_1,
             data.table_name_1,
             data.column_name_1,
+            data.schema_name_2,
             data.table_name_2,
             data.column_name_2,
         )
@@ -94,26 +102,30 @@ class ColumnRelationService:
     async def _validate_endpoints(
         self,
         database_id: int,
-        schema_name: str,
+        schema_name_1: str,
         table_name_1: str,
         column_name_1: str,
+        schema_name_2: str,
         table_name_2: str,
         column_name_2: str,
         exclude_relation_id: int | None = None,
     ) -> None:
-        if (table_name_1, column_name_1) == (table_name_2, column_name_2):
+        endpoint_1 = (schema_name_1, table_name_1, column_name_1)
+        endpoint_2 = (schema_name_2, table_name_2, column_name_2)
+
+        if endpoint_1 == endpoint_2:
             raise ColumnRelationError(status_code=400, message="A column cannot be related to itself")
 
         # relations reference columns by name -> nothing in the database
         # guarantees they exist — check both against the scanned structure
-        for table_name, column_name in ((table_name_1, column_name_1), (table_name_2, column_name_2)):
+        for schema_name, table_name, column_name in (endpoint_1, endpoint_2):
             if not await self.column_repo.column_exists(database_id, schema_name, table_name, column_name):
                 raise ColumnRelationError(
                     status_code=404, message=f"Column {schema_name}.{table_name}.{column_name} not found"
                 )
 
         existing_column_relation = await self.column_rel_repo.get_column_relation_by_endpoints(
-            database_id, schema_name, table_name_1, column_name_1, table_name_2, column_name_2
+            database_id, *endpoint_1, *endpoint_2
         )
         if existing_column_relation and existing_column_relation.id != exclude_relation_id:
             raise ColumnRelationError(status_code=400, message="Relation between these columns already exists")

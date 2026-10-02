@@ -15,7 +15,8 @@ class ColumnRelationRepository:
     async def create_column_relation(self, database_id: int, data: CreateColumnRelation):
         new_column_relation = ColumnRelations(
             database_id=database_id,
-            schema_name=data.schema_name,
+            schema_name_1=data.schema_name_1,
+            schema_name_2=data.schema_name_2,
             table_name_1=data.table_name_1,
             table_name_2=data.table_name_2,
             column_name_1=data.column_name_1,
@@ -45,22 +46,27 @@ class ColumnRelationRepository:
     async def get_column_relation_by_endpoints(
         self,
         database_id: int,
-        schema_name: str,
+        schema_name_1: str,
         table_name_1: str,
         column_name_1: str,
+        schema_name_2: str,
         table_name_2: str,
         column_name_2: str,
     ):
         # A relation is undirected: 1 <-> 2 and 2 <-> 1 are the same relation
         forward = and_(
+            ColumnRelations.schema_name_1 == schema_name_1,
             ColumnRelations.table_name_1 == table_name_1,
             ColumnRelations.column_name_1 == column_name_1,
+            ColumnRelations.schema_name_2 == schema_name_2,
             ColumnRelations.table_name_2 == table_name_2,
             ColumnRelations.column_name_2 == column_name_2,
         )
         backward = and_(
+            ColumnRelations.schema_name_1 == schema_name_2,
             ColumnRelations.table_name_1 == table_name_2,
             ColumnRelations.column_name_1 == column_name_2,
+            ColumnRelations.schema_name_2 == schema_name_1,
             ColumnRelations.table_name_2 == table_name_1,
             ColumnRelations.column_name_2 == column_name_1,
         )
@@ -68,7 +74,6 @@ class ColumnRelationRepository:
             select(ColumnRelations).where(
                 and_(
                     ColumnRelations.database_id == database_id,
-                    ColumnRelations.schema_name == schema_name,
                     or_(forward, backward),
                 )
             )
