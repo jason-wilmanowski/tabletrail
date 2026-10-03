@@ -7,21 +7,9 @@ beforeEach(() => {
   useFilterStore.setState(initialState, true)
 })
 
-it('starts with no schema filter and an empty search query', () => {
-  expect(useFilterStore.getState().activeSchemaFilter).toBeNull()
+it('starts with an empty search query in tables mode', () => {
   expect(useFilterStore.getState().searchQuery).toBe('')
-})
-
-describe('setActiveSchemaFilter', () => {
-  it('sets and clears the active schema filter', () => {
-    useFilterStore.getState().setActiveSchemaFilter('public')
-
-    expect(useFilterStore.getState().activeSchemaFilter).toBe('public')
-
-    useFilterStore.getState().setActiveSchemaFilter(null)
-
-    expect(useFilterStore.getState().activeSchemaFilter).toBeNull()
-  })
+  expect(useFilterStore.getState().searchMode).toBe('tables')
 })
 
 describe('setSearchQuery', () => {
@@ -29,5 +17,24 @@ describe('setSearchQuery', () => {
     useFilterStore.getState().setSearchQuery('users')
 
     expect(useFilterStore.getState().searchQuery).toBe('users')
+  })
+})
+
+describe('setSearchMode', () => {
+  it('switches between tables and columns mode', () => {
+    useFilterStore.getState().setSearchMode('columns')
+
+    expect(useFilterStore.getState().searchMode).toBe('columns')
+
+    useFilterStore.getState().setSearchMode('tables')
+
+    expect(useFilterStore.getState().searchMode).toBe('tables')
+  })
+
+  it('keeps the search query when switching modes', () => {
+    useFilterStore.getState().setSearchQuery('user')
+    useFilterStore.getState().setSearchMode('columns')
+
+    expect(useFilterStore.getState().searchQuery).toBe('user')
   })
 })

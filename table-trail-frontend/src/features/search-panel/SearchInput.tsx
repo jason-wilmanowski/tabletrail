@@ -2,10 +2,10 @@ import { Search } from 'lucide-react'
 import { useFilterStore } from '../../store/filterStore'
 
 /**
- * Compact search field for the sidebar table list. Only renders the
- * input and writes keystrokes into `filterStore.searchQuery` — it does
- * not filter anything itself, that happens in `VirtualizedTableList`,
- * which reads the same store value.
+ * Compact search field for the sidebar lists. Only renders the input and
+ * writes keystrokes into `filterStore.searchQuery` — it does not filter
+ * anything itself, that happens in the sidebar lists, which read the same
+ * store value. The placeholder follows `filterStore.searchMode`.
  *
  * Styled as a small, quiet utility field (thin border, muted icon, no
  * accent color) rather than a prominent hero search bar — this is a tool
@@ -14,6 +14,7 @@ import { useFilterStore } from '../../store/filterStore'
 export function SearchInput() {
   const searchQuery = useFilterStore((state) => state.searchQuery)
   const setSearchQuery = useFilterStore((state) => state.setSearchQuery)
+  const searchMode = useFilterStore((state) => state.searchMode)
 
   return (
     <div className="flex items-center gap-1.5 border-b border-border px-2 py-1.5 focus-within:ring-1 focus-within:ring-ring focus-within:ring-inset">
@@ -22,7 +23,7 @@ export function SearchInput() {
         type="text"
         value={searchQuery}
         onChange={(event) => setSearchQuery(event.target.value)}
-        placeholder="Filter tables..."
+        placeholder={searchMode === 'columns' ? 'Filter columns...' : 'Filter tables...'}
         className="text-technical w-full bg-transparent placeholder:text-muted-foreground focus:outline-none"
       />
     </div>

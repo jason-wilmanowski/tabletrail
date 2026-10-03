@@ -5,6 +5,8 @@ import { useDatabase, useDatabases, useDeleteDatabase, useRescanDatabase } from 
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 import { TableInspectorPanel } from '../features/table-inspector/TableInspectorPanel'
 import { SearchInput } from '../features/search-panel/SearchInput'
+import { SearchModeToggle } from '../features/search-panel/SearchModeToggle'
+import { VirtualizedColumnList } from '../features/search-panel/VirtualizedColumnList'
 import { SchemaStats } from '../features/search-panel/SchemaStats'
 import { VirtualizedTableList } from '../features/search-panel/VirtualizedTableList'
 import { EditDatabaseModal } from '../features/database-detail/EditDatabaseModal'
@@ -14,6 +16,7 @@ import { ExportButton } from '../features/database-detail/ExportButton'
 import { ConfirmDialog } from '../components/ui/ConfirmDialog'
 import { DatabaseTypeIcon } from '../features/connection-form/DatabaseTypeIcon'
 import { useUiStore } from '../store/uiStore'
+import { useFilterStore } from '../store/filterStore'
 import { useSettingValue } from '../store/settingsStore'
 import { formatDayCount, formatScanAge, getDaysSince, parseBackendTimestamp } from '../utils/scanAge'
 
@@ -32,6 +35,7 @@ export function DatabaseDetailPage() {
 
   const { data, isLoading, error } = useDatabase(databaseId)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
+  const searchMode = useFilterStore((state) => state.searchMode)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isRescanConfirmOpen, setIsRescanConfirmOpen] = useState(false)
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
@@ -129,13 +133,21 @@ export function DatabaseDetailPage() {
         </div>
 
         <SearchInput />
+        <SearchModeToggle />
         {isSchemaStatsEnabled && <SchemaStats tables={data.tables} showMatchCount={isSearchMatchCountEnabled} />}
 
         <div className="flex-1 overflow-hidden">
-          <VirtualizedTableList
-            tables={data.tables}
-            onSelectTable={(tableId) => setSelectedTableId(String(tableId))}
-          />
+          {searchMode === 'columns' ? (
+            <VirtualizedColumnList
+              tables={data.tables}
+              onSelectTable={(tableId) => setSelectedTableId(String(tableId))}
+            />
+          ) : (
+            <VirtualizedTableList
+              tables={data.tables}
+              onSelectTable={(tableId) => setSelectedTableId(String(tableId))}
+            />
+          )}
         </div>
 
         <div className="space-y-2 border-t border-border p-3">

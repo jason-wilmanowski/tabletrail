@@ -1,25 +1,29 @@
 import { create } from 'zustand'
 
-interface FilterState {
-  activeSchemaFilter: string | null
-  searchQuery: string
+/** What the sidebar search matches against — table names (default) or column names. */
+export type SearchMode = 'tables' | 'columns'
 
-  setActiveSchemaFilter: (schema: string | null) => void
+interface FilterState {
+  searchQuery: string
+  searchMode: SearchMode
+
   setSearchQuery: (query: string) => void
+  setSearchMode: (mode: SearchMode) => void
 }
 
 /**
  * Central filter state store, kept separate from uiStore because filter
- * state (schema filter, search term) is conceptually distinct from
- * general interface state (selection, focus, sidebar, zoom). `searchQuery`
- * (Step 26) is the search term typed into `SearchInput` — `filterStore`
- * only holds the raw string, it does not filter anything itself; that
- * happens in `VirtualizedTableList`, which reads this value.
+ * state (search term, search mode) is conceptually distinct from general
+ * interface state (selection, focus, sidebar, zoom). `searchQuery` is the
+ * search term typed into `SearchInput`, `searchMode` the tables/columns
+ * choice from `SearchModeToggle` — `filterStore` only holds these raw
+ * values, it does not filter anything itself; that happens in the sidebar
+ * lists and `SchemaStats`, which read them.
  */
 export const useFilterStore = create<FilterState>((set) => ({
-  activeSchemaFilter: null,
   searchQuery: '',
+  searchMode: 'tables',
 
-  setActiveSchemaFilter: (schema) => set({ activeSchemaFilter: schema }),
   setSearchQuery: (query) => set({ searchQuery: query }),
+  setSearchMode: (mode) => set({ searchMode: mode }),
 }))
