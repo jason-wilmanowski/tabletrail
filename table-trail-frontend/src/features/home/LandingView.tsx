@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Database, Network, Layers, Sparkles, Download, Boxes, ArrowRight } from 'lucide-react'
+import { Database, Network, Layers, Download, Boxes, ArrowRight } from 'lucide-react'
 
 const FEATURES = [
   {
@@ -18,14 +18,9 @@ const FEATURES = [
     description: 'Understand foreign keys and system dependencies.',
   },
   {
-    icon: Sparkles,
-    title: 'AI Assistance',
-    description: 'AI-powered explanations of tables and relations.',
-  },
-  {
     icon: Download,
     title: 'Export',
-    description: 'Export diagrams for documentation and sharing.',
+    description: 'Export schemas as JSON, Markdown or PDF documentation.',
   },
   {
     icon: Boxes,
@@ -35,8 +30,7 @@ const FEATURES = [
 ]
 
 const ROADMAP = [
-  'AI Database Editing',
-  'Documentation Generation',
+  'AI Schema Reasoning',
   'Additional Database Systems',
 ]
 
@@ -46,8 +40,8 @@ export function LandingView() {
   return (
     <div className="flex h-full items-center justify-center overflow-y-auto p-6">
       <div className="max-w-xl">
-        <h1 className="text-display">Understand your databases visually</h1>
-        <p className="text-body mt-3">
+        <h1 className="text-display text-center">Understand your databases visually</h1>
+        <p className="text-body mt-3 text-center">
           TableTrail turns complex database schemas into an interactive visual map.
           Explore tables, relationships and dependencies, and onboard developers
           onto unfamiliar systems faster.
@@ -68,7 +62,7 @@ export function LandingView() {
           </ul>
         </div>
 
-        <div className="mt-8 border-t border-border pt-6">
+        <div className="mt-8 border-t border-border pt-6 text-center">
           <p className="text-label mb-3">Coming Soon</p>
           <ul className="space-y-1.5">
             {ROADMAP.map((item) => (
