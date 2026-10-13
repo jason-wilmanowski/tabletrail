@@ -28,12 +28,15 @@ import { constraintsToEdges } from '../../utils/constraintsToEdges'
 import { getSavedLayout, saveLayout } from '../../utils/layoutStorage'
 import { computeCollisionOffsets } from '../../utils/collisionOffset'
 import { buildColumnIndex, resolveRelationEndpoints } from '../../utils/columnRelationEndpoints'
+import { arrangeSchemaGroup } from '../../utils/schemaGrouping'
+import type { TableNodeType } from '../../utils/tablesToNodes'
 import { TableNode } from './nodes/TableNode'
 import { RelationEdge } from './edges/RelationEdge'
 import { ColumnRelationEdge } from './edges/ColumnRelationEdge'
 import type { ColumnRelationEdgeType } from './edges/ColumnRelationEdge'
 import { ColumnRelationsPanel } from './column-relations/ColumnRelationsPanel'
 import { VisibilityPanel } from './visibility/VisibilityPanel'
+import { SchemaGroupingPanel } from './schema-grouping/SchemaGroupingPanel'
 import { useUiStore } from '../../store/uiStore'
 import { useColumnRelationStore } from '../../store/columnRelationStore'
 import { useGraphVisibilityStore } from '../../store/graphVisibilityStore'
@@ -179,7 +182,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const [edges, setEdges] = useState<Edge[]>(() => initialGraphRef.current!.edges)
   const wrapperRef = useRef<HTMLDivElement>(null)
 
-  const { setViewport, getNodesBounds } = useReactFlow()
+  const { setViewport, getNodesBounds, fitView } = useReactFlow()
   const selectedTableId = useUiStore((state) => state.selectedTableId)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
   const pendingColumnRelationAction = useColumnRelationStore((state) => state.pendingAction)
@@ -499,6 +502,29 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
     [databaseId]
   )
 
+  // "Group by schema" (`SchemaGroupingPanel`): moves the schema's tables
+  // into one spaced block right of the rest, persists that like a finished
+  // drag, and leaves exactly those tables selected — React Flow drags every
+  // selected node together, so the whole schema can then be moved as one
+  // block. `fitView` runs after the node update is applied, so it already
+  // sees the new positions.
+  const handleArrangeSchema = useCallback(
+    (schemaName: string | null) => {
+      const arranged = arrangeSchemaGroup(nodes as TableNodeType[], schemaName).map((node) => ({
+        ...node,
+        selected: node.data.table.schema_name === schemaName,
+      }))
+      setNodes(arranged)
+      saveLayout(databaseId, Object.fromEntries(arranged.map((node) => [node.id, node.position])))
+      fitView({
+        nodes: arranged.filter((node) => node.selected),
+        duration: 400,
+        padding: 0.15,
+      })
+    },
+    [nodes, databaseId, fitView]
+  )
+
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => setEdges((current) => applyEdgeChanges(changes, current)),
     []
@@ -585,11 +611,12 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
       {/* Hidden while a table is selected — the top trigger sits top-right
           (`right-3 top-3`), directly over `TableInspectorPanel`'s header
           (`absolute right-0 top-0 w-72`), so an open table's name/columns
-          would otherwise be partly covered by this icon. `ColumnRelationsPanel`
-          and `VisibilityPanel` are plain (non-absolute) flex children here —
-          this wrapper is the single absolutely-positioned overlay, so when
-          either panel's dropdown opens, normal flex flow pushes the other
-          trigger down instead of it getting covered by a hardcoded offset.
+          would otherwise be partly covered by this icon. `ColumnRelationsPanel`,
+          `SchemaGroupingPanel` and `VisibilityPanel` are plain (non-absolute)
+          flex children here — this wrapper is the single absolutely-positioned
+          overlay, so when any panel's dropdown opens, normal flex flow pushes
+          the triggers below it down instead of them getting covered by a
+          hardcoded offset.
           `zoom` sits on the inner wrapper so the `graph.menuScale` setting
           scales every menu (trigger + open panel) as one unit, while the
           outer `right-3 top-3` offset stays the same at every size. */}
@@ -597,6 +624,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         <div className="absolute right-3 top-3 z-30">
           <div className="flex flex-col items-end gap-2" style={{ zoom: menuScale }}>
             <ColumnRelationsPanel />
+            <SchemaGroupingPanel tables={tables} onArrange={handleArrangeSchema} />
             <VisibilityPanel />
           </div>
         </div>
