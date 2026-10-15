@@ -51,12 +51,17 @@ const NODE_CORNER_CLASSES: Record<string, string> = {
  * whole card, keeping the technical/flat aesthetic instead of turning it
  * into a colored card.
  *
+ * React Flow's own `selected` flag (several nodes at once, e.g. a whole
+ * schema after "Group by schema", so they can be dragged as one block)
+ * gets the same accent border without the ring, keeping the single
+ * inspected table distinguishable from a multi-selection.
+ *
  * Expand state stays local `useState` (only affects this node's own
  * rendering), while selection goes through the global store (affects a
  * different part of the UI entirely) — same distinction the store
  * architecture was designed around back in Step 5.
  */
-export function TableNode({ data }: NodeProps<TableNodeType>) {
+export function TableNode({ data, selected }: NodeProps<TableNodeType>) {
   const { table } = data
   const [isExpanded, setIsExpanded] = useState(false)
   // Selecting the derived boolean (not the raw `selectedTableId`, compared
@@ -95,7 +100,11 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
     <div
       onClick={() => setSelectedTableId(String(table.id))}
       className={`relative min-w-[220px] ${cornerClass} border bg-surface text-foreground outline-none transition-colors ${
-        isSelected ? 'border-accent ring-1 ring-accent' : 'border-border hover:border-muted-foreground'
+        isSelected
+          ? 'border-accent ring-1 ring-accent'
+          : selected
+            ? 'border-accent'
+            : 'border-border hover:border-muted-foreground'
       }`}
     >
       {/*

@@ -11,7 +11,7 @@ import type { TableNodeType } from './tablesToNodes'
  * per table, and a fixed height would cause overlapping nodes for tables
  * with many columns.
  */
-const NODE_WIDTH = 220
+export const NODE_WIDTH = 220
 const HEADER_HEIGHT = 33
 const ROW_HEIGHT = 26
 const VERTICAL_PADDING = 4
@@ -21,7 +21,7 @@ const VERTICAL_PADDING = 4
  * perfect (Step 17's collapse/expand will change this again), but close
  * enough for Dagre to space nodes apart without visible overlap.
  */
-function estimateNodeHeight(node: TableNodeType): number {
+export function estimateNodeHeight(node: TableNodeType): number {
   return HEADER_HEIGHT + node.data.table.columns.length * ROW_HEIGHT + VERTICAL_PADDING
 }
 
