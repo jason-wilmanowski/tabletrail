@@ -16,7 +16,7 @@ class MarkdownExport:
         markdown_bytes = markdown_string.encode("utf-8")
 
         if not markdown_bytes or not markdown_bytes.strip():
-            raise ExportMarkdownError
+            raise ExportMarkdownError(message="Generated markdown file is empty", status_code=500)
 
         # 3. return markdown export
         return ExportResult(
