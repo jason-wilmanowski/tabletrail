@@ -29,6 +29,7 @@ It's aimed at developers who need to:
 - **Rescan** support to refresh an already-scanned database's structure
 - **Search** across tables and columns within a scanned database
 - **Export system** for scanned schemas, currently supporting **JSON**, **Markdown**, and **PDF** (PDF generated via Jinja2 templates rendered through WeasyPrint)
+- **Custom column relations** — user-defined, column-to-column relations that are not real foreign keys, stored per database with a free color and an optional description, exposed through full CRUD endpoints
 - Structured service/repository layering with centralized exception handling
 
 ### Frontend
@@ -40,6 +41,9 @@ A dark-themed, developer-tool-styled web interface, built as a single-page appli
 - **Sidebar with live search and schema grouping** — a virtualized, filterable list of tables grouped by schema, built to stay responsive even on databases with hundreds of tables
 - **Connection management** — add a new database connection through a guided form (with per-type validation and branded database-type icons), view all connected databases, and edit or delete a connection
 - **Database detail workspace** — combines the schema graph, table sidebar, and connection details (host, port, credentials) in one view, including rescan and delete actions
+- **Persistent graph layout** — tables moved manually in the graph keep their position; layouts are saved per database in the browser (localStorage) and restored on the next visit, while tables without a saved position fall back to the automatic Dagre layout
+- **Custom column relations** — in an edit mode, draw a relation between two columns, pick a color and add an optional note; custom relations are persisted via the backend and rendered visually distinct from real foreign-key edges
+- **Export from the UI** — export buttons connected to the backend export endpoint for downloading a scanned schema as JSON, Markdown, or PDF
 - Collapsible global navigation, hover-to-preview for saved databases, and a settings area scaffold (Design / General / Graph / AI Models tabs prepared, not yet functional)
 
 > The frontend is under active iteration — some actions in the UI (such as certain settings tabs) are present as interface scaffolding ahead of their backend wiring.
@@ -141,6 +145,14 @@ Planned: the ability to ask questions about a scanned database directly, e.g.
 - "Explain this database structure."
 
 This will require careful context-building so that only relevant schema information is passed to the model, rather than dumping the entire schema into every query.
+
+### AI Assistant (Frontend)
+
+Planned: an in-app AI assistant that serves as the user-facing side of the AI reasoning work above.
+
+- **Movable assistant window** — a floating window that can be dragged freely around the workspace, so it can sit next to the graph without blocking it. The AI reasoning conversation takes place inside this window.
+- **Configurable provider setup** — in the settings, users choose from a set of predefined API contracts, and select the model and the reasoning effort to use.
+- **Saved configurations** — a configuration can be saved in the settings under a custom name together with its API key, so it can be selected again later without re-entering anything.
 
 ### Asynchronous Processing
 
