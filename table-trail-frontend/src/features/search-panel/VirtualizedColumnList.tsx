@@ -18,12 +18,27 @@ const UNKNOWN_SCHEMA_LABEL = '(no schema)'
 type ListRow = { type: 'header'; schemaName: string } | { type: 'column'; match: ColumnMatch }
 
 /**
+ * Whether the database spans more than one schema. Decided from *all*
+ * tables rather than the current matches, so schema headers don't appear
+ * and disappear while typing.
+ */
+function hasMultipleSchemas(tables: TableResponse[]): boolean {
+  return new Set(tables.map((table) => table.schema_name ?? UNKNOWN_SCHEMA_LABEL)).size > 1
+}
+
+/**
  * Groups column matches by their table's schema into one flat row list —
  * a header row followed by its matches — so the column list reads like
  * the table list. Schemas are sorted alphabetically (unknown schema last);
- * matches keep their order within a schema.
+ * matches keep their order within a schema. With `showSchemas` off (a
+ * single-schema database) the headers carry no information and are left
+ * out, leaving just the matches.
  */
-function groupMatchesBySchema(matches: ColumnMatch[]): ListRow[] {
+function groupMatchesBySchema(matches: ColumnMatch[], showSchemas: boolean): ListRow[] {
+  if (!showSchemas) {
+    return matches.map((match) => ({ type: 'column', match }))
+  }
+
   const groups = new Map<string, ColumnMatch[]>()
 
   for (const match of matches) {
@@ -57,7 +72,8 @@ const COLUMN_ROW_HEIGHT = 32
  * Virtualized sidebar list for the columns search mode: every column whose
  * name matches `filterStore.searchQuery`, with its table shown next to it.
  * Clicking a column selects its table, like clicking a table in
- * `VirtualizedTableList`. With an empty search it shows a hint instead of
+ * `VirtualizedTableList`. Schema headers only appear when the database
+ * has more than one schema. With an empty search it shows a hint instead of
  * every column of the database.
  */
 export function VirtualizedColumnList({ tables, onSelectTable }: VirtualizedColumnListProps) {
@@ -67,7 +83,8 @@ export function VirtualizedColumnList({ tables, onSelectTable }: VirtualizedColu
 
   const matches = useMemo(() => filterColumnsByName(tables, searchQuery), [tables, searchQuery])
 
-  const rows = useMemo(() => groupMatchesBySchema(matches), [matches])
+  const showSchemas = useMemo(() => hasMultipleSchemas(tables), [tables])
+  const rows = useMemo(() => groupMatchesBySchema(matches, showSchemas), [matches, showSchemas])
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -120,7 +137,7 @@ export function VirtualizedColumnList({ tables, onSelectTable }: VirtualizedColu
               type="button"
               onClick={() => onSelectTable?.(table.id)}
               style={style}
-              className={`text-technical flex items-center justify-between gap-2 border-b border-border border-l-2 pl-6 pr-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset ${
+              className={`text-technical flex items-center justify-between gap-2 border-b border-border border-l-2 ${showSchemas ? 'pl-6' : 'pl-3'} pr-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset ${
                 isSelected ? 'border-l-accent bg-surface-hover' : 'border-l-transparent'
               }`}
             >
