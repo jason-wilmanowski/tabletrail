@@ -48,6 +48,7 @@ import {
   useDeleteColumnRelation,
 } from '../../hooks/useColumnRelations'
 import type { TableResponse } from '../../types/table'
+import { FOCUS_ZOOM_DURATION_MS } from '../../utils/graphFocus'
 
 interface GraphCanvasProps {
   tables: TableResponse[]
@@ -181,6 +182,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
 
   const { setViewport, getNodesBounds } = useReactFlow()
   const selectedTableId = useUiStore((state) => state.selectedTableId)
+  const focusRequest = useUiStore((state) => state.focusRequest)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
   const pendingColumnRelationAction = useColumnRelationStore((state) => state.pendingAction)
   const clearPendingColumnRelationAction = useColumnRelationStore((state) => state.clearPendingAction)
@@ -471,8 +473,9 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
       0.1
     )
 
-    setViewport({ x, y, zoom }, { duration: 400 })
-  }, [selectedTableId, nodes, getNodesBounds, setViewport])
+    setViewport({ x, y, zoom }, { duration: FOCUS_ZOOM_DURATION_MS })
+    // `focusRequest` re-runs this for an already selected table (see uiStore).
+  }, [selectedTableId, focusRequest, nodes, getNodesBounds, setViewport])
 
   // Persists node positions to `localStorage` once a drag finishes — React
   // Flow reports drag progress as a stream of `position` changes with

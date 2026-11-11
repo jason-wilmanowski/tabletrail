@@ -8,8 +8,8 @@ import type { ColumnMatch } from '../../utils/filterTables'
 
 interface VirtualizedColumnListProps {
   tables: TableResponse[]
-  /** Fired with the column's table when a column row is clicked — same contract as `VirtualizedTableList`. */
-  onSelectTable?: (tableId: number) => void
+  /** Fired when a column row is clicked, with the column and the table it belongs to. */
+  onSelectColumn?: (tableId: number, columnId: number) => void
 }
 
 /** Same label `VirtualizedTableList` uses for tables without a `schema_name`. */
@@ -72,11 +72,11 @@ const COLUMN_ROW_HEIGHT = 32
  * Virtualized sidebar list for the columns search mode: every column whose
  * name matches `filterStore.searchQuery`, with its table shown next to it.
  * Clicking a column selects its table, like clicking a table in
- * `VirtualizedTableList`. Schema headers only appear when the database
+ * `VirtualizedTableList`, and briefly highlights the column in the graph. Schema headers only appear when the database
  * has more than one schema. With an empty search it shows a hint instead of
  * every column of the database.
  */
-export function VirtualizedColumnList({ tables, onSelectTable }: VirtualizedColumnListProps) {
+export function VirtualizedColumnList({ tables, onSelectColumn }: VirtualizedColumnListProps) {
   const parentRef = useRef<HTMLDivElement>(null)
   const searchQuery = useFilterStore((state) => state.searchQuery)
   const selectedTableId = useUiStore((state) => state.selectedTableId)
@@ -135,7 +135,7 @@ export function VirtualizedColumnList({ tables, onSelectTable }: VirtualizedColu
             <button
               key={column.id}
               type="button"
-              onClick={() => onSelectTable?.(table.id)}
+              onClick={() => onSelectColumn?.(table.id, column.id)}
               style={style}
               className={`text-technical flex items-center justify-between gap-2 border-b border-border border-l-2 ${showSchemas ? 'pl-6' : 'pl-3'} pr-3 text-left transition-colors hover:bg-surface-hover focus:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset ${
                 isSelected ? 'border-l-accent bg-surface-hover' : 'border-l-transparent'

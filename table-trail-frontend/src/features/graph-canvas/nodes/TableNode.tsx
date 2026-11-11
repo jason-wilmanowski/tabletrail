@@ -7,6 +7,7 @@ import { buildColumnConstraintMap } from '../../../utils/constraintGrouping'
 import { useUiStore } from '../../../store/uiStore'
 import { useColumnRelationStore } from '../../../store/columnRelationStore'
 import { useSettingValue } from '../../../store/settingsStore'
+import { COLUMN_HIGHLIGHT_DELAY_MS, COLUMN_HIGHLIGHT_DURATION_MS } from '../../../utils/graphFocus'
 
 /**
  * Invisible, non-connectable — these exist purely as DOM anchors so a
@@ -27,6 +28,12 @@ const columnHandleStyle = { opacity: 0, width: 1, height: 1, pointerEvents: 'non
  * neighbors.
  */
 const COLLAPSE_THRESHOLD = 15
+
+/** Timing for the column flash, kept in sync with the store's clear timer. */
+const columnHighlightStyle = {
+  animationDuration: `${COLUMN_HIGHLIGHT_DURATION_MS}ms`,
+  animationDelay: `${COLUMN_HIGHLIGHT_DELAY_MS}ms`,
+}
 
 /** Maps the `design.nodeCornerStyle` setting to its Tailwind corner class. */
 const NODE_CORNER_CLASSES: Record<string, string> = {
@@ -77,6 +84,17 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
       : null
   )
   const selectColumnForRelation = useColumnRelationStore((state) => state.selectColumn)
+  // Column picked in the sidebar column search — scoped to this table like
+  // `pendingColumnId`, and selected as a primitive (the token) so only the
+  // affected node re-renders.
+  const highlightToken = useUiStore((state) =>
+    table.columns.some((column) => column.id === state.columnHighlight?.columnId)
+      ? state.columnHighlight!.token
+      : null
+  )
+  const highlightedColumnId = useUiStore((state) =>
+    highlightToken !== null ? (state.columnHighlight?.columnId ?? null) : null
+  )
   const cornerStyle = useSettingValue<string>('design.nodeCornerStyle', 'rounded')
   const cornerClass = NODE_CORNER_CLASSES[cornerStyle] ?? NODE_CORNER_CLASSES.rounded
 
@@ -87,6 +105,19 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
   const columnConstraints = buildColumnConstraintMap(table.constraints)
 
   const hasMore = sortedColumns.length > COLLAPSE_THRESHOLD
+
+  // A highlighted column hidden behind "+N more" would flash invisibly, so
+  // expand once per highlight request. Adjusted during render (React's
+  // "storing information from previous renders" pattern) rather than in an
+  // effect, to avoid a collapsed frame first.
+  const [handledHighlightToken, setHandledHighlightToken] = useState<number | null>(null)
+  if (highlightToken !== handledHighlightToken) {
+    setHandledHighlightToken(highlightToken)
+    const highlightedIndex = sortedColumns.findIndex((column) => column.id === highlightedColumnId)
+    if (highlightToken !== null && highlightedIndex >= COLLAPSE_THRESHOLD) {
+      setIsExpanded(true)
+    }
+  }
   const visibleColumns =
     hasMore && !isExpanded ? sortedColumns.slice(0, COLLAPSE_THRESHOLD) : sortedColumns
   const hiddenCount = sortedColumns.length - COLLAPSE_THRESHOLD
@@ -156,6 +187,16 @@ export function TableNode({ data }: NodeProps<TableNodeType>) {
                 isColumnRelationEditMode ? 'cursor-pointer hover:bg-surface-hover' : ''
               } ${isPending ? 'bg-accent/15 ring-1 ring-inset ring-accent' : ''}`}
             >
+              {highlightedColumnId === column.id && (
+                // Keyed by token so picking the same column again restarts
+                // the animation from the beginning.
+                <span
+                  key={highlightToken}
+                  aria-hidden
+                  style={columnHighlightStyle}
+                  className="animate-column-highlight pointer-events-none absolute inset-0"
+                />
+              )}
               <Handle
                 type="target"
                 position={Position.Left}

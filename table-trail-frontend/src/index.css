@@ -243,6 +243,52 @@
   .animate-toast-in {
     animation: toast-in 0.2s ease-out;
   }
+
+  /*
+   * Short flash on a column picked in the sidebar column search. Duration
+   * and delay come inline from `utils/graphFocus.ts`; `both` keeps it
+   * invisible during the delay and after the end, so it never lingers.
+   */
+  @keyframes column-highlight {
+    0% {
+      opacity: 0;
+    }
+    12%,
+    38% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+    62%,
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  .animate-column-highlight {
+    animation-name: column-highlight;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: both;
+    background-color: hsl(var(--accent) / 0.18);
+    box-shadow: inset 0 0 0 2px hsl(var(--accent));
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Same 2s highlight, just without the pulse. */
+    @keyframes column-highlight {
+      0%,
+      90% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+  }
 }
 
 /*

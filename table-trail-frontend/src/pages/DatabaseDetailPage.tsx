@@ -35,6 +35,7 @@ export function DatabaseDetailPage() {
 
   const { data, isLoading, error } = useDatabase(databaseId)
   const setSelectedTableId = useUiStore((state) => state.setSelectedTableId)
+  const focusColumn = useUiStore((state) => state.focusColumn)
   const searchMode = useFilterStore((state) => state.searchMode)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isRescanConfirmOpen, setIsRescanConfirmOpen] = useState(false)
@@ -138,10 +139,7 @@ export function DatabaseDetailPage() {
 
         <div className="flex-1 overflow-hidden">
           {searchMode === 'columns' ? (
-            <VirtualizedColumnList
-              tables={data.tables}
-              onSelectTable={(tableId) => setSelectedTableId(String(tableId))}
-            />
+            <VirtualizedColumnList tables={data.tables} onSelectColumn={focusColumn} />
           ) : (
             <VirtualizedTableList
               tables={data.tables}
