@@ -29,18 +29,6 @@ class TableRepository:
         )
         return table.scalar_one_or_none()
 
-    async def search_by_name(self, db_id: int, query: str) -> list[Tables]:
-        result = await self.db.execute(
-            select(Tables).where(and_(Tables.database_id == db_id, Tables.name.ilike(f"%{query}%")))
-        )
-        return list(result.scalars().all())
-
-    async def search_by_schema_name(self, db_id: int, query: str) -> list[Tables]:
-        result = await self.db.execute(
-            select(Tables).where(and_(Tables.database_id == db_id, Tables.schema_name.ilike(f"%{query}%")))
-        )
-        return list(result.scalars().all())
-
     async def update_table(self, db_id: int, table_id: int, name: str | None = None, schema_name: str | None = None):
         database = await self.get_table_by_id(db_id, table_id)
         if name is not None:

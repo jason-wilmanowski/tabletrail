@@ -1,6 +1,5 @@
 import type { ConnectionFields, DatabaseConnectionInfo, DBStatus } from './common'
 import type { TableResponse } from './table'
-import type { ColumnResponse } from './column'
 
 /**
  * Mirrors backend `DatabaseOverviewResponse` schema.
@@ -44,15 +43,4 @@ export interface DatabaseStructureResponse extends DatabaseConnectionInfo {
  */
 export interface DatabaseResponse extends DatabaseConnectionInfo {
   id: number
-}
-
-/**
- * Mirrors backend `SearchResponse` schema.
- * All three fields are optional/nullable on the backend (Pydantic
- * `| None = None`), reflected here as optional.
- */
-export interface SearchResponse {
-  tables?: TableResponse[] | null
-  columns?: ColumnResponse[] | null
-  schema_tables?: TableResponse[] | null
 }

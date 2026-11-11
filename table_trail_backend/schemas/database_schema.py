@@ -3,7 +3,6 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 from table_trail_backend.core.enums import DBStatus, DBType
-from table_trail_backend.schemas.column_schema import ColumnResponse
 from table_trail_backend.schemas.table_schema import TableResponse
 
 # Insert Section
@@ -79,11 +78,4 @@ class DatabaseOverviewResponse(BaseModel):
     db_name: str
     created_at: datetime
     updated_at: datetime
-    model_config = ConfigDict(from_attributes=True)
-
-
-class SearchResponse(BaseModel):
-    tables: list[TableResponse] | None = None
-    columns: list[ColumnResponse] | None = None
-    schema_tables: list[TableResponse] | None = None
     model_config = ConfigDict(from_attributes=True)

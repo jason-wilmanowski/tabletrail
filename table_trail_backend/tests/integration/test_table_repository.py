@@ -98,32 +98,6 @@ async def test_get_table_by_name_not_found(db_session, make_database):
     assert result is None
 
 
-# -- Search --
-
-
-@pytest.mark.asyncio
-async def test_search_by_name_case_insensitive_partial_match(db_session, make_database, make_table):
-    database = await make_database()
-    table = await make_table(database.id, name="Customer_Orders")
-    repo = TableRepository(db_session)
-
-    result = await repo.search_by_name(database.id, "order")
-
-    assert [row.id for row in result] == [table.id]
-
-
-@pytest.mark.asyncio
-async def test_search_by_schema_name_partial_match(db_session, make_database, make_table):
-    database = await make_database()
-    table = await make_table(database.id, name="users", schema_name="analytics")
-    await make_table(database.id, name="logs", schema_name="public")
-    repo = TableRepository(db_session)
-
-    result = await repo.search_by_schema_name(database.id, "analy")
-
-    assert [row.id for row in result] == [table.id]
-
-
 # -- Update --
 
 
