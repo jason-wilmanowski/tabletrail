@@ -7,7 +7,6 @@ from table_trail_backend.schemas.database_schema import (
     DatabaseOverviewResponse,
     DatabaseResponse,
     DatabaseStructureResponse,
-    SearchResponse,
     UpdateDatabase,
 )
 from table_trail_backend.services.database_service import DatabaseService
@@ -37,18 +36,6 @@ async def get_database(db_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=error.status_code, detail=error.message) from error
 
     return database
-
-
-@router.get("/{db_id}/search", response_model=SearchResponse)
-async def database_component_search(db_id: int, q: str, db: AsyncSession = Depends(get_db)):
-    database_service = DatabaseService(db)
-
-    try:
-        components = await database_service.search_database_components(db_id, q)
-    except DatabaseSystemError as error:
-        raise HTTPException(status_code=error.status_code, detail=error.message) from error
-
-    return components
 
 
 @router.put("/{db_id}", response_model=DatabaseResponse)

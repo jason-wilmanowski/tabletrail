@@ -93,28 +93,6 @@ async def test_get_table_columns_scoped_to_table(db_session, make_database, make
     assert [row.id for row in result] == [column.id]
 
 
-# -- Search --
-
-
-@pytest.mark.asyncio
-async def test_search_by_name_scoped_to_database_case_insensitive(db_session, make_database, make_table):
-    database = await make_database()
-    other_database = await make_database(name="Other", db_name="other_db")
-    table = await make_table(database.id, name="users")
-    other_table = await make_table(other_database.id, name="users")
-    repo = ColumnRepository(db_session)
-    column = await repo.create_column(
-        table.id, CreateColumn(name="email_address", data_type="varchar", is_nullable=False, ordinal_position=1)
-    )
-    await repo.create_column(
-        other_table.id, CreateColumn(name="email_address", data_type="varchar", is_nullable=False, ordinal_position=1)
-    )
-
-    result = await repo.search_by_name(database.id, "EMAIL")
-
-    assert [row.id for row in result] == [column.id]
-
-
 # -- Column Exists --
 
 

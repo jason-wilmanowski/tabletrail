@@ -50,12 +50,6 @@ class ColumnRepository:
         )
         return column.scalar_one_or_none() is not None
 
-    async def search_by_name(self, db_id: int, query: str) -> list[Columns]:
-        result = await self.db.execute(
-            select(Columns).join(Tables).where(and_(Tables.database_id == db_id, Columns.name.ilike(f"%{query}%")))
-        )
-        return list(result.scalars().all())
-
     async def update_column(self, table_id: int, column_id: int, data: UpdateColumn):
         column = await self.get_column_by_id(table_id, column_id)
         update_data = data.model_dump(exclude_none=True)
