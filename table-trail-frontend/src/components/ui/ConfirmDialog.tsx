@@ -2,6 +2,8 @@ import { Modal } from './Modal'
 
 interface ConfirmDialogProps {
   title: string
+  /** Optional explanation below the title, e.g. what confirming will affect. */
+  description?: string
   confirmLabel: string
   pendingLabel: string
   isPending: boolean
@@ -22,6 +24,7 @@ const CANCEL_CLASSES =
 
 export function ConfirmDialog({
   title,
+  description,
   confirmLabel,
   pendingLabel,
   isPending,
@@ -33,6 +36,8 @@ export function ConfirmDialog({
   return (
     <Modal onClose={onCancel}>
       <h2 className="text-section">{title}</h2>
+
+      {description && <p className="text-body mt-2">{description}</p>}
 
       {errorMessage && <p className="mt-3 text-sm text-danger">{errorMessage}</p>}
 
