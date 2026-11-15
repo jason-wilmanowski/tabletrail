@@ -17,12 +17,17 @@ export interface ExportResult {
  */
 export async function exportDatabase(
   databaseId: number,
-  exportType: ExportFormat
+  exportType: ExportFormat,
+  includeConnectionDetails: boolean
 ): Promise<ExportResult> {
   const response = await fetch(`${BASE_URL}/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ database_id: databaseId, export_type: exportType }),
+    body: JSON.stringify({
+      database_id: databaseId,
+      export_type: exportType,
+      include_connection_details: includeConnectionDetails,
+    }),
   })
 
   if (!response.ok) {
