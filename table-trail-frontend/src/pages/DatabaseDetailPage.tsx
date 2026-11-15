@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AlertTriangle } from 'lucide-react'
 import { useDatabase, useDatabases, useDeleteDatabase, useRescanDatabase } from '../hooks/useDatabases'
+import { useColumnRelations } from '../hooks/useColumnRelations'
 import { GraphCanvas } from '../features/graph-canvas/GraphCanvas'
 import { TableInspectorPanel } from '../features/table-inspector/TableInspectorPanel'
 import { SearchInput } from '../features/search-panel/SearchInput'
@@ -25,6 +26,19 @@ const INFO_LABELS: Record<(typeof INFO_ROWS)[number], string> = {
   db_name: 'Database',
 }
 
+/**
+ * A rescan keeps custom relations (they reference columns by name) but
+ * removes those whose columns no longer exist afterwards — worth a heads-up
+ * before confirming, but only when there are relations to lose.
+ */
+function describeRescanRelationImpact(relationCount: number): string | undefined {
+  if (relationCount === 0) {
+    return undefined
+  }
+  const relations = relationCount === 1 ? '1 custom relation' : `${relationCount} custom relations`
+  return `This database has ${relations}. Any relation whose columns no longer exist after the rescan will be removed.`
+}
+
 export function DatabaseDetailPage() {
   const { id } = useParams<{ id: string }>()
   const databaseId = Number(id)
@@ -37,6 +51,9 @@ export function DatabaseDetailPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false)
 
   const rescanDatabaseMutation = useRescanDatabase(databaseId)
+  // Same query (and cache entry) the graph already uses for its relation edges.
+  const { data: columnRelations } = useColumnRelations(databaseId)
+  const rescanDescription = describeRescanRelationImpact(columnRelations?.length ?? 0)
   const deleteDatabaseMutation = useDeleteDatabase()
 
   // `updated_at` only comes with the overview list (already loaded for the
@@ -175,6 +192,7 @@ export function DatabaseDetailPage() {
       {isRescanConfirmOpen && (
         <ConfirmDialog
           title="Rescan this database?"
+          description={rescanDescription}
           confirmLabel="Yes"
           pendingLabel="Rescanning..."
           isPending={rescanDatabaseMutation.isPending}
