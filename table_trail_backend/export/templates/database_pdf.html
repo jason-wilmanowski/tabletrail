@@ -70,8 +70,30 @@
 
     <p>
         <strong>Type:</strong>
-        {{ database.type }}
+        {{ database.db_type.value }}
     </p>
+
+    {% if database.host %}
+    <p>
+        <strong>Host:</strong>
+        {{ database.host }}
+    </p>
+
+    <p>
+        <strong>Port:</strong>
+        {{ database.port }}
+    </p>
+
+    <p>
+        <strong>Database:</strong>
+        {{ database.db_name }}
+    </p>
+
+    <p>
+        <strong>Username:</strong>
+        {{ database.username }}
+    </p>
+    {% endif %}
 
     <p>
         <strong>Generated:</strong>

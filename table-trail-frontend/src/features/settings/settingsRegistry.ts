@@ -135,6 +135,13 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
             ],
             defaultValue: 'pdf',
           },
+          {
+            key: 'general.exportConnectionDetails',
+            type: 'toggle',
+            label: 'Include connection details',
+            description: 'Adds host, port, database name and username to exports. The password is never exported.',
+            defaultValue: false,
+          },
         ],
       },
       {

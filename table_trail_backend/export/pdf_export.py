@@ -1,7 +1,6 @@
 from table_trail_backend.export.generators.html_generator import HTMLGenerator
 from table_trail_backend.export.generators.pdf_generator import PdfGenerator
-from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
-from table_trail_backend.schemas.export_schema import ExportResult
+from table_trail_backend.schemas.export_schema import DatabaseExport, ExportResult
 
 
 class PdfExport:
@@ -9,7 +8,7 @@ class PdfExport:
         self.pdf_gen = PdfGenerator()
         self.html_gen = HTMLGenerator()
 
-    def run_export(self, database: DatabaseStructureResponse):
+    def run_export(self, database: DatabaseExport):
         # 1. generate dynamic html file with database structure
         html = self.html_gen.generate_html(database=database)
 

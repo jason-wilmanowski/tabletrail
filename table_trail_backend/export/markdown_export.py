@@ -1,14 +1,13 @@
 from table_trail_backend.core.exceptions import ExportMarkdownError
 from table_trail_backend.export.generators.markdown_generator import MarkdownGenerator
-from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
-from table_trail_backend.schemas.export_schema import ExportResult
+from table_trail_backend.schemas.export_schema import DatabaseExport, ExportResult
 
 
 class MarkdownExport:
     def __init__(self):
         self.markdown_gen = MarkdownGenerator()
 
-    def run_export(self, database: DatabaseStructureResponse):
+    def run_export(self, database: DatabaseExport):
         # 1. generate markdown string
         markdown_string = self.markdown_gen.generate_markdown(database)
 

@@ -8,10 +8,13 @@
 
 | Property | Value |
 |---|---|
-| Database Type | {{ database.database_type }} |
+| Database Type | {{ database.db_type.value }} |
+{% if database.host %}
 | Host | {{ database.host }} |
 | Port | {{ database.port }} |
-| Database | {{ database.database_name }} |
+| Database | {{ database.db_name }} |
+| Username | {{ database.username }} |
+{% endif %}
 | Tables | {{ database.tables | length }} |
 
 ---
@@ -28,7 +31,7 @@
 | Column | Type | Nullable | Default |
 |---|---|---|---|
 {% for column in table.columns %}
-| `{{ column.name }}` | `{{ column.data_type }}` | {{ column.nullable }} | {{ column.default or "—" }} |
+| `{{ column.name }}` | `{{ column.data_type }}` | {{ "yes" if column.is_nullable else "no" }} | {{ column.default_value or "—" }} |
 {% endfor %}
 
 {% if table.constraints %}
