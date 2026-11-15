@@ -9,9 +9,12 @@
 | Property | Value |
 |---|---|
 | Database Type | {{ database.db_type.value }} |
+{% if database.host %}
 | Host | {{ database.host }} |
 | Port | {{ database.port }} |
 | Database | {{ database.db_name }} |
+| Username | {{ database.username }} |
+{% endif %}
 | Tables | {{ database.tables | length }} |
 
 ---

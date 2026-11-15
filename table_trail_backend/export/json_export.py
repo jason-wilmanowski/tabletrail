@@ -1,12 +1,13 @@
-from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
-from table_trail_backend.schemas.export_schema import ExportResult
+from table_trail_backend.schemas.export_schema import CONNECTION_DETAIL_FIELDS, DatabaseExport, ExportResult
 
 
 class JsonExport:
     @staticmethod
-    def run_export(database: DatabaseStructureResponse):
+    def run_export(database: DatabaseExport):
         # 1. convert database structure to json
-        json_export = database.model_dump_json(indent=4)
+        # left-out connection details are omitted rather than exported as null
+        omitted = {field for field in CONNECTION_DETAIL_FIELDS if getattr(database, field) is None}
+        json_export = database.model_dump_json(indent=4, exclude=omitted)
 
         # 2. encode json variable to bytes
         json_bytes = json_export.encode("utf-8")

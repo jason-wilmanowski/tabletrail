@@ -4,12 +4,12 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from table_trail_backend.core.exceptions import ExportHtmlError
-from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
+from table_trail_backend.schemas.export_schema import DatabaseExport
 
 
 class HTMLGenerator:
     @staticmethod
-    def generate_html(database: DatabaseStructureResponse):
+    def generate_html(database: DatabaseExport):
         base_directory = Path(__file__).resolve().parent.parent
         template_dir = base_directory / "templates"
 

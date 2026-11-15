@@ -11,8 +11,7 @@ from table_trail_backend.export.json_export import JsonExport
 from table_trail_backend.export.markdown_export import MarkdownExport
 from table_trail_backend.export.pdf_export import PdfExport
 from table_trail_backend.repositories.database_repository import DatabasesRepository
-from table_trail_backend.schemas.database_schema import DatabaseStructureResponse
-from table_trail_backend.schemas.export_schema import CreateExport
+from table_trail_backend.schemas.export_schema import CreateExport, DatabaseExport
 
 
 class ExportService:
@@ -24,8 +23,10 @@ class ExportService:
         # 1. prepare database structure
         database_raw = await self._prepare_export_data(export_details.database_id)
 
-        # 2. convert sql alchemy model zu pydantic model
-        database = DatabaseStructureResponse.model_validate(database_raw)
+        # 2. convert sql alchemy model zu pydantic model, connection details only on request
+        database = DatabaseExport.model_validate(database_raw)
+        if not export_details.include_connection_details:
+            database = database.without_connection_details()
 
         # 3. run export with all dependencies
         export_file = self._run_export(export_details, database)
@@ -40,7 +41,7 @@ class ExportService:
 
         return database
 
-    def _run_export(self, export_details: CreateExport, database: DatabaseStructureResponse):
+    def _run_export(self, export_details: CreateExport, database: DatabaseExport):
         # get dynamic export class via export type
         export_class = self._get_export_type(export_details.export_type)
 
