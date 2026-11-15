@@ -70,3 +70,9 @@ def test_pdf_template_renders_database_type(database):
 
     assert "postgresql" in html
     assert "DBType" not in html
+
+
+def test_markdown_template_keeps_table_rows_together(database):
+    markdown = MarkdownGenerator.generate_markdown(database)
+
+    assert "|---|---|---|---|\n| `email` | `varchar` | no | 'none' |\n| `nickname` | `text` | yes | — |\n" in markdown
