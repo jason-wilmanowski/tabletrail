@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import type { TableResponse } from '../types/table'
-import { countColumns, countMatchedTables, filterColumnsByName, filterTablesByName } from './filterTables'
+import {
+  countColumns,
+  countMatchedTables,
+  countSearchMatches,
+  filterColumnsByName,
+  filterTablesByName,
+} from './filterTables'
 
 function makeTable(id: number, name: string, columnCount: number): TableResponse {
   return {
@@ -109,5 +115,23 @@ describe('countMatchedTables', () => {
 
   it('returns 0 for no matches', () => {
     expect(countMatchedTables([])).toBe(0)
+  })
+})
+
+describe('countSearchMatches', () => {
+  it('counts matching tables and matching columns independently', () => {
+    // "user" matches the table "users" and the column orders.user_id
+    expect(countSearchMatches(namedTables, 'USER')).toEqual({ tables: 1, columns: 1 })
+    // "id" matches no table name but four columns
+    expect(countSearchMatches(namedTables, 'id')).toEqual({ tables: 0, columns: 4 })
+  })
+
+  it('returns null for an empty or whitespace-only query', () => {
+    expect(countSearchMatches(namedTables, '')).toBeNull()
+    expect(countSearchMatches(namedTables, '   ')).toBeNull()
+  })
+
+  it('returns zero counts when nothing matches', () => {
+    expect(countSearchMatches(namedTables, 'zzz')).toEqual({ tables: 0, columns: 0 })
   })
 })
