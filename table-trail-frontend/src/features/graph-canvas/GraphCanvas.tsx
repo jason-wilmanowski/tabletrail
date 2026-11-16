@@ -42,6 +42,7 @@ import { useUiStore } from '../../store/uiStore'
 import { useColumnRelationStore } from '../../store/columnRelationStore'
 import { useGraphVisibilityStore } from '../../store/graphVisibilityStore'
 import { useSettingValue } from '../../store/settingsStore'
+import { useResolvedTheme } from '../settings/useApplyTheme'
 import { notifyError } from '../../store/notificationStore'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { getErrorMessage } from '../../api/client'
@@ -110,6 +111,8 @@ interface ReactFlowThemeVars extends CSSProperties {
   '--xy-minimap-mask-background-color'?: string
   '--xy-minimap-node-background-color'?: string
   '--xy-minimap-node-stroke-color'?: string
+  '--xy-selection-background-color'?: string
+  '--xy-selection-border'?: string
 }
 
 const reactFlowTheme: ReactFlowThemeVars = {
@@ -123,6 +126,8 @@ const reactFlowTheme: ReactFlowThemeVars = {
   '--xy-minimap-mask-background-color': 'hsl(var(--background) / 0.6)',
   '--xy-minimap-node-background-color': 'hsl(var(--border))',
   '--xy-minimap-node-stroke-color': 'hsl(var(--muted-foreground))',
+  '--xy-selection-background-color': 'hsl(var(--accent) / 0.08)',
+  '--xy-selection-border': '1px dotted hsl(var(--accent) / 0.8)',
 }
 
 /**
@@ -234,6 +239,11 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const [relationIdToDelete, setRelationIdToDelete] = useState<number | null>(null)
 
   const isMinimapEnabled = useSettingValue('graph.showMinimap', true)
+  // Everything not covered by `reactFlowTheme` (shadows, edge label and
+  // handle defaults) falls back to React Flow's own light/dark defaults,
+  // so its color mode has to follow the app theme, not React Flow's
+  // default `light`.
+  const colorMode = useResolvedTheme()
   const isZoomControlsEnabled = useSettingValue('graph.showZoomControls', true)
   const backgroundPattern = useSettingValue<string>('graph.backgroundPattern', 'dots')
   const menuScale = Number(useSettingValue<string>('graph.menuScale', '100')) / 100
@@ -588,6 +598,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         // regardless of what's mounted, so this only changes what's in
         // the DOM, not any of the existing features.
         onlyRenderVisibleElements
+        colorMode={colorMode}
         nodesDraggable={interactive}
         nodesConnectable={false}
         elementsSelectable={interactive}
