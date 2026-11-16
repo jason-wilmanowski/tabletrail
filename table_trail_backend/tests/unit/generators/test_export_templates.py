@@ -9,6 +9,7 @@ from table_trail_backend.export.generators.html_generator import HTMLGenerator
 from table_trail_backend.export.generators.markdown_generator import MarkdownGenerator
 from table_trail_backend.export.json_export import JsonExport
 from table_trail_backend.schemas.column_schema import ColumnResponse
+from table_trail_backend.schemas.constraint_schema import ConstraintResponse
 from table_trail_backend.schemas.export_schema import DatabaseExport
 from table_trail_backend.schemas.table_schema import TableResponse
 
@@ -118,3 +119,37 @@ def test_json_export_omits_connection_keys_instead_of_null(database):
 
     for key in ["host", "port", "db_name", "username"]:
         assert f'"{key}"' not in content
+
+
+# -- relations --
+
+
+def test_markdown_template_lists_foreign_keys(database):
+    orders = TableResponse(
+        id=2,
+        name="orders",
+        schema_name="public",
+        columns=[],
+        constraints=[
+            ConstraintResponse(
+                id=1,
+                constraint_name="orders_user_fk",
+                constraint_type="FOREIGN KEY",
+                references_table_id=1,
+                column_names=["user_id"],
+                on_delete="CASCADE",
+            )
+        ],
+    )
+    database = database.model_copy(update={"tables": [*database.tables, orders]})
+
+    markdown = MarkdownGenerator.generate_markdown(database)
+
+    assert "| `public.orders` | user_id | `public.users` | CASCADE |" in markdown
+    assert "No foreign keys found." not in markdown
+
+
+def test_markdown_template_says_when_there_are_no_foreign_keys(database):
+    markdown = MarkdownGenerator.generate_markdown(database)
+
+    assert "No foreign keys found." in markdown
