@@ -151,7 +151,7 @@ export function DatabaseDetailPage() {
         </div>
 
         <SearchInput />
-        <SearchModeToggle />
+        <SearchModeToggle tables={data.tables} />
         {isSchemaStatsEnabled && <SchemaStats tables={data.tables} showMatchCount={isSearchMatchCountEnabled} />}
 
         <div className="flex-1 overflow-hidden">

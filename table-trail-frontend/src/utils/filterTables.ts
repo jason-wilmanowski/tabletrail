@@ -47,3 +47,25 @@ export function filterColumnsByName(tables: TableResponse[], searchQuery: string
 export function countMatchedTables(matches: ColumnMatch[]): number {
   return new Set(matches.map((match) => match.table.id)).size
 }
+
+/** Hits per search mode, shown in the `SearchModeToggle` buttons. */
+export interface SearchMatchCounts {
+  tables: number
+  columns: number
+}
+
+/**
+ * How many tables and how many columns `searchQuery` matches by name —
+ * both modes at once, so the toggle can show where the hits are before
+ * switching. Uses the same filters as the lists. `null` for an empty
+ * query, since "matches" of no search aren't meaningful.
+ */
+export function countSearchMatches(tables: TableResponse[], searchQuery: string): SearchMatchCounts | null {
+  if (searchQuery.trim() === '') {
+    return null
+  }
+  return {
+    tables: filterTablesByName(tables, searchQuery).length,
+    columns: filterColumnsByName(tables, searchQuery).length,
+  }
+}
