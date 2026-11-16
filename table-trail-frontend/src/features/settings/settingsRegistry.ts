@@ -300,6 +300,18 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
             ],
             defaultValue: 'TB',
           },
+          {
+            key: 'graph.edgeStyle',
+            type: 'select',
+            label: 'Edge style',
+            description: 'How foreign key and custom relation lines are drawn.',
+            options: [
+              { value: 'smoothstep', label: 'Stepped' },
+              { value: 'bezier', label: 'Curved' },
+              { value: 'straight', label: 'Straight' },
+            ],
+            defaultValue: 'smoothstep',
+          },
         ],
       },
       {
