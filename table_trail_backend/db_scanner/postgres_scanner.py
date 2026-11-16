@@ -7,7 +7,10 @@ from .base_scanner import (
     ScannedConstraint,
     ScannedDatabase,
     ScannedTable,
+    TableKey,
 )
+
+SYSTEM_SCHEMAS = "('information_schema', 'pg_catalog')"
 
 
 class PostgresScanner(BaseScanner):
@@ -22,59 +25,44 @@ class PostgresScanner(BaseScanner):
 
     def _scan_tables(self, conn: Connection) -> list[ScannedTable]:
         result = conn.execute(
-            text("""
+            text(f"""
             SELECT table_name, table_schema
             FROM information_schema.tables
-            WHERE table_schema NOT IN ('information_schema', 'pg_catalog')
+            WHERE table_schema NOT IN {SYSTEM_SCHEMAS}
             AND table_type = 'BASE TABLE'
             ORDER BY table_schema, table_name
         """)
         )
+        table_rows = result.fetchall()
 
-        tables = []
-        for row in result.fetchall():
-            table_name = row[0]
-            schema_name = row[1]
-            columns = self._scan_columns(conn, schema_name, table_name)
-            constraints = self._scan_constraints(conn, schema_name, table_name)
-            tables.append(
-                ScannedTable(name=table_name, schema_name=schema_name, columns=columns, constraints=constraints)
-            )
-        return tables
+        columns = self._scan_columns(conn)
+        constraints = self._scan_constraints(conn)
+        return self._build_tables(table_rows, columns, constraints)
 
-    def _scan_columns(self, conn: Connection, schema_name: str, table_name: str) -> list[ScannedColumn]:
+    def _scan_columns(self, conn: Connection) -> dict[TableKey, list[ScannedColumn]]:
         result = conn.execute(
-            text("""
+            text(f"""
             SELECT
+                table_schema,
+                table_name,
                 column_name,
                 data_type,
                 is_nullable,
                 column_default,
                 ordinal_position
             FROM information_schema.columns
-            WHERE table_schema = :schema AND table_name = :table
-            ORDER BY ordinal_position
-        """),
-            {"schema": schema_name, "table": table_name},
+            WHERE table_schema NOT IN {SYSTEM_SCHEMAS}
+            ORDER BY table_schema, table_name, ordinal_position
+        """)
         )
+        return self._group_columns(result.fetchall())
 
-        columns = []
-        for row in result.fetchall():
-            columns.append(
-                ScannedColumn(
-                    name=row[0],
-                    data_type=row[1],
-                    is_nullable=row[2] == "YES",
-                    default_value=row[3],
-                    ordinal_position=row[4],
-                )
-            )
-        return columns
-
-    def _scan_constraints(self, conn: Connection, schema_name: str, table_name: str) -> list[ScannedConstraint]:
+    def _scan_constraints(self, conn: Connection) -> dict[TableKey, list[ScannedConstraint]]:
         result = conn.execute(
-            text("""
+            text(f"""
             SELECT
+                tc.table_schema,
+                tc.table_name,
                 tc.constraint_name,
                 tc.constraint_type,
                 kcu.column_name,
@@ -87,46 +75,18 @@ class PostgresScanner(BaseScanner):
             LEFT JOIN information_schema.key_column_usage kcu
                 ON tc.constraint_name = kcu.constraint_name
                 AND tc.table_schema   = kcu.table_schema
+                AND tc.table_name     = kcu.table_name
             LEFT JOIN information_schema.referential_constraints rc
-                ON tc.constraint_name = rc.constraint_name
+                ON tc.constraint_name    = rc.constraint_name
+                AND tc.constraint_schema = rc.constraint_schema
             LEFT JOIN information_schema.constraint_column_usage ccu
                 ON tc.constraint_name    = ccu.constraint_name
                 AND tc.constraint_schema = ccu.constraint_schema
             LEFT JOIN information_schema.check_constraints cc
                 ON tc.constraint_name = cc.constraint_name
                 AND tc.table_schema   = cc.constraint_schema
-            WHERE tc.table_schema = :schema
-            AND   tc.table_name   = :table
-            ORDER BY tc.constraint_name, kcu.ordinal_position
-        """),
-            {"schema": schema_name, "table": table_name},
+            WHERE tc.table_schema NOT IN {SYSTEM_SCHEMAS}
+            ORDER BY tc.table_schema, tc.table_name, tc.constraint_name, kcu.ordinal_position
+        """)
         )
-
-        # Group rows by constraint_name (composite constraints span multiple rows)
-        constraints_map: dict[str, ScannedConstraint] = {}
-        for row in result.fetchall():
-            constraint_name = row[0]
-            constraint_type = row[1]
-            column_name = row[2]
-            references_table = row[3]
-            on_delete = row[4]
-            on_update = row[5]
-            check_expression = row[6]
-            references_schema = row[7]
-
-            if constraint_name not in constraints_map:
-                constraints_map[constraint_name] = ScannedConstraint(
-                    constraint_name=constraint_name,
-                    constraint_type=constraint_type,
-                    column_names=[],
-                    references_table=references_table,
-                    references_schema=references_schema,
-                    on_delete=on_delete,
-                    on_update=on_update,
-                    check_expression=check_expression,
-                )
-
-            if column_name and column_name not in constraints_map[constraint_name].column_names:
-                constraints_map[constraint_name].column_names.append(column_name)
-
-        return list(constraints_map.values())
+        return self._group_constraints(result.fetchall())
