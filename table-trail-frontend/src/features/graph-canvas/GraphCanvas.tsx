@@ -23,7 +23,8 @@ import type {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { tablesToNodes } from '../../utils/tablesToNodes'
-import { layoutAlgorithm } from '../../utils/layoutAlgorithm'
+import { DEFAULT_LAYOUT_DIRECTION, layoutAlgorithm } from '../../utils/layoutAlgorithm'
+import type { LayoutDirection } from '../../utils/layoutAlgorithm'
 import { constraintsToEdges } from '../../utils/constraintsToEdges'
 import { getSavedLayout, saveLayout } from '../../utils/layoutStorage'
 import { computeCollisionOffsets } from '../../utils/collisionOffset'
@@ -41,6 +42,7 @@ import { useUiStore } from '../../store/uiStore'
 import { useColumnRelationStore } from '../../store/columnRelationStore'
 import { useGraphVisibilityStore } from '../../store/graphVisibilityStore'
 import { useSettingValue } from '../../store/settingsStore'
+import { useResolvedTheme } from '../settings/useApplyTheme'
 import { notifyError } from '../../store/notificationStore'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 import { getErrorMessage } from '../../api/client'
@@ -109,6 +111,8 @@ interface ReactFlowThemeVars extends CSSProperties {
   '--xy-minimap-mask-background-color'?: string
   '--xy-minimap-node-background-color'?: string
   '--xy-minimap-node-stroke-color'?: string
+  '--xy-selection-background-color'?: string
+  '--xy-selection-border'?: string
 }
 
 const reactFlowTheme: ReactFlowThemeVars = {
@@ -122,6 +126,8 @@ const reactFlowTheme: ReactFlowThemeVars = {
   '--xy-minimap-mask-background-color': 'hsl(var(--background) / 0.6)',
   '--xy-minimap-node-background-color': 'hsl(var(--border))',
   '--xy-minimap-node-stroke-color': 'hsl(var(--muted-foreground))',
+  '--xy-selection-background-color': 'hsl(var(--accent) / 0.08)',
+  '--xy-selection-border': '1px dotted hsl(var(--accent) / 0.8)',
 }
 
 /**
@@ -136,9 +142,13 @@ const reactFlowTheme: ReactFlowThemeVars = {
  * substituted back in — Dagre stays the fallback for tables that were
  * never dragged.
  */
-function buildGraph(tables: TableResponse[], databaseId: number): { nodes: Node[]; edges: Edge[] } {
+function buildGraph(
+  tables: TableResponse[],
+  databaseId: number,
+  layoutDirection: LayoutDirection
+): { nodes: Node[]; edges: Edge[] } {
   const edges = constraintsToEdges(tables)
-  const layoutNodes = layoutAlgorithm(tablesToNodes(tables), edges)
+  const layoutNodes = layoutAlgorithm(tablesToNodes(tables), edges, layoutDirection)
   const savedLayout = getSavedLayout(databaseId)
   const nodes = layoutNodes.map((node) => {
     const saved = savedLayout[node.id]
@@ -170,6 +180,10 @@ function buildGraph(tables: TableResponse[], databaseId: number): { nodes: Node[
  * `<ReactFlow>` without the explicit provider wrapping.
  */
 function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanvasProps) {
+  // Anything but 'LR' (e.g. an outdated stored value) falls back to the default.
+  const layoutDirection: LayoutDirection =
+    useSettingValue<string>('graph.layoutDirection', DEFAULT_LAYOUT_DIRECTION) === 'LR' ? 'LR' : 'TB'
+
   // `buildGraph` runs Dagre over every table/edge — computed once via a
   // ref (not `useMemo`, since a *stale* value here is fine: the effect
   // below re-derives `nodes`/`edges` on every `tables`/`databaseId`
@@ -177,7 +191,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // calling `buildGraph` twice on mount.
   const initialGraphRef = useRef<{ nodes: Node[]; edges: Edge[] } | null>(null)
   if (initialGraphRef.current === null) {
-    initialGraphRef.current = buildGraph(tables, databaseId)
+    initialGraphRef.current = buildGraph(tables, databaseId, layoutDirection)
   }
   const [nodes, setNodes] = useState<Node[]>(() => initialGraphRef.current!.nodes)
   const [edges, setEdges] = useState<Edge[]>(() => initialGraphRef.current!.edges)
@@ -225,6 +239,11 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   const [relationIdToDelete, setRelationIdToDelete] = useState<number | null>(null)
 
   const isMinimapEnabled = useSettingValue('graph.showMinimap', true)
+  // Everything not covered by `reactFlowTheme` (shadows, edge label and
+  // handle defaults) falls back to React Flow's own light/dark defaults,
+  // so its color mode has to follow the app theme, not React Flow's
+  // default `light`.
+  const colorMode = useResolvedTheme()
   const isZoomControlsEnabled = useSettingValue('graph.showZoomControls', true)
   const backgroundPattern = useSettingValue<string>('graph.backgroundPattern', 'dots')
   const menuScale = Number(useSettingValue<string>('graph.menuScale', '100')) / 100
@@ -430,12 +449,13 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
   // (e.g. after a rescan) or when a different database is shown. Manual
   // drag positions are re-applied on top of the fresh Dagre layout by
   // `buildGraph` itself (via `layoutStorage`), so they survive a rescan
-  // as long as the dragged table still exists.
+  // as long as the dragged table still exists. A changed layout direction
+  // re-lays out the same way — again, dragged tables stay where they are.
   useEffect(() => {
-    const graph = buildGraph(tables, databaseId)
+    const graph = buildGraph(tables, databaseId, layoutDirection)
     setNodes(graph.nodes)
     setEdges(graph.edges)
-  }, [tables, databaseId])
+  }, [tables, databaseId, layoutDirection])
 
   // Centers the view on the node matching the current selection —
   // triggered both by clicking a TableNode directly and by clicking a
@@ -578,6 +598,7 @@ function GraphCanvasInner({ tables, databaseId, interactive = true }: GraphCanva
         // regardless of what's mounted, so this only changes what's in
         // the DOM, not any of the existing features.
         onlyRenderVisibleElements
+        colorMode={colorMode}
         nodesDraggable={interactive}
         nodesConnectable={false}
         elementsSelectable={interactive}

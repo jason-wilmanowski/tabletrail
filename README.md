@@ -48,7 +48,7 @@ A developer-tool-styled web interface with dark and light themes, built as a sin
 - **Settings** — stored per browser, only values you change are saved:
   - **General** — relation delete confirmation, hover previews, export defaults, outdated-scan warning
   - **Design** — theme (system / dark / light), accent color, table node corners, monospace font
-  - **Graph** — minimap, zoom controls, background pattern, sidebar stats and search match counts, control sizes
+  - **Graph** — layout direction, edge style, minimap, zoom controls, background pattern, sidebar stats and search match counts, control sizes
   - **AI Models** — placeholder for the planned AI features (see Roadmap)
 - Collapsible global navigation and hover-to-preview for saved databases
 
@@ -193,7 +193,7 @@ Delivered to the frontend via SSE or WebSockets.
 
 ### Frontend
 
-Near-term frontend plans build on the current interface rather than starting from scratch: more graph settings (default layout direction, edge style), the AI Models settings once AI reasoning lands, refining the table/column detail views further, and preparing the graph for the context needs of AI reasoning.
+Near-term frontend plans build on the current interface rather than starting from scratch: the AI Models settings once AI reasoning lands, refining the table/column detail views further, and preparing the graph for the context needs of AI reasoning.
 
 ---
 

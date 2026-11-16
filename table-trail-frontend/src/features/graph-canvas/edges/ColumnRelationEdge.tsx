@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, Position, useInternalNode, useViewport } from '@xyflow/react'
+import { BaseEdge, EdgeLabelRenderer, Position, useInternalNode, useViewport } from '@xyflow/react'
 import type { Edge, EdgeProps } from '@xyflow/react'
 import { Eye, EyeOff, Trash2, X } from 'lucide-react'
 import { useColumnRelationStore } from '../../../store/columnRelationStore'
 import type { ColumnRelationColor } from '../../../types/columnRelation'
 import { COLUMN_RELATION_COLORS, COLUMN_RELATION_COLOR_OPTIONS } from '../column-relations/relationColors'
 import { pickHorizontalSide } from '../../../utils/floatingEdgeGeometry'
+import { DEFAULT_EDGE_STYLE, getEdgePath } from '../../../utils/edgePath'
+import { useSettingValue } from '../../../store/settingsStore'
 import { useClampedNoteText } from './useClampedNoteText'
 
 const TEXTAREA_CLASSES =
@@ -113,6 +115,7 @@ export function ColumnRelationEdge({
   // is actually to the *left* of the source.
   const sourceNode = useInternalNode(source)
   const targetNode = useInternalNode(target)
+  const edgeStyle = useSettingValue<string>('graph.edgeStyle', DEFAULT_EDGE_STYLE)
   const horizontalSides =
     sourceNode && targetNode
       ? pickHorizontalSide(
@@ -136,7 +139,7 @@ export function ColumnRelationEdge({
         (horizontalSides.targetPosition === Position.Right ? (targetNode.measured.width ?? 0) : 0)
       : targetX
 
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getEdgePath(edgeStyle, {
     sourceX: resolvedSourceX,
     sourceY,
     sourcePosition: horizontalSides?.sourcePosition ?? sourcePosition,

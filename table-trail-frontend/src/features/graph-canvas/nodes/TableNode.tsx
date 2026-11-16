@@ -146,8 +146,9 @@ export function TableNode({ data, selected }: NodeProps<TableNodeType>) {
         land on the table's first column instead of the table itself.
         Giving the table one explicit `id="table"` handle (matching
         `constraintsToEdges.ts`) keeps FK edges anchored at the table
-        boundary regardless of column handles, order, or count. Position
-        matches the Dagre `rankdir: 'TB'` layout (layoutAlgorithm.ts).
+        boundary regardless of column handles, order, or count. Top/Bottom
+        is only a fallback: `RelationEdge` picks the actual sides from the
+        node rectangles, so this works for every layout direction.
       */}
       <Handle
         type="target"

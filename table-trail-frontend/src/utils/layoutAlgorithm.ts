@@ -26,15 +26,17 @@ export function estimateNodeHeight(node: TableNodeType): number {
 }
 
 /**
- * Layout direction: top-to-bottom.
+ * Dagre rank direction, set by the `graph.layoutDirection` setting.
  *
- * Chosen because once Step 18 adds Foreign-Key edges, the natural reading
- * direction for "this table references that table" is downward (similar
- * to an org chart / ER diagram convention), and TB layouts stay narrower
- * horizontally, which fits better next to the fixed-width sidebar defined
- * in AppShell.
+ * Top-to-bottom is the default: the natural reading direction for "this
+ * table references that table" is downward (similar to an org chart / ER
+ * diagram convention), and TB layouts stay narrower horizontally, which
+ * fits better next to the fixed-width sidebar defined in AppShell.
+ * Left-to-right suits wide screens and long reference chains.
  */
-const LAYOUT_DIRECTION = 'TB'
+export type LayoutDirection = 'TB' | 'LR'
+
+export const DEFAULT_LAYOUT_DIRECTION: LayoutDirection = 'TB'
 
 /**
  * Computes positions for the given nodes using Dagre and returns a new
@@ -48,10 +50,14 @@ const LAYOUT_DIRECTION = 'TB'
  * fully content-agnostic, but stays specific to table nodes, which is all
  * this application ever lays out.
  */
-export function layoutAlgorithm(nodes: TableNodeType[], edges: Edge[] = []): TableNodeType[] {
+export function layoutAlgorithm(
+  nodes: TableNodeType[],
+  edges: Edge[] = [],
+  direction: LayoutDirection = DEFAULT_LAYOUT_DIRECTION
+): TableNodeType[] {
   const graph = new dagre.graphlib.Graph()
   graph.setDefaultEdgeLabel(() => ({}))
-  graph.setGraph({ rankdir: LAYOUT_DIRECTION })
+  graph.setGraph({ rankdir: direction })
 
   for (const node of nodes) {
     graph.setNode(node.id, { width: NODE_WIDTH, height: estimateNodeHeight(node) })

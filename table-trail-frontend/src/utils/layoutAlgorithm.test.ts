@@ -75,4 +75,24 @@ describe('layoutAlgorithm', () => {
 
     expect(gapMany).toBeGreaterThan(gapFew)
   })
+
+  it('stacks connected tables vertically by default (top to bottom)', () => {
+    const nodes = tablesToNodes([makeTable(1, 2), makeTable(2, 2)])
+    const edges: Edge[] = [{ id: 'e1', source: 'table-1', target: 'table-2' }]
+
+    const [a, b] = layoutAlgorithm(nodes, edges)
+
+    expect(a.position.x).toBe(b.position.x)
+    expect(b.position.y).toBeGreaterThan(a.position.y)
+  })
+
+  it('places connected tables side by side for left to right', () => {
+    const nodes = tablesToNodes([makeTable(1, 2), makeTable(2, 2)])
+    const edges: Edge[] = [{ id: 'e1', source: 'table-1', target: 'table-2' }]
+
+    const [a, b] = layoutAlgorithm(nodes, edges, 'LR')
+
+    expect(a.position.y).toBe(b.position.y)
+    expect(b.position.x).toBeGreaterThan(a.position.x)
+  })
 })

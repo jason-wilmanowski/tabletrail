@@ -286,6 +286,35 @@ export const SETTINGS_CATEGORIES: SettingsCategoryDef[] = [
         ],
       },
       {
+        id: 'layout',
+        title: 'Layout',
+        settings: [
+          {
+            key: 'graph.layoutDirection',
+            type: 'select',
+            label: 'Layout direction',
+            description: 'Direction of the automatic layout. Tables you moved yourself keep their position.',
+            options: [
+              { value: 'TB', label: 'Top to bottom' },
+              { value: 'LR', label: 'Left to right' },
+            ],
+            defaultValue: 'TB',
+          },
+          {
+            key: 'graph.edgeStyle',
+            type: 'select',
+            label: 'Edge style',
+            description: 'How foreign key and custom relation lines are drawn.',
+            options: [
+              { value: 'smoothstep', label: 'Stepped' },
+              { value: 'bezier', label: 'Curved' },
+              { value: 'straight', label: 'Straight' },
+            ],
+            defaultValue: 'smoothstep',
+          },
+        ],
+      },
+      {
         id: 'sidebar',
         title: 'Sidebar',
         settings: [

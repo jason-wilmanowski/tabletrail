@@ -1,7 +1,9 @@
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useInternalNode } from '@xyflow/react'
+import { BaseEdge, EdgeLabelRenderer, useInternalNode } from '@xyflow/react'
 import type { EdgeProps } from '@xyflow/react'
 import type { RelationEdgeType } from '../../../utils/constraintsToEdges'
 import { getFloatingEdgeParams } from '../../../utils/floatingEdgeGeometry'
+import { DEFAULT_EDGE_STYLE, getEdgePath } from '../../../utils/edgePath'
+import { useSettingValue } from '../../../store/settingsStore'
 
 /**
  * Custom edge representing a Foreign-Key relation between two tables.
@@ -55,6 +57,7 @@ export function RelationEdge({
   // measured (`sourceNode`/`targetNode` briefly undefined on mount).
   const sourceNode = useInternalNode(source)
   const targetNode = useInternalNode(target)
+  const edgeStyle = useSettingValue<string>('graph.edgeStyle', DEFAULT_EDGE_STYLE)
   const floating =
     sourceNode && targetNode
       ? getFloatingEdgeParams(
@@ -73,7 +76,7 @@ export function RelationEdge({
         )
       : null
 
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getEdgePath(edgeStyle, {
     sourceX: floating?.sourceX ?? sourceX,
     sourceY: floating?.sourceY ?? sourceY,
     sourcePosition: floating?.sourcePosition ?? sourcePosition,
