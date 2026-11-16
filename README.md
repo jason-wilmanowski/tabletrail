@@ -23,7 +23,7 @@ It's aimed at developers who need to:
 
 ### Backend
 
-- **Database scanning** for PostgreSQL, MySQL, and MariaDB — reads tables, columns, data types, primary keys, foreign keys, and constraints directly from the source database
+- **Database scanning** for PostgreSQL, MySQL, and MariaDB — reads tables, columns, data types, primary keys, foreign keys, and constraints directly from the source database, in three queries per scan regardless of the number of tables
 - **Persistent schema cache** — scanned structures are stored in their own database (not re-scanned on every request), organized as a layered schema: databases → tables → columns → constraints
 - **Full CRUD** for managed database connections (create via scan, read, update connection details, delete)
 - **Rescan** support to refresh an already-scanned database's structure — custom relations are kept, only those whose columns no longer exist are removed
@@ -199,7 +199,7 @@ Near-term frontend plans build on the current interface rather than starting fro
 
 ## Project Status
 
-TableTrail is under active development. The backend covers database scanning, structured persistence, custom relations, and multi-format export, and an interactive frontend exists for exploring and managing scanned databases, including search, custom relations, and a working settings area. Next up are performance work for large databases (batched scanner queries) and the asynchronous processing and AI reasoning work described in the roadmap.
+TableTrail is under active development. The backend covers database scanning, structured persistence, custom relations, and multi-format export, and an interactive frontend exists for exploring and managing scanned databases, including search, custom relations, and a working settings area. Next up is the asynchronous processing and AI reasoning work described in the roadmap.
 
 ---
 
