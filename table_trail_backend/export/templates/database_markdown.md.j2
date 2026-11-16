@@ -50,14 +50,16 @@
 
 ## Relations
 
-{% if database.relations %}
-| From | Column | To |
-|---|---|---|
-{% for relation in database.relations %}
-| `{{ relation.from_table }}` | `{{ relation.from_column }}` | `{{ relation.to_table }}.{{ relation.to_column }}` |
+Foreign keys between the scanned tables.
+
+{% if relations %}
+| From | Columns | To | On delete |
+|---|---|---|---|
+{% for relation in relations %}
+| `{{ relation.from_table }}` | {{ relation.from_columns | join(", ") }} | `{{ relation.to_table }}` | {{ relation.on_delete or "—" }} |
 {% endfor %}
 {% else %}
-No relations found.
+No foreign keys found.
 {% endif %}
 
 ---
