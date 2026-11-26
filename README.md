@@ -229,6 +229,15 @@ npm run dev
 
 The frontend reads the API base URL from `VITE_API_BASE_URL` (default `http://localhost:8000/api/v1`).
 
+### Database migrations
+
+The cache database schema is managed with Alembic and migrated automatically when the API starts. After changing a model in `table_trail_backend/db/models/`, create a migration and review it before committing:
+
+```bash
+alembic revision --autogenerate -m "describe the change"
+alembic upgrade head   # or just restart the API
+```
+
 ---
 
 ## Contributing
