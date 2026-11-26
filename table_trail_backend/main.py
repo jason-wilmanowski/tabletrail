@@ -5,13 +5,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from table_trail_backend.api import column_relation, database, export, health_check, scanner
 from table_trail_backend.core.config import settings
-from table_trail_backend.db.database_config import Base, engine
+from table_trail_backend.db.database_config import engine
+from table_trail_backend.db.migrations import run_migrations
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    await run_migrations(engine)
     yield
     await engine.dispose()
 
