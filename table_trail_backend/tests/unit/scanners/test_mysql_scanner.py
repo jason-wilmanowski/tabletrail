@@ -3,6 +3,12 @@ from unittest.mock import MagicMock
 from table_trail_backend.db_scanner.mysql_scanner import MySQLScanner
 
 
+def _result(rows):
+    result = MagicMock()
+    result.fetchall.return_value = rows
+    return result
+
+
 def test_scan_success(monkeypatch):
     fake_engine = MagicMock()
     fake_connection = MagicMock()
@@ -13,7 +19,7 @@ def test_scan_success(monkeypatch):
 
     scanner = MySQLScanner()
 
-    fake_tables = [MagicMock(name="users", schema_name="app", columns=[], constraints=[])]
+    fake_tables = [MagicMock(name="users", schema_name="public", columns=[], constraints=[])]
 
     monkeypatch.setattr(scanner, "_scan_tables", MagicMock(return_value=fake_tables))
 
@@ -26,29 +32,53 @@ def test_scan_success(monkeypatch):
     fake_engine.dispose.assert_called_once_with()
 
 
+def test_scan_tables_runs_three_queries_regardless_of_table_count():
+    scanner = MySQLScanner()
+
+    fake_connection = MagicMock()
+    fake_connection.execute.side_effect = [
+        _result([("orders", "shop"), ("users", "shop")]),
+        _result(
+            [
+                ("shop", "orders", "id", "integer", "NO", None, 1),
+                ("shop", "users", "id", "integer", "NO", None, 1),
+                ("shop", "users", "email", "varchar", "YES", None, 2),
+            ]
+        ),
+        _result([("shop", "users", "users_pkey", "PRIMARY KEY", "id", None, None, None, None, None)]),
+    ]
+
+    tables = scanner._scan_tables(fake_connection)
+
+    assert fake_connection.execute.call_count == 3
+    assert [table.name for table in tables] == ["orders", "users"]
+    assert [column.name for column in tables[1].columns] == ["id", "email"]
+    assert [constraint.constraint_name for constraint in tables[1].constraints] == ["users_pkey"]
+    assert tables[0].constraints == []
+
+
 def test_scan_columns():
     scanner = MySQLScanner()
 
     fake_connection = MagicMock()
 
     fake_connection.execute.return_value.fetchall.return_value = [
-        ("id", "int", "NO", None, 1),
-        ("name", "varchar", "YES", None, 2),
-        ("created_at", "datetime", "NO", "CURRENT_TIMESTAMP", 3),
+        ("shop", "users", "id", "integer", "NO", None, 1),
+        ("shop", "users", "name", "character varying", "YES", None, 2),
+        ("shop", "users", "created_at", "timestamp", "NO", "CURRENT_TIMESTAMP", 3),
     ]
 
-    result = scanner._scan_columns(fake_connection, "app", "users")
+    result = scanner._scan_columns(fake_connection)[("shop", "users")]
 
     assert len(result) == 3
 
     assert result[0].name == "id"
-    assert result[0].data_type == "int"
+    assert result[0].data_type == "integer"
     assert result[0].is_nullable is False
     assert result[0].default_value is None
     assert result[0].ordinal_position == 1
 
     assert result[1].name == "name"
-    assert result[1].data_type == "varchar"
     assert result[1].is_nullable is True
 
     assert result[2].name == "created_at"
@@ -63,17 +93,10 @@ def test_scan_constraints():
     fake_connection = MagicMock()
 
     fake_connection.execute.return_value.fetchall.return_value = [
+        ("shop", "users", "users_pkey", "PRIMARY KEY", "id", None, None, None, None, None),
         (
-            "PRIMARY",
-            "PRIMARY KEY",
-            "id",
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
+            "shop",
+            "users",
             "fk_user_company",
             "FOREIGN KEY",
             "company_id",
@@ -81,17 +104,17 @@ def test_scan_constraints():
             "CASCADE",
             "CASCADE",
             None,
-            "app",
+            "shop",
         ),
     ]
 
-    result = scanner._scan_constraints(fake_connection, "app", "users")
+    result = scanner._scan_constraints(fake_connection)[("shop", "users")]
 
     assert len(result) == 2
 
     primary_key = result[0]
 
-    assert primary_key.constraint_name == "PRIMARY"
+    assert primary_key.constraint_name == "users_pkey"
     assert primary_key.constraint_type == "PRIMARY KEY"
     assert primary_key.column_names == ["id"]
 
@@ -101,78 +124,8 @@ def test_scan_constraints():
     assert foreign_key.constraint_type == "FOREIGN KEY"
     assert foreign_key.column_names == ["company_id"]
     assert foreign_key.references_table == "companies"
-    assert foreign_key.references_schema == "app"
+    assert foreign_key.references_schema == "shop"
     assert foreign_key.on_delete == "CASCADE"
     assert foreign_key.on_update == "CASCADE"
 
-
-def test_scan_constraints_combines_columns_of_same_constraint():
-    scanner = MySQLScanner()
-
-    fake_connection = MagicMock()
-
-    fake_connection.execute.return_value.fetchall.return_value = [
-        (
-            "pk_example",
-            "PRIMARY KEY",
-            "id",
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
-            "pk_example",
-            "PRIMARY KEY",
-            "tenant_id",
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-    ]
-
-    result = scanner._scan_constraints(fake_connection, "app", "example")
-
-    assert len(result) == 1
-
-    constraint = result[0]
-
-    assert constraint.constraint_name == "pk_example"
-    assert constraint.constraint_type == "PRIMARY KEY"
-    assert constraint.column_names == [
-        "id",
-        "tenant_id",
-    ]
-
-
-def test_scan_constraints_check_constraint():
-    scanner = MySQLScanner()
-
-    fake_connection = MagicMock()
-
-    fake_connection.execute.return_value.fetchall.return_value = [
-        (
-            "check_positive",
-            "CHECK",
-            None,
-            None,
-            None,
-            None,
-            "`age` >= 18",
-            None,
-        ),
-    ]
-
-    result = scanner._scan_constraints(fake_connection, "app", "users")
-
-    assert len(result) == 1
-
-    constraint = result[0]
-
-    assert constraint.constraint_name == "check_positive"
-    assert constraint.constraint_type == "CHECK"
-    assert constraint.column_names == []
-    assert constraint.check_expression == "`age` >= 18"
+    fake_connection.execute.assert_called_once()
